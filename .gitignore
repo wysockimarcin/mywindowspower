@@ -1,0 +1,33 @@
+# Logi i dane lokalne
+*.log
+logs/
+*.tmp
+.cache/
+
+# Konfiguracja lokalna użytkownika (szablon: config/settings.example.json)
+config/settings.local.json
+
+# Wyniki testów i analiz
+TestResults/
+coverage.xml
+*.trx
+
+# Artefakty budowania / pakowania
+dist/
+build/
+*.exe
+
+# Sekrety - NIGDY nie commitować
+*.pfx
+*.key
+*.secret
+.env
+.env.*
+
+# Edytory i system
+.vscode/*
+!.vscode/settings.json
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

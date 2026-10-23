@@ -71,8 +71,9 @@ Fazy od FAZY 2 do FAZY 21 (patrz tabela). Istnieje tylko szkielet: moduły mają
 
 - Komputery docelowe (D-019): `localhost` (poniżej) oraz jeden komputer zdalny; jego nazwa i parametry są tylko w `config/settings.local.json` (poza repozytorium). System i konfiguracja komputera zdalnego — do ustalenia w FAZIE 3.
 - Windows 11 Pro, wersja 26H2, kompilacja 26300.9711 (`winver`) — potwierdzone w FAZIE 1.
-- PowerShell 5.1.26100.9711 — potwierdzone (D-013). PowerShell 7.6.7 — zainstalowany 2026-10-23 przez winget (pakiet MSIX, D-022).
-- Narzędzia: Pester 6.2.0, PSScriptAnalyzer 1.25.0 (CurrentUser).
+- PowerShell 5.1.26100.9711 — potwierdzone (D-013). PowerShell 7.6.7 — zainstalowany 2026-10-23 z instalatora MSI (oficjalne wydanie na GitHubie, D-022); `(Get-Command pwsh).Source` = `C:\Program Files\PowerShell\7\pwsh.exe` (w PATH maszyny).
+- Narzędzia: Pester 6.2.0, PSScriptAnalyzer 1.25.0 (CurrentUser), osobno dla 5.1 (`Documents\WindowsPowerShell\Modules`) i 7.x (`Documents\PowerShell\Modules`).
+- Uruchamianie PowerShella w kodzie (wejście do FAZY 3): launcher i `tests\Launcher.Tests.ps1` uruchamiają ponownie bieżący host przez `(Get-Process -Id $PID).Path` (`Start-MyWindowsPower.ps1:79` i `:105`, `tests\Launcher.Tests.ps1:13` i `:18`); nigdzie nie ma zakodowanej ścieżki instalacji.
 
 ## Materiały użytkownika
 
@@ -85,6 +86,6 @@ Fazy od FAZY 2 do FAZY 21 (patrz tabela). Istnieje tylko szkielet: moduły mają
 
 ## Punkty do weryfikacji na Windows 11
 
-- ~~Launcher i `tests\Invoke-Checks.ps1` w PowerShell 7.x~~ — **zweryfikowane 2026-10-23**: `tests\Invoke-Checks.ps1` w PowerShell 7.6.7 (Core) i 5.1.26100.9711 (Desktop): PSScriptAnalyzer bez uwag, Pester 175/175 (w tym testy launchera uruchamianego w bieżącym hoście). Pierwszy przebieg w 7.x ujawnił błąd testu `schemaVersion` (`[long]` zamiast `[int]`), poprawiony w `tests\Repository.Tests.ps1`.
+- ~~Launcher i `tests\Invoke-Checks.ps1` w PowerShell 7.x~~ — **zweryfikowane 2026-10-23**: `tests\Invoke-Checks.ps1` w PowerShell 7.6.7 (Core) i 5.1.26100.9711 (Desktop): PSScriptAnalyzer bez uwag, Pester 175/175 (w tym testy launchera uruchamianego w bieżącym hoście). Pierwszy przebieg w 7.x ujawnił błąd testu `schemaVersion` (`[long]` zamiast `[int]`), poprawiony w `tests\Repository.Tests.ps1`. **Ponowna weryfikacja po przejściu na MSI (2026-10-23)**, każda wersja w nowym procesie: 5.1.26100.9711 — 0 uwag, 175/175; 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`) — 0 uwag, 175/175.
 - Połączenie z komputerem zdalnym, `Invoke-MwpOnTarget` i zachowanie przy utracie łączności (FAZA 3 i fazy obszarów).
 - Zachowanie launchera przy zasadzie wykonywania `Restricted`/`AllSigned` (FAZA 1; przy `RemoteSigned` działa).

@@ -18,6 +18,7 @@ Cel: pierwszy realny widok tylko do odczytu (informacje o systemie i sprzęcie) 
 - `Dashboard.xaml`: dodawanie i usuwanie widgetów, komputer i parametry per widget, odświeżanie ręczne i automatyczne z kontrolowaną częstotliwością i limitem zadań, zapis i odtworzenie konfiguracji,
 - izolacja widgetów: awaria jednego lub utrata połączenia z jednym komputerem nie zatrzymuje pozostałych; usunięcie widgetu zwalnia zasoby,
 - eksport raportu do JSON i tekstu,
+- usuwanie widgetów odinstalowanego modułu z Dashboardu i z zapisanej konfiguracji (przy odinstalowaniu i przy odtwarzaniu konfiguracji, D-031),
 - testy Pester z mockami CIM i testy izolacji widgetów.
 Nie zmieniaj niczego w systemie. Nie wykonuj pracy z innych faz.
 

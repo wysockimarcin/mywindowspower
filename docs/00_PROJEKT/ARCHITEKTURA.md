@@ -52,7 +52,8 @@ mywindowspower/
 │   │   ├── MWP.Processes/          ← (FAZA 16) procesy i zasoby
 │   │   ├── MWP.Accounts/           ← (FAZA 17) użytkownicy i grupy lokalne
 │   │   ├── MWP.Rdp/                ← (FAZA 18) sesje i RDP
-│   │   └── MWP.Screenshot/         ← (FAZA 18) zrzuty ekranu komputera docelowego (o ile wykonalne)
+│   │   ├── MWP.Screenshot/         ← (FAZA 18) zrzuty ekranu komputera docelowego (o ile wykonalne)
+│   │   └── Installed/              ← (FAZA 3) moduły zainstalowane z paczek .mwpmod (poza repo, w .gitignore, D-031)
 │   └── UI/                         ← (FAZA 4) host modułów: okno, nawigacja, instancje, Dashboard (FAZA 5)
 │       ├── MainWindow.xaml
 │       ├── Themes/                 ← Light.xaml, Dark.xaml
@@ -71,7 +72,7 @@ mywindowspower/
 
 ## Launcher (`Start-MyWindowsPower.ps1`)
 
-Kolejność: wykrycie Windows i wersji PowerShella (≥ 5.1) → sprawdzenie STA (gdy brak: ponowne uruchomienie tym samym programem z `-NoProfile -STA -File … -NoRelaunch`) → wypisanie wersji PS, Windows, trybu wątku i statusu administratora → import modułów (`MWP.Core` pierwszy, potem alfabetycznie; po imporcie `MWP.Core` launcher sprawdza kontrakt każdego modułu przez `Get-MwpModuleDefinition` i nie ładuje modułu z błędnym kontraktem) → opcjonalnie `-Elevate`: ponowne uruchomienie przez UAC (`Request-MwpElevation`, D-027) → kod wyjścia 0/1. Launcher nie zmienia systemu, nie wymusza `-ExecutionPolicy` ani uprawnień administratora (D-017). Własne, minimalne wykrywanie środowiska zostaje w launcherze, bo działa przed importem `MWP.Core`; moduły używają `Get-MwpEnvironment`. Od FAZY 4 uruchomi okno GUI.
+Kolejność: wykrycie Windows i wersji PowerShella (≥ 5.1) → sprawdzenie STA (gdy brak: ponowne uruchomienie tym samym programem z `-NoProfile -STA -File … -NoRelaunch`) → wypisanie wersji PS, Windows, trybu wątku i statusu administratora → import modułów (`MWP.Core` pierwszy, potem alfabetycznie; po imporcie `MWP.Core` launcher sprawdza kontrakt każdego modułu przez `Get-MwpModuleDefinition` i nie ładuje modułu z błędnym kontraktem; od FAZY 3 importuje też moduły zainstalowane z `src/Modules/Installed`, D-031) → opcjonalnie `-Elevate`: ponowne uruchomienie przez UAC (`Request-MwpElevation`, D-027) → kod wyjścia 0/1. Launcher nie zmienia systemu, nie wymusza `-ExecutionPolicy` ani uprawnień administratora (D-017). Własne, minimalne wykrywanie środowiska zostaje w launcherze, bo działa przed importem `MWP.Core`; moduły używają `Get-MwpEnvironment`. Od FAZY 4 uruchomi okno GUI.
 
 ## Nazewnictwo
 
@@ -110,7 +111,8 @@ Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.2.0) jest wersją hosta (D-024). F
 | Cofanie | `Save-MwpUndoEntry`, `Get-MwpUndoEntry`, `Invoke-MwpUndo` | rejestr cofnięć w `%LOCALAPPDATA%\MyWindowsPower\undo\` (D-028) |
 | Punkt przywracania | `New-MwpRestorePoint` | CIM `SystemRestore`; limit częstotliwości i wyłączona ochrona obsłużone (D-029) |
 | Lista ochronna | `Test-MwpProtectedItem`, `Get-MwpProtectedItem` | dane w `MWP.Core\Data\protected-items.json` (D-029) |
-| Kontrakt modułu | `Get-MwpModuleDefinition`, `Test-MwpModuleDefinition` | odkrywanie w `src/Modules` bez importu, walidacja wersji i zależności (D-024) |
+| Kontrakt modułu | `Get-MwpModuleDefinition`, `Test-MwpModuleDefinition` | odkrywanie bez importu, walidacja wersji i zależności (D-024); w FAZIE 2 tylko `src/Modules`, od FAZY 3 także `src/Modules/Installed` (D-031) |
+| Paczki modułów (FAZA 3) | `Test-MwpModulePackage`, `Install-MwpModulePackage`, `Uninstall-MwpModulePackage` | instalacja i odinstalowanie modułów z paczek `.mwpmod`, tylko lokalnie (D-031) |
 
 Funkcje wewnętrzne (`Private/`) ukrywają położenie danych (`Get-MwpDataPath`, `Get-MwpConfigPath` — w testach podmieniane mockami na `TestDrive`), konwersje JSON zgodne z 5.1 i 7.x (`ConvertTo-MwpHashtable`, `ConvertTo-MwpDateTime`) i zapis atomowy (`Write-MwpJsonFile`).
 
@@ -177,7 +179,7 @@ Zasady wzorca:
 
 ## Host i moduły (propozycja, FAZA 2–4)
 
-Host (okno główne) odpowiada za: nawigację (`Pulpit` z Dashboardem, obszary, `Ustawienia`, `O programie`), wykrywanie, ładowanie i uruchamianie modułów, zarządzanie instancjami i ich cyklem życia, konfigurację i logowanie, zarządzanie komputerami docelowymi, umieszczanie widoków modułów (okno główne, osobne okno, Dashboard), zapis konfiguracji Dashboardu, obsługę błędów i statusów połączeń, kontrolę uprawnień i potwierdzeń. Host nie zawiera szczegółowej logiki obszarów.
+Host (okno główne) odpowiada za: nawigację (`Pulpit` z Dashboardem, obszary, `Moduły`, `Ustawienia`, `O programie`), wykrywanie, ładowanie i uruchamianie modułów, instalację i odinstalowanie modułów z paczek (D-031), zarządzanie instancjami i ich cyklem życia, konfigurację i logowanie, zarządzanie komputerami docelowymi, umieszczanie widoków modułów (okno główne, osobne okno, Dashboard), zapis konfiguracji Dashboardu, obsługę błędów i statusów połączeń, kontrolę uprawnień i potwierdzeń. Host nie zawiera szczegółowej logiki obszarów.
 
 Każdy moduł: ma unikalny identyfikator, nazwę i wersję; udostępnia kontrakt integracyjny (manifest); oddziela widok od logiki; deklaruje obsługiwane tryby prezentacji, wymagane uprawnienia i zależności; waliduje dane wejściowe i zgłasza czytelne błędy; jest testowalny bez hosta.
 
@@ -260,11 +262,23 @@ PrivateData = @{
 
 Słownik dozwolonych wartości jest w jednym miejscu (`Get-MwpContractVocabulary` w `MWP.Core`); jego zmiana wymaga wpisu w `DECYZJE.md`. `Capabilities` i `SupportedPresentationModes` modułów obszarów są puste, dopóki faza obszaru nie doda funkcji i widoków.
 
-Odkrywanie i walidacja: `Get-MwpModuleDefinition` czyta wyłącznie `src/Modules/MWP.*/MWP.*.psd1` (bez instalatora, D-020) i zwraca definicje z polami `IsValid` i `Errors`. `Test-MwpModuleDefinition` sprawdza: obecność pól, wersję kontraktu, słownik wartości, `EntryPoint` wśród `FunctionsToExport`, `MinimumHostVersion` względem wersji hosta, unikalność `Id`, obecność i minimalne wersje zależności, zależność od samego siebie i cykle. Uszkodzony manifest daje błąd walidacji tego modułu, a nie przerywa odkrywania innych. Launcher nie ładuje modułu z błędnym kontraktem.
+Odkrywanie i walidacja: `Get-MwpModuleDefinition` czyta manifesty `MWP.*/MWP.*.psd1` w dwóch katalogach: `src/Modules` (moduły wbudowane) i `src/Modules/Installed` (moduły zainstalowane z paczek, D-031; w FAZIE 2 był tylko pierwszy katalog, drugi dochodzi w FAZIE 3 jako lista katalogów zamiast jednego `-ModulesRoot`, ze zgodnością wsteczną) i zwraca definicje z polami `IsValid` i `Errors`. `Test-MwpModuleDefinition` sprawdza: obecność pól, wersję kontraktu, słownik wartości, `EntryPoint` wśród `FunctionsToExport`, `MinimumHostVersion` względem wersji hosta, unikalność `Id`, obecność i minimalne wersje zależności, zależność od samego siebie i cykle. Uszkodzony manifest daje błąd walidacji tego modułu, a nie przerywa odkrywania innych. Launcher nie ładuje modułu z błędnym kontraktem.
 
 Cykl życia (D-024): **odkrycie** → **walidacja** → **import** (raz na proces lub runspace) → od FAZY 3: **utworzenie instancji** z kontekstem → **inicjalizacja** → **działanie** → **zamknięcie** i zwolnienie zasobów (zadania, sesje). Definicja jest niezmienna; stan należy do instancji.
 
-Kontrakt określa: odkrywanie i ładowanie modułu (tylko `src/Modules`, bez instalatora), tworzenie, inicjalizację i zamykanie instancji, przekazywanie kontekstu wykonania, dostęp do usług hosta, udostępnianie pełnego widoku i widgetu, obsługę i walidację konfiguracji, zasady anulowania zadań i zwalniania zasobów, raportowanie błędów i statusów, zgodność wersji i brakujące zależności. Moduł nie zależy od prywatnych klas hosta bez jawnego kontraktu.
+Kontrakt określa: odkrywanie i ładowanie modułu (`src/Modules` i `src/Modules/Installed`, instalacja i odinstalowanie z paczki — D-031, sekcja „Paczki modułów"), tworzenie, inicjalizację i zamykanie instancji, przekazywanie kontekstu wykonania, dostęp do usług hosta, udostępnianie pełnego widoku i widgetu, obsługę i walidację konfiguracji, zasady anulowania zadań i zwalniania zasobów, raportowanie błędów i statusów, zgodność wersji i brakujące zależności. Moduł nie zależy od prywatnych klas hosta bez jawnego kontraktu.
+
+## Paczki modułów (D-031)
+
+Moduły tworzy użytkownik w PowerShellu i dostarcza je jako paczki. Host instaluje je i odinstalowuje; aktualizacji modułów przez host nie ma (wersję podnosi autor przy tworzeniu modułu). Implementacja logiki: FAZA 3 (`MWP.Core`), widok „Moduły": FAZA 4, usuwanie widgetów: FAZA 5.
+
+- **Format `.mwpmod`:** archiwum ZIP z dokładnie jednym folderem głównym `MWP.<Obszar>/` o budowie modułu (manifest `.psd1` z kontraktem `PrivateData.MWP`, `.psm1`, `Public/`, `Private/`). Bez podpisu cyfrowego (D-015); integralność potwierdza użytkownik po sumie SHA-256 paczki.
+- **Moduł wbudowany** leży w `src/Modules/` (repozytorium), **moduł zainstalowany** w `src/Modules/Installed/` (poza repozytorium, `.gitignore`). `Get-MwpModuleDefinition`, launcher, host i `apprun` skanują oba katalogi po manifeście.
+- **Instalacja** (`Install-MwpModulePackage`, klasa **Zmiana**: `-WhatIf`, log): rozpakowanie do katalogu tymczasowego → walidacja (`Test-MwpModulePackage`: dokładnie jeden folder główny, żadna ścieżka w archiwum nie wychodzi poza folder docelowy, manifest i pola kontraktu, `MinimumHostVersion`, zależności, kolizja `Id` i nazwy folderu z modułem wbudowanym lub zainstalowanym) → okno potwierdzenia z nazwą, wersją, `RequiredPermissions` i SHA-256 paczki → atomowe przeniesienie do `src/Modules/Installed/` → wpis w rejestrze. Błąd na dowolnym etapie usuwa katalog tymczasowy i nie zostawia niczego w połowie. Paczka z `Id` już zainstalowanego modułu jest odrzucana (nowa wersja = odinstalowanie starej, potem instalacja).
+- **Odinstalowanie** (`Uninstall-MwpModulePackage`, klasa **Destrukcyjna**: `ConfirmImpact = 'High'`, potwierdzenie z nazwą modułu): zamknięcie instancji modułu → usunięcie jego widgetów z Dashboardu → usunięcie folderu z `src/Modules/Installed/`, sekcji konfiguracji modułu i wpisu w rejestrze. Zostają logi operacji i rejestr cofnięć (audyt zmian w systemie). Odinstalowanie nie jest cofane przez rejestr cofnięć (ponowna instalacja z paczki).
+- **Moduły nieusuwalne:** bazowe (`MWP.Core`, `MWP.Remote`) i wszystkie wbudowane — odinstalowanie zwraca wynik z błędem.
+- **Rejestr zainstalowanych modułów** w `config/settings.local.json`: `Id`, wersja, data instalacji, SHA-256 paczki.
+- **Tylko lokalnie:** instalacja i usuwanie dotyczą komputera, na którym działa host; na komputerach zdalnych nic się nie instaluje (moduły wykonują tam operacje przez kontekst wykonania, D-019).
 
 ## Samodzielne uruchamianie (propozycja, FAZA 19)
 

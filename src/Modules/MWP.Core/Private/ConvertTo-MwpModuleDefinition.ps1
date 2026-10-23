@@ -25,7 +25,7 @@
         if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
             throw ("Nie znaleziono manifestu {0}." -f $ManifestPath)
         }
-        $manifest = Import-PowerShellDataFile -LiteralPath $ManifestPath
+        $manifest = Import-PowerShellDataFile -LiteralPath $ManifestPath -ErrorAction Stop
     }
     catch {
         $loadError = $_.Exception.Message

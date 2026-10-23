@@ -22,6 +22,7 @@ FAZY 1, 2 i 3 zakończone.
 - **Wybór komputera docelowego** z rejestru komputerów (FAZA 3) przy otwieraniu instancji — wspólny komponent; pasek stanu pokazuje komputer i stan połączenia instancji. Błąd lub utrata połączenia jest sygnalizowana w widoku danej instancji, nie jako błąd całej aplikacji.
 - **Tryby prezentacji:** Embedded view (w oknie głównym) i Separate window (osobne okno instancji). Widget Dashboardu → FAZA 5, Standalone i CLI → FAZA 19. Logika modułu nie zależy od miejsca prezentacji.
 - Widoki `Ustawienia` (motyw, lista komputerów docelowych: dodawanie, edycja, usuwanie, zgodnie z decyzją o uwierzytelnianiu z FAZY 3) i `O programie`.
+- **Widok „Moduły" (D-031):** lista modułów wbudowanych i zainstalowanych (nazwa, `Id`, wersja, pochodzenie, stan walidacji); instalacja z pliku `.mwpmod` (wybór pliku, `Test-MwpModulePackage`, okno potwierdzenia z nazwą, wersją, `RequiredPermissions` i SHA-256 paczki, potem `Install-MwpModulePackage`); odinstalowanie modułu zainstalowanego z potwierdzeniem zawierającym jego nazwę (`Uninstall-MwpModulePackage`; zamyka otwarte instancje). Moduły bazowe i wbudowane bez przycisku odinstalowania. Logika instalacji jest w `MWP.Core` (FAZA 3), nie w kodzie widoku; długie operacje w tle.
 
 ## Poza zakresem
 Logika i dane obszarów, widgety Dashboardu (FAZA 5), uruchamianie samodzielne (FAZA 19).
@@ -37,16 +38,17 @@ Logika i dane obszarów, widgety Dashboardu (FAZA 5), uruchamianie samodzielne (
 - [ ] Wybór komputera docelowego per instancja, stan połączenia w pasku stanu i w widoku instancji
 - [ ] Tryby Embedded i Separate window
 - [ ] Widoki `Ustawienia` (w tym komputery docelowe) i `O programie`
+- [ ] Widok „Moduły": lista wbudowanych i zainstalowanych, instalacja z `.mwpmod` z oknem potwierdzenia (nazwa, wersja, uprawnienia, SHA-256), odinstalowanie z potwierdzeniem nazwą modułu (D-031)
 - [ ] Wspólne style i okno potwierdzenia z podglądem zmian
 - [ ] Launcher uruchamia okno GUI
 - [ ] Analiza statyczna i testy logiki (nie GUI) przechodzą
 - [ ] Dokumentacja zaktualizowana, commit `FAZA 4: ...`
 
 ## Kryteria ukończenia
-Okno startuje w 5.1 i 7.x, motyw się przełącza, długie zadanie testowe nie zawiesza GUI, dwie instancje tego samego widoku-zaślepki działają niezależnie dla dwóch komputerów.
+Okno startuje w 5.1 i 7.x, motyw się przełącza, długie zadanie testowe nie zawiesza GUI, dwie instancje tego samego widoku-zaślepki działają niezależnie dla dwóch komputerów, moduł z paczki `.mwpmod` da się zainstalować i odinstalować z widoku „Moduły".
 
 ## Do weryfikacji na Windows 11
-Całe GUI (wygląd, motywy, responsywność, DPI, instancje i osobne okna, utrata połączenia z jednym komputerem) — wymaga ręcznego uruchomienia na Windows 11.
+Całe GUI (wygląd, motywy, responsywność, DPI, instancje i osobne okna, utrata połączenia z jednym komputerem, instalacja i odinstalowanie modułu w widoku „Moduły") — wymaga ręcznego uruchomienia na Windows 11.
 
 ## Wyniki
 (wypełnia Claude po zakończeniu fazy)

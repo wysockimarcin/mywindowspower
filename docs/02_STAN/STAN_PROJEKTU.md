@@ -12,7 +12,7 @@
 | Plik następnej fazy | `docs/03_FAZY/FAZA_3_KOMPUTERY_ZDALNE.md` |
 | Data ostatniej aktualizacji | 2026-10-23 |
 | Ostatni commit | commit `FAZA 2: rdzeń MWP.Core, bezpieczeństwo zmian i kontrakt modułu` (hash uzupełnia FAZA 3 w `CHANGELOG_FAZ.md`) |
-| Zdalne repozytorium | https://github.com/wysockimarcin/mywindowspower (`origin/main` zawiera FAZĘ 0 i FAZĘ 1; FAZA 2 czeka na `git push` użytkownika) |
+| Zdalne repozytorium | https://github.com/wysockimarcin/mywindowspower (`git push` FAZY 2 wykonany: `origin/main` = `10646d9`; korekta D-031 czeka na `git push` użytkownika) |
 | Testy (FAZA 2) | `.\tests\Invoke-Checks.ps1`: PowerShell 5.1.26100.9711 — 0 uwag, 393/393; PowerShell 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`, MSI) — 0 uwag, 393/393 |
 
 ## Postęp faz
@@ -50,10 +50,13 @@ Dozwolone statusy: `DO ZROBIENIA`, `W TOKU`, `CZĘŚCIOWA` (część punktów od
 - Korekta dokumentacji po FAZIE 1 (2026-10-23): przywrócono zarządzanie komputerem lokalnym (`localhost`) i zdalnymi zgodnie z koncepcją pierwotną (D-019), rozszerzono zakres o moduły i tryby ze starej koncepcji (D-020), przypisano decyzje architektoniczne do faz (D-021). Plan faz przenumerowany: nowa FAZA 3, dotychczasowe 3–13 → 4–14, nowe 15–19, testy → 20, wydanie → 21. Zaktualizowano `CONTEXT`, `ARCHITEKTURA`, `DECYZJE`, `SLOWNIK`, `PLAN_FAZ`, pliki faz i prompty, `README`, `CLAUDE.md`. Kodu nie zmieniano poza komunikatem launchera i nazwą testu (numer fazy GUI).
 - FAZA 1: launcher `Start-MyWindowsPower.ps1` (wersja PS, Windows 11, STA z ponownym uruchomieniem, status administratora, import modułów); 11 szkieletów modułów `src/Modules/MWP.*` z manifestami; `PSScriptAnalyzerSettings.psd1` (zgodność 5.1/7.0); testy Pester (175, wszystkie zaliczone) i `tests/Invoke-Checks.ps1`; `config/settings.example.json`; `.editorconfig`, `.gitattributes`; środowisko potwierdzone (brak PS 7); stare pliki przejrzane i zarchiwizowane w `docs/00_PROJEKT/MATERIALY/`.
 - FAZA 2: rdzeń `MWP.Core` 0.2.0 (wersja hosta): `Get-MwpEnvironment`, `Test-MwpAdmin`, `Request-MwpElevation`; `Write-MwpLog` (JSON Lines, plik dzienny, rotacja, muteks, ukrywanie sekretów); `Get-MwpSetting`/`Set-MwpSetting` (szablon + plik lokalny, zapis atomowy, uszkodzony plik, migracje); `New-MwpResult`, `Format-MwpOperationTarget`; rejestr cofnięć `Save-MwpUndoEntry`/`Get-MwpUndoEntry`/`Invoke-MwpUndo`; `New-MwpRestorePoint` (CIM); lista ochronna (`Data/protected-items.json`, `Test-MwpProtectedItem`, `Get-MwpProtectedItem`); kontrakt modułu `PrivateData.MWP` we wszystkich 11 manifestach, `Get-MwpModuleDefinition` i `Test-MwpModuleDefinition`; launcher waliduje kontrakty i ma `-Elevate`; komputer docelowy (`-ComputerName`, domyślnie `localhost`) w logu, wpisie cofnięcia i wyniku, bez globalnego „bieżącego komputera"; wzorzec funkcji zmieniającej system w `ARCHITEKTURA.md`; ADR D-023…D-029 (+ D-030); 393 testy Pester z mockami.
+- Korekta dokumentacji po FAZIE 2 (2026-10-23): instalacja i odinstalowanie modułów z paczek `.mwpmod` (D-031, zastępuje część D-020). Zaktualizowano `CONTEXT`, `ARCHITEKTURA` (sekcja „Paczki modułów", `src/Modules/Installed/`), `SLOWNIK`, `PLAN_FAZ`, pliki i prompty FAZ 3, 4, 5 oraz plik FAZY 19, `.gitignore`. Jedyna zmiana w kodzie: `-ErrorAction Stop` przy odczycie manifestu w `ConvertTo-MwpModuleDefinition.ps1` (test uszkodzonego manifestu przestał przechodzić już na `10646d9`); po poprawce 0 uwag i 393/393 w 5.1 i 7.x.
 
 ## Co zostało do zrobienia
 
-Fazy od FAZY 3 do FAZY 21 (patrz tabela). Jest rdzeń i kontrakt modułu; moduły obszarów mają nadal tylko funkcje-zaślepki, nie ma GUI, logiki obszarów ani obsługi komputerów zdalnych. Najbliższa: FAZA 3 (komputery docelowe, kontekst wykonania, instancje modułów, połączenia zdalne).
+Fazy od FAZY 3 do FAZY 21 (patrz tabela). Jest rdzeń i kontrakt modułu; moduły obszarów mają nadal tylko funkcje-zaślepki, nie ma GUI, logiki obszarów ani obsługi komputerów zdalnych. Najbliższa: FAZA 3 (komputery docelowe, kontekst wykonania, instancje modułów, połączenia zdalne, paczki modułów).
+
+Instalacja i odinstalowanie modułów z paczek `.mwpmod` (D-031) są rozłożone na fazy: FAZA 3 — logika w `MWP.Core` (`Test-`/`Install-`/`Uninstall-MwpModulePackage`, skanowanie `src/Modules` i `src/Modules/Installed`, import przez launcher, rejestr instalacji, zamykanie instancji, testy); FAZA 4 — widok „Moduły" w hoście; FAZA 5 — usuwanie widgetów odinstalowanego modułu z Dashboardu.
 
 ## Dług techniczny i odroczone punkty
 
@@ -68,6 +71,7 @@ Fazy od FAZY 3 do FAZY 21 (patrz tabela). Jest rdzeń i kontrakt modułu; moduł
 - Profile zgodności PSScriptAnalyzer dotyczą Windows 10 1809 / PS 5.1 i PS 7.0 — nowszych brak (D-018). Przy nowej wersji PSScriptAnalyzer sprawdzić, czy pojawiły się profile Windows 11 / PS 7.4+.
 - `tests/Modules.Tests.ps1`: lista oczekiwanych modułów trzeba uzupełnić o nowe moduły przy ich tworzeniu (`MWP.Remote` w FAZIE 3; `MWP.Disks`, `MWP.Processes`, `MWP.Accounts`, `MWP.Rdp`, `MWP.Screenshot` w FAZACH 15–18).
 - `config/settings.example.json`: sekcja `targets` (komputery docelowe, nazwa zastępcza) i migracja `schemaVersion` w FAZIE 3 (D-019) — krok migracji dopisać w `Invoke-MwpSettingsMigration` (`$steps`). Manifesty modułów: pola kontraktu dodane w FAZIE 2.
+- Instalacja i usuwanie modułów z paczek (D-031): `Get-MwpModuleDefinition` i launcher znają dziś tylko `src/Modules` (jeden parametr `-ModulesRoot`) — rozszerzenie o `src/Modules/Installed` i funkcje paczek w FAZIE 3, widok „Moduły" w FAZIE 4, usuwanie widgetów w FAZIE 5. Test `.gitignore` w `Repository.Tests.ps1` sprawdza tylko `config/settings.local.json`; wpis `src/Modules/Installed/` można objąć testem w FAZIE 3.
 - Testy `Launcher.Tests.ps1` uruchamiają launcher w nowym procesie (ok. 2–3 s); przy rozbudowie launchera (GUI w FAZIE 4) trzeba dodać tryb bez okna do testów.
 
 ## Otwarte pytania do użytkownika

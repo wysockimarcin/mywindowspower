@@ -17,6 +17,19 @@
 
 ---
 
+## Korekta dokumentacji po FAZIE 2 — instalacja i usuwanie modułów z paczki (2026-10-23)
+- Status: ZAKOŃCZONA (korekta, nie nowa faza)
+- Commit: `FAZA 2 (korekta): instalacja i usuwanie modułów z paczki (D-031)` — hash do uzupełnienia na starcie FAZY 3 (razem z hashem FAZY 2)
+- Powód: użytkownik tworzy moduły w PowerShellu i dostarcza je jako paczki; host ma je instalować i odinstalowywać. Obowiązujące zapisy (D-020, `CONTEXT.md` „Poza zakresem", „bez instalatora" w `ARCHITEKTURA.md`) wykluczały instalację i usuwanie modułów.
+- Zrobiono: D-031 (paczka `.mwpmod`, katalog `src/Modules/Installed/`, walidacja i atomowa instalacja, klasy operacji, odinstalowanie usuwające wszystko poza logami i rejestrem cofnięć, moduły bazowe i wbudowane nieusuwalne, tylko lokalnie, rejestr instalacji, brak aktualizacji przez host); zaktualizowano `CONTEXT`, `ARCHITEKTURA` (struktura, launcher, host, tabela rdzenia, kontrakt, nowa sekcja „Paczki modułów"), `SLOWNIK` (3 hasła), `PLAN_FAZ` (FAZY 3, 4, 5, 19), pliki faz 3, 4, 5, 19, prompty FAZ 3, 4, 5, `STAN_PROJEKTU` (stan `git push`, podział prac, dług techniczny), `.gitignore` (`src/Modules/Installed/`).
+- Zmiany w kodzie: jedna poprawka za zgodą użytkownika (opis w punkcie „Testy"). Statusy faz bez zmian. `docs/03_FAZY/FAZA_2_RDZEN_BEZPIECZENSTWO.md` (zamknięta faza) zostaje z historycznym zapisem „odkrywanie tylko `src/Modules`"; D-020 i D-021 bez edycji (zastąpione częściowo przez D-031).
+- Testy, pierwszy przebieg (przed poprawką kodu): `.\tests\Invoke-Checks.ps1`, każda wersja w nowym procesie — 5.1.26100.9711: 0 uwag, 392/393; 7.6.7: 0 uwag, 392/393. Nie przechodzi `ModuleContract.Tests.ps1:186` („uszkodzony manifest nie przerywa odkrywania pozostałych modułów"): `Import-PowerShellDataFile` w `ConvertTo-MwpModuleDefinition.ps1:28` zgłasza błąd nieprzerywający, więc `catch` go nie łapie i definicja dostaje komunikat „Manifest nie zawiera kontraktu…" zamiast „Nie udało się odczytać manifestu…". Test pada tak samo na czystym `10646d9` (sprawdzone `git stash`), więc nie jest skutkiem korekty; wynik 393/393 z FAZY 2 się nie powtórzył.
+- Poprawka (za zgodą użytkownika): `-ErrorAction Stop` przy `Import-PowerShellDataFile` w `src/Modules/MWP.Core/Private/ConvertTo-MwpModuleDefinition.ps1:28` — błąd odczytu manifestu trafia do `catch` i daje komunikat „Nie udało się odczytać manifestu…". BOM UTF-8 i CRLF zachowane. Wynik końcowy, każda wersja w nowym procesie: 5.1.26100.9711 — 0 uwag, 393/393; 7.6.7 — 0 uwag, 393/393.
+- Decyzje: D-031
+- Następna faza: FAZA 3 — Komputery docelowe i połączenia zdalne
+
+---
+
 ## FAZA 2 — Rdzeń i bezpieczeństwo zmian (2026-10-23)
 - Status: ZAKOŃCZONA
 - Commit: `FAZA 2: rdzeń MWP.Core, bezpieczeństwo zmian i kontrakt modułu` — hash do uzupełnienia na starcie FAZY 3

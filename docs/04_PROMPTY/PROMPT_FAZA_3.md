@@ -10,7 +10,7 @@ Pracujesz nad projektem **mywindowspower**. Odpowiadaj wyłącznie po polsku. To
 1. Przeczytaj w kolejności: `CLAUDE.md`, `docs/02_STAN/STAN_PROJEKTU.md`, `docs/00_PROJEKT/CONTEXT.md`, `docs/00_PROJEKT/ARCHITEKTURA.md`, `docs/00_PROJEKT/DECYZJE.md`, `docs/03_FAZY/FAZA_3_KOMPUTERY_ZDALNE.md`, `docs/05_PROCES/PROCEDURA_FAZY.md`.
 2. Wykonaj `git status` i `git log --oneline -10`. Potwierdź, że FAZA 2 jest ZAKOŃCZONA (status, commit, wpis w `CHANGELOG_FAZ.md`). Jeśli nie, zatrzymaj się i zgłoś.
 3. **Baza testów (przed jakąkolwiek zmianą).** W NOWYM terminalu zapisz `(Get-Command pwsh).Source` i `$PSVersionTable.PSVersion` dla `powershell.exe` (5.1) i `pwsh` (7.x). Uruchom `.\tests\Invoke-Checks.ps1` w obu wersjach. Oczekiwany stan wyjściowy po FAZIE 2: brak uwag analizatora, 393/393 testów. Jeśli coś nie przechodzi, zatrzymaj się i zgłoś.
-4. Uzupełnij hash commita FAZY 2 w `CHANGELOG_FAZ.md` oraz w `STAN_PROJEKTU.md` (pole „Ostatni commit" i tabela „Postęp faz") i ustaw status FAZY 3 na `W TOKU` w `STAN_PROJEKTU.md`.
+4. Uzupełnij hash commita FAZY 2 w `CHANGELOG_FAZ.md` oraz w `STAN_PROJEKTU.md` (pole „Ostatni commit" i tabela „Postęp faz"), a w `CHANGELOG_FAZ.md` także hash commita korekty `FAZA 2 (korekta): instalacja i usuwanie modułów z paczki (D-031)`, i ustaw status FAZY 3 na `W TOKU` w `STAN_PROJEKTU.md`.
 5. Przy projektowaniu kontekstu wykonania uwzględnij dług techniczny z FAZY 2 w `STAN_PROJEKTU.md` (przejściowe `-ComputerName` w rdzeniu → `-Context`, pula runspace'ów D-023, `EntryPoint` a fabryka instancji D-024).
 
 ## Zadanie
@@ -23,8 +23,10 @@ Cel: aplikacja zarządza komputerem lokalnym (`localhost`) i komputerami zdalnym
 - ADR: transport (propozycja: WinRM dla operacji, CIM dla odczytu) i uwierzytelnianie (bez sekretów w tekście, repozytorium i logach),
 - izolacja błędów: awaria jednego komputera nie wpływa na inne instancje; limit równoległości, anulowanie, sprzątanie sesji,
 - zdalne zmiany respektują `-WhatIf`, log z nazwą komputera, cofanie i potwierdzenia z nazwą komputera,
-- testy Pester z mockami.
-Nie twórz GUI ani logiki obszarów. Nie wykonuj pracy z innych faz.
+- **paczki modułów (D-031, w `MWP.Core`, opis w `ARCHITEKTURA.md`, sekcja „Paczki modułów"):** `Test-MwpModulePackage`, `Install-MwpModulePackage` (Zmiana: `-WhatIf`, log, atomowe przeniesienie do `src/Modules/Installed/`, błąd niczego nie zostawia, istniejące `Id` odrzucane), `Uninstall-MwpModulePackage` (Destrukcyjna: potwierdzenie z nazwą modułu, zamyka instancje, usuwa folder, sekcję konfiguracji i wpis w rejestrze; moduły bazowe i wbudowane nieusuwalne),
+- `Get-MwpModuleDefinition` skanuje `src/Modules` i `src/Modules/Installed` (lista katalogów zamiast jednego `-ModulesRoot`, zgodność wsteczna testów); launcher importuje moduły zainstalowane; rejestr instalacji (`Id`, wersja, data, SHA-256) w `settings.local.json`; nic nie instaluje się na komputerach zdalnych,
+- testy Pester z mockami, w tym testy paczek: ZIP z wyjściem poza folder, dwa foldery główne, kolizja `Id`, brak zależności, błąd w trakcie instalacji niczego nie zostawia, odinstalowanie modułu bazowego i wbudowanego odrzucone.
+Nie twórz GUI (widok „Moduły" → FAZA 4) ani logiki obszarów. Aktualizacji modułów przez host nie implementuj (poza zakresem, D-031). Nie wykonuj pracy z innych faz.
 
 ## Zamknięcie
 Zgodnie z `docs/05_PROCES/PROCEDURA_FAZY.md` (sekcja C): zweryfikuj checklistę, zaktualizuj dokumentację, wykonaj commit `FAZA 3: <krótki opis>` i napisz: „Następna faza: FAZA 4 — Szkielet GUI i host modułów. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_4.md`. Otwórz nową rozmowę w Claude Code."

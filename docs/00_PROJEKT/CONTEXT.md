@@ -8,7 +8,7 @@ Osobisty panel do zarządzania systemami Windows 11: komputerem lokalnym (`local
 
 ## Odbiorca
 
-Jeden użytkownik: właściciel repozytorium (`wysockimarcin`), na własnych komputerach: lokalnym i zdalnych. To nie jest produkt dla wielu odbiorców. Nie projektujemy instalatora, licencjonowania ani wielojęzyczności.
+Jeden użytkownik: właściciel repozytorium (`wysockimarcin`), na własnych komputerach: lokalnym i zdalnych. To nie jest produkt dla wielu odbiorców. Nie projektujemy instalatora aplikacji, licencjonowania ani wielojęzyczności. Instalacja i odinstalowanie modułów z paczki (`.mwpmod`) przez host są dozwolone (D-031).
 
 ## Decyzje bazowe (uzgodnione z użytkownikiem)
 
@@ -71,14 +71,15 @@ Użytkownik zaakceptował proponowaną listę obszarów. Kolejność realizacji 
 14. RDP i sesje, w tym obsługiwane scenariusze shadowingu (D-020)
 15. Zrzuty ekranu zdalnego komputera — o ile da się je wykonać bez osłabiania zabezpieczeń Windows (do zbadania w FAZIE 18, D-020)
 
-Możliwości przekrojowe (D-019, D-020): obsługa wielu komputerów (lokalny i zdalne), wiele instancji tego samego modułu, Dashboard jako kompozycja niezależnych widgetów dla różnych komputerów, tryby prezentacji (okno główne, osobne okno, widget, samodzielnie, CLI).
+Możliwości przekrojowe (D-019, D-020, D-031): obsługa wielu komputerów (lokalny i zdalne), wiele instancji tego samego modułu, Dashboard jako kompozycja niezależnych widgetów dla różnych komputerów, tryby prezentacji (okno główne, osobne okno, widget, samodzielnie, CLI), instalacja i odinstalowanie modułów tworzonych przez użytkownika z paczek `.mwpmod`.
 
 Zakres można zawężać. Usunięcie obszaru wymaga wpisu w `DECYZJE.md` i zmiany w `PLAN_FAZ.md`.
 
 ## Poza zakresem
 
 - Pakowanie do `.exe`, instalator, aktualizacje automatyczne.
-- Własny agent lub serwer zdalny, instalator i aktualizacje modułów, wielojęzyczność, licencjonowanie.
+- Własny agent lub serwer zdalny, aktualizacje modułów (nową wersję modułu instaluje się po odinstalowaniu starej; instalacja i usuwanie modułów z paczki są w zakresie, D-031), wielojęzyczność, licencjonowanie.
+- Instalowanie czegokolwiek na komputerach zdalnych (moduły instaluje się tylko lokalnie, D-031).
 - Zdalne komputery z systemem innym niż Windows (do potwierdzenia w FAZIE 3, gdy użytkownik opisze komputer zdalny).
 - Obsługa Windows 10 i starszych (nie jest wymagana; nie psuj, ale nie testuj).
 - Zbieranie telemetrii lub wysyłanie danych poza komputery użytkownika.

@@ -9,6 +9,9 @@
 | Punkt przywracania | Punkt przywracania systemu Windows tworzony przed ryzykowną zmianą |
 | Rejestr cofnięć | Zapis stanu przed zmianą umożliwiający jej cofnięcie |
 | Moduł MWP.* | Moduł PowerShell z logiką jednego obszaru |
+| Paczka modułu (`.mwpmod`) | Archiwum ZIP z jednym folderem głównym `MWP.<Obszar>` (manifest, `.psm1`, `Public/`, `Private/`), z którego host instaluje moduł (D-031) |
+| Moduł wbudowany | Moduł w repozytorium, w `src/Modules/`; nie da się go odinstalować z hosta |
+| Moduł zainstalowany | Moduł zainstalowany z paczki `.mwpmod` do `src/Modules/Installed/` (poza repozytorium); można go odinstalować, co usuwa wszystko, co go dotyczy, poza logami i rejestrem cofnięć (D-031) |
 | Widok | Plik XAML z interfejsem jednego obszaru |
 | STA | Single-Threaded Apartment — tryb wątku wymagany przez WPF |
 | Runspace | Osobny wątek wykonania PowerShella, służy do operacji w tle bez zawieszania GUI |

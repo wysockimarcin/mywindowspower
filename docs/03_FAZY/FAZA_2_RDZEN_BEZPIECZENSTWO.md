@@ -19,6 +19,7 @@ FAZA 1 zakończona.
 - Wzorzec funkcji zmieniającej system: `SupportsShouldProcess`, `-WhatIf`, `-Confirm`, logowanie, wpis cofnięcia. Dokument wzorca w `docs/00_PROJEKT/ARCHITEKTURA.md`.
 - Lista ochronna: mechanizm oznaczania elementów chronionych (dane w osobnym pliku).
 - Testy Pester z mockami (bez zmian w realnym systemie).
+- Z FAZY 1: przenieść wykrywanie środowiska (wersja PS, Windows 11, administrator) do `MWP.Core` i rozważyć użycie go w launcherze (D-017); rozważyć klasy operacji Odczyt/Zmiana/Destrukcyjna i zasady zapisu konfiguracji opisane w `ARCHITEKTURA.md` (D-015). Testy logiki umieszczać w `tests/Modules/MWP.Core/` (D-012), uruchamiać `.\tests\Invoke-Checks.ps1`.
 
 ## Poza zakresem
 GUI i logika obszarów.

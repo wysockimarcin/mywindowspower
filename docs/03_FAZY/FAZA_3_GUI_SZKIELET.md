@@ -9,6 +9,7 @@ Okno aplikacji WPF z nawigacją, motywami i bezpiecznym wykonywaniem operacji w 
 FAZY 1 i 2 zakończone.
 
 ## Zakres
+- **Wzorzec wyglądu:** obejrzyj `docs/design/mockup-pulpit.png` (mockup głównego okna dostarczony przez użytkownika) i zaprojektuj układ zgodnie z nim. Odstępstwa od mockupu zapisz w `DECYZJE.md`. Jeśli pliku brakuje lub jest nieczytelny, zapytaj użytkownika.
 - `src/UI/MainWindow.xaml`: lewy panel nawigacji (po jednej pozycji na obszar), kontener widoku, pasek stanu (administrator tak/nie, wersja PowerShella, wersja Windows), panel logu.
 - `src/UI/UI.ps1`: ładowanie XAML (`XamlReader`), mapowanie nazwanych kontrolek, nawigacja między widokami.
 - Motywy `Themes/Light.xaml` i `Themes/Dark.xaml` (słowniki zasobów), domyślnie zgodnie z systemem (`AppsUseLightTheme` w `HKCU\...\Themes\Personalize`), ręczny przełącznik zapamiętywany w konfiguracji.
@@ -22,6 +23,7 @@ FAZY 1 i 2 zakończone.
 Logika i dane obszarów.
 
 ## Checklista
+- [ ] Mockup `docs/design/mockup-pulpit.png` obejrzany, układ zgodny lub odstępstwa opisane w `DECYZJE.md`
 - [ ] `MainWindow.xaml` z nawigacją i paskiem stanu
 - [ ] `UI.ps1`: ładowanie XAML i nawigacja
 - [ ] Motyw jasny i ciemny, wykrywanie motywu systemu, przełącznik

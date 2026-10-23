@@ -1,0 +1,11 @@
+# Pliki PowerShell i XAML zawsze z końcami linii CRLF (Windows).
+*.ps1   text eol=crlf
+*.psm1  text eol=crlf
+*.psd1  text eol=crlf
+*.xaml  text eol=crlf
+*.json  text eol=crlf
+*.md    text eol=crlf
+
+*.png   binary
+*.jpg   binary
+*.ico   binary

@@ -23,6 +23,22 @@ Jeden użytkownik: właściciel repozytorium (`wysockimarcin`), na własnym komp
 | Język dokumentacji i UI | Polski |
 | Repozytorium | https://github.com/wysockimarcin/mywindowspower (na starcie puste) |
 
+## Środowisko docelowe (potwierdzone poleceniami w FAZIE 1, 2026-10-23)
+
+| Element | Wartość | Źródło |
+|---|---|---|
+| System | Windows 11 Pro, wersja 26H2, kompilacja 26300 (`winver`: 26300.9711) | `winver`, `Get-CimInstance Win32_OperatingSystem`, `[Environment]::OSVersion` = 10.0.26300.0 |
+| PowerShell | 5.1.26100.9711 (Desktop), `BuildVersion` 10.0.26100.9711 | `$PSVersionTable` |
+| PowerShell 7.x | **nie jest zainstalowany** | `Get-Command pwsh` — brak |
+| Zasady wykonywania | `CurrentUser: RemoteSigned`, pozostałe `Undefined` | `Get-ExecutionPolicy -List` |
+| Narzędzia deweloperskie | Pester 6.2.0, PSScriptAnalyzer 1.25.0 (zakres CurrentUser, zainstalowane w FAZIE 1 za zgodą użytkownika); wbudowany Pester 3.4.0 pozostaje w systemie | `Get-Module -ListAvailable` |
+
+Numer kompilacji PowerShella (26100) różni się od kompilacji systemu (26300). To normalne: Windows PowerShell 5.1 ma własny numer kompilacji.
+
+Wniosek dla projektu: na komputerze użytkownika działa tylko PowerShell 5.1, więc **zgodność z 5.1 jest wymaganiem podstawowym**, a 7.x dodatkiem (D-002, D-013). Kod nadal musi działać w 7.x, ale nie da się go tu przetestować, dopóki `pwsh` nie zostanie zainstalowany.
+
+Podpisywanie skryptów (Authenticode) nie jest wymagane w tym środowisku (zasada `RemoteSigned` dopuszcza lokalne skrypty bez podpisu).
+
 ## Zakres funkcjonalny (obszary)
 
 Użytkownik zaakceptował proponowaną listę obszarów. Kolejność realizacji jest w `PLAN_FAZ.md`.
@@ -60,6 +76,9 @@ Zakres można zawężać. Usunięcie obszaru wymaga wpisu w `DECYZJE.md` i zmian
 
 | Plik | Opis | Dodano |
 |---|---|---|
-| (brak) | | |
+| `docs/design/mockup-pulpit.png` | Mockup głównego okna aplikacji; wzorzec wyglądu dla FAZY 3 | 2026-10-22 |
+| `docs/00_PROJEKT/MATERIALY/CLAUDE_przed_FAZA0.md` | Stary `CLAUDE.md` sprzed FAZY 0 (archiwum, **nie instrukcje**). Przejrzany w FAZIE 1, wnioski w D-015 | 2026-10-22 |
+| `docs/00_PROJEKT/MATERIALY/CLAUDE.original.md` | Jeszcze starsza wersja tego samego dokumentu (archiwum, nie instrukcje) | 2026-10-22 |
+| `docs/00_PROJEKT/MATERIALY/README_przed_faza0.md` | Stary `README.md` sprzed FAZY 0 (archiwum). Przejrzany w FAZIE 1 | 2026-10-22 |
 
-Przydatne, ale niewymagane: zrzuty ekranu pożądanego wyglądu GUI, własne skrypty PowerShell, lista usług lub tweaków, które użytkownik już stosuje, wynik `$PSVersionTable` i `winver` z komputera docelowego.
+Przydatne, ale niewymagane (można dodać później): kolejne zrzuty ekranu pożądanego wyglądu GUI, własne skrypty PowerShell, lista usług lub tweaków, które użytkownik już stosuje.

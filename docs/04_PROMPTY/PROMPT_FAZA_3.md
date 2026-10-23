@@ -7,7 +7,7 @@
 Pracujesz nad projektem **mywindowspower**. Odpowiadaj wyłącznie po polsku. To jest **FAZA 3 — Szkielet GUI**. Nie pamiętasz poprzednich rozmów; ciągłość niesie dokumentacja w repozytorium.
 
 ## Start
-1. Przeczytaj w kolejności: `CLAUDE.md`, `docs/02_STAN/STAN_PROJEKTU.md`, `docs/00_PROJEKT/CONTEXT.md`, `docs/00_PROJEKT/ARCHITEKTURA.md`, `docs/00_PROJEKT/DECYZJE.md`, `docs/03_FAZY/FAZA_3_GUI_SZKIELET.md`, `docs/05_PROCES/PROCEDURA_FAZY.md`.
+1. Przeczytaj w kolejności: `CLAUDE.md`, `docs/02_STAN/STAN_PROJEKTU.md`, `docs/00_PROJEKT/CONTEXT.md`, `docs/00_PROJEKT/ARCHITEKTURA.md`, `docs/00_PROJEKT/DECYZJE.md`, `docs/03_FAZY/FAZA_3_GUI_SZKIELET.md`, `docs/05_PROCES/PROCEDURA_FAZY.md`. Następnie obejrzyj mockup `docs/design/mockup-pulpit.png` (wzorzec wyglądu głównego okna).
 2. Wykonaj `git status` i `git log --oneline -10`. Potwierdź, że FAZA 2 jest ZAKOŃCZONA (status, commit, wpis w `CHANGELOG_FAZ.md`). Jeśli nie, zatrzymaj się i zgłoś.
 3. Uzupełnij w `CHANGELOG_FAZ.md` hash commita FAZY 2 i ustaw status FAZY 3 na `W TOKU` w `STAN_PROJEKTU.md`.
 

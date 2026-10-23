@@ -19,4 +19,31 @@ Zasady pracy w Claude Code opisuje [`CLAUDE.md`](CLAUDE.md).
 
 ## Uruchomienie
 
-Dostępne od FAZY 1. Szczegóły zostaną uzupełnione w FAZIE 15.
+Wymagania: Windows 11, Windows PowerShell 5.1 (wbudowany) lub PowerShell 7.x.
+
+W katalogu repozytorium:
+
+```powershell
+.\Start-MyWindowsPower.ps1
+```
+
+Launcher sprawdza wersję PowerShella, system i tryb STA (w razie potrzeby uruchamia się ponownie z `-STA`), wypisuje status administratora i importuje moduły z `src/Modules`. Niczego nie zmienia w systemie. Okno GUI pojawi się od FAZY 3.
+
+Jeśli PowerShell blokuje skrypty, ustaw dla swojego konta `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+## Testy i analiza (dla dewelopera)
+
+Jednorazowo:
+
+```powershell
+Install-Module Pester -MinimumVersion 5.0.0 -Scope CurrentUser -SkipPublisherCheck
+Install-Module PSScriptAnalyzer -Scope CurrentUser
+```
+
+Sprawdzenie (PSScriptAnalyzer + Pester):
+
+```powershell
+.\tests\Invoke-Checks.ps1
+```
+
+Używane wersje: Pester 6.2.0, PSScriptAnalyzer 1.25.0.

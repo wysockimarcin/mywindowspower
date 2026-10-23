@@ -1,0 +1,19 @@
+# Ustawienia edytora dla mywindowspower (https://editorconfig.org).
+root = true
+
+[*]
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Windows PowerShell 5.1 bez BOM czyta pliki jako ANSI i psuje polskie znaki.
+[*.{ps1,psm1,psd1}]
+charset = utf-8-bom
+
+[*.{md,json,xaml,xml}]
+charset = utf-8
+
+[*.md]
+trim_trailing_whitespace = false

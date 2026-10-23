@@ -1,0 +1,9 @@
+{
+    "schemaVersion": 1,
+    "theme": "System",
+    "logLevel": "Info",
+    "logRetentionDays": 30,
+    "dryRunByDefault": true,
+    "confirmChanges": true,
+    "createRestorePointBeforeRiskyChanges": true
+}

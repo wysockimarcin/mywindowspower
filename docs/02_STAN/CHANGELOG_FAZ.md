@@ -19,7 +19,7 @@
 
 ## Korekta dokumentacji po FAZIE 1 — przywrócenie zarządzania zdalnego (2026-10-23)
 - Status: ZAKOŃCZONA (korekta, nie nowa faza)
-- Commit: `FAZA 1: korekta dokumentacji — zarządzanie komputerami zdalnymi (D-019…D-021)` — hash do uzupełnienia w FAZIE 2
+- Commit: `FAZA 1: korekta dokumentacji — zarządzanie komputerami zdalnymi (D-019…D-021)` — `a776ca9`
 - Powód: użytkownik wskazał, że aplikacja ma zarządzać także komputerami zdalnymi i `localhost` zgodnie ze starym `CLAUDE.md`, a dokumentacja (wpis w „Poza zakresem" w `CONTEXT.md` i D-015) mówiła odwrotnie.
 - Zrobiono: D-019 (zarządzanie `localhost` i komputerami zdalnymi, wieloinstancyjność, kontekst wykonania, Dashboard z widgetami, kontrakt modułu), D-020 (nowe moduły i tryby ze starej koncepcji, przenumerowanie faz), D-021 (ADR do podjęcia, przypisane do faz); nowa FAZA 3, nowe FAZY 15–19, rozbudowane FAZY 2, 4, 5 i 6–14, FAZA 20 (testy architektoniczne i zdalne) i 21; zaktualizowano `CONTEXT`, `ARCHITEKTURA` (host, instancje, kontekst wykonania, połączenia zdalne, tryby prezentacji, Dashboard i widgety, kontrakt modułu, `apprun`, model procesów, testy architektoniczne), `SLOWNIK`, `PLAN_FAZ`, `STAN_PROJEKTU`, `README`, `CLAUDE.md`, pliki faz i prompty (FAZA 2–21).
 - Zmiany w kodzie: tylko komunikat launchera i opis w komentarzu („FAZIE 3" → „FAZIE 4") oraz nazwa testu w `tests/Repository.Tests.ps1`; nie uruchamiano ich (brak Windows i `pwsh`).

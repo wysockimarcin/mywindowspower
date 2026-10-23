@@ -79,6 +79,17 @@ Describe 'Moduł <Name>' -ForEach $modules {
         }
     }
 
+    It 'manifest zawiera kontrakt modułu (PrivateData.MWP) z Id zgodnym z nazwą' {
+        $data.PrivateData.MWP | Should -Not -BeNullOrEmpty
+        $data.PrivateData.MWP.Id | Should -Be ($Name -replace '^MWP\.', '')
+    }
+
+    It 'kontrakt przechodzi walidację Get-MwpModuleDefinition' {
+        Import-Module -Name (Join-Path -Path (Split-Path -Parent $Directory) -ChildPath 'MWP.Core\MWP.Core.psd1') -Force -ErrorAction Stop
+        $definition = Get-MwpModuleDefinition -Name $Name
+        $definition.IsValid | Should -BeTrue -Because ($definition.Errors -join ' ')
+    }
+
     It 'zaślepka zwraca nazwę i wersję modułu' {
         Import-Module -Name $Manifest -Force -ErrorAction Stop
         $info = & ("Get-Mwp{0}ModuleInfo" -f ($Name -replace '^MWP\.', ''))

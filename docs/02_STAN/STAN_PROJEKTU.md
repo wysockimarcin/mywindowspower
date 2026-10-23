@@ -6,13 +6,14 @@
 
 | Pole | Wartość |
 |---|---|
-| Ostatnia zakończona faza | **FAZA 1 — Szkielet techniczny** |
-| **Następna faza** | **FAZA 2 — Rdzeń i bezpieczeństwo zmian** |
-| Prompt następnej fazy | `docs/04_PROMPTY/PROMPT_FAZA_2.md` |
-| Plik następnej fazy | `docs/03_FAZY/FAZA_2_RDZEN_BEZPIECZENSTWO.md` |
+| Ostatnia zakończona faza | **FAZA 2 — Rdzeń i bezpieczeństwo zmian** |
+| **Następna faza** | **FAZA 3 — Komputery docelowe i połączenia zdalne** |
+| Prompt następnej fazy | `docs/04_PROMPTY/PROMPT_FAZA_3.md` |
+| Plik następnej fazy | `docs/03_FAZY/FAZA_3_KOMPUTERY_ZDALNE.md` |
 | Data ostatniej aktualizacji | 2026-10-23 |
-| Ostatni commit | `286fcfb` — `FAZA 1: szkielet techniczny, launcher, moduły, Pester i PSScriptAnalyzer` |
-| Zdalne repozytorium | https://github.com/wysockimarcin/mywindowspower (push wykonany: `origin/main` zawiera FAZĘ 0 i FAZĘ 1) |
+| Ostatni commit | commit `FAZA 2: rdzeń MWP.Core, bezpieczeństwo zmian i kontrakt modułu` (hash uzupełnia FAZA 3 w `CHANGELOG_FAZ.md`) |
+| Zdalne repozytorium | https://github.com/wysockimarcin/mywindowspower (`origin/main` zawiera FAZĘ 0 i FAZĘ 1; FAZA 2 czeka na `git push` użytkownika) |
+| Testy (FAZA 2) | `.\tests\Invoke-Checks.ps1`: PowerShell 5.1.26100.9711 — 0 uwag, 393/393; PowerShell 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`, MSI) — 0 uwag, 393/393 |
 
 ## Postęp faz
 
@@ -20,7 +21,7 @@
 |---|---|---|---|
 | FAZA 0 | Fundament | ZAKOŃCZONA | `47c4b0a` |
 | FAZA 1 | Szkielet techniczny | ZAKOŃCZONA | `286fcfb` |
-| FAZA 2 | Rdzeń i bezpieczeństwo zmian | DO ZROBIENIA | — |
+| FAZA 2 | Rdzeń i bezpieczeństwo zmian | ZAKOŃCZONA | hash w `CHANGELOG_FAZ.md` (uzupełnia FAZA 3) |
 | FAZA 3 | Komputery docelowe i połączenia zdalne | DO ZROBIENIA | — |
 | FAZA 4 | Szkielet GUI i host modułów | DO ZROBIENIA | — |
 | FAZA 5 | Dashboard | DO ZROBIENIA | — |
@@ -48,17 +49,25 @@ Dozwolone statusy: `DO ZROBIENIA`, `W TOKU`, `CZĘŚCIOWA` (część punktów od
 - FAZA 0: repozytorium git z remote `origin`, `.gitignore`, `README.md`, `CLAUDE.md`, pełna struktura `docs/`, `CONTEXT`, `ARCHITEKTURA`, `DECYZJE`, `SLOWNIK`, `PLAN_FAZ`, `PROCEDURA_FAZY`, pliki faz i prompty (wg numeracji sprzed D-020: FAZY 0–15; obecnie 0–21).
 - Korekta dokumentacji po FAZIE 1 (2026-10-23): przywrócono zarządzanie komputerem lokalnym (`localhost`) i zdalnymi zgodnie z koncepcją pierwotną (D-019), rozszerzono zakres o moduły i tryby ze starej koncepcji (D-020), przypisano decyzje architektoniczne do faz (D-021). Plan faz przenumerowany: nowa FAZA 3, dotychczasowe 3–13 → 4–14, nowe 15–19, testy → 20, wydanie → 21. Zaktualizowano `CONTEXT`, `ARCHITEKTURA`, `DECYZJE`, `SLOWNIK`, `PLAN_FAZ`, pliki faz i prompty, `README`, `CLAUDE.md`. Kodu nie zmieniano poza komunikatem launchera i nazwą testu (numer fazy GUI).
 - FAZA 1: launcher `Start-MyWindowsPower.ps1` (wersja PS, Windows 11, STA z ponownym uruchomieniem, status administratora, import modułów); 11 szkieletów modułów `src/Modules/MWP.*` z manifestami; `PSScriptAnalyzerSettings.psd1` (zgodność 5.1/7.0); testy Pester (175, wszystkie zaliczone) i `tests/Invoke-Checks.ps1`; `config/settings.example.json`; `.editorconfig`, `.gitattributes`; środowisko potwierdzone (brak PS 7); stare pliki przejrzane i zarchiwizowane w `docs/00_PROJEKT/MATERIALY/`.
+- FAZA 2: rdzeń `MWP.Core` 0.2.0 (wersja hosta): `Get-MwpEnvironment`, `Test-MwpAdmin`, `Request-MwpElevation`; `Write-MwpLog` (JSON Lines, plik dzienny, rotacja, muteks, ukrywanie sekretów); `Get-MwpSetting`/`Set-MwpSetting` (szablon + plik lokalny, zapis atomowy, uszkodzony plik, migracje); `New-MwpResult`, `Format-MwpOperationTarget`; rejestr cofnięć `Save-MwpUndoEntry`/`Get-MwpUndoEntry`/`Invoke-MwpUndo`; `New-MwpRestorePoint` (CIM); lista ochronna (`Data/protected-items.json`, `Test-MwpProtectedItem`, `Get-MwpProtectedItem`); kontrakt modułu `PrivateData.MWP` we wszystkich 11 manifestach, `Get-MwpModuleDefinition` i `Test-MwpModuleDefinition`; launcher waliduje kontrakty i ma `-Elevate`; komputer docelowy (`-ComputerName`, domyślnie `localhost`) w logu, wpisie cofnięcia i wyniku, bez globalnego „bieżącego komputera"; wzorzec funkcji zmieniającej system w `ARCHITEKTURA.md`; ADR D-023…D-029 (+ D-030); 393 testy Pester z mockami.
 
 ## Co zostało do zrobienia
 
-Fazy od FAZY 2 do FAZY 21 (patrz tabela). Istnieje tylko szkielet: moduły mają funkcje-zaślepki, nie ma GUI, logiki obszarów ani obsługi komputerów zdalnych. Najbliższa: FAZA 2 (rdzeń i kontrakt modułu), potem FAZA 3 (komputery docelowe i połączenia zdalne).
+Fazy od FAZY 3 do FAZY 21 (patrz tabela). Jest rdzeń i kontrakt modułu; moduły obszarów mają nadal tylko funkcje-zaślepki, nie ma GUI, logiki obszarów ani obsługi komputerów zdalnych. Najbliższa: FAZA 3 (komputery docelowe, kontekst wykonania, instancje modułów, połączenia zdalne).
 
 ## Dług techniczny i odroczone punkty
 
-- Wykrywanie środowiska jest w launcherze (funkcje lokalne); w FAZIE 2 przenieść wspólną część do `MWP.Core` (D-017).
+- ~~Wykrywanie środowiska w `MWP.Core`~~ — zrobione w FAZIE 2 (`Get-MwpEnvironment`). Launcher świadomie zachowuje własne, minimalne wykrywanie, bo działa przed importem `MWP.Core` (D-017).
+- `-ComputerName` w funkcjach rdzenia to rozwiązanie przejściowe (D-019): w FAZIE 3 dodać `-Context` (kontekst wykonania) do `New-MwpRestorePoint`, `Invoke-MwpUndo` (przekazywanie kontekstu zamiast samej nazwy) i wzorca funkcji; `Test-MwpLocalComputer` zastąpić trybem Local/Remote kontekstu. Punkt przywracania na komputerze zdalnym — FAZA 3 (CIM przez sesję).
+- Pula runspace'ów z limitem równoległości, anulowaniem i limitem czasu (D-023) — FAZA 3 (operacje zdalne) i FAZA 4 (GUI). Limit równoległości jako ustawienie w szablonie — do dodania razem z pulą.
+- Rejestr cofnięć: brak retencji i usuwania starych wpisów (`%LOCALAPPDATA%\MyWindowsPower\undo\`) oraz widoku w GUI — dodać w FAZIE 4 (panel cofnięć) lub FAZIE 20.
+- Lista ochronna: tylko kategoria `Service` (15 usług); brak lokalnych rozszerzeń listy (np. `config/protected.local.json`) — FAZA 7 (usługi) i kolejne fazy obszarów.
+- `EntryPoint` kontraktu wskazuje funkcję informacyjną `Get-Mwp<Obszar>ModuleInfo`; przy modelu instancji (FAZA 3/4) zdecydować o fabryce instancji i ewentualnym `ContractVersion` 2 (D-024). `Capabilities` i `SupportedPresentationModes` modułów obszarów uzupełniają fazy obszarów.
+- Ustawienia modułów (`ConfigurationSchema`) są walidowane w kontrakcie, ale jeszcze nie odczytywane ani zapisywane — FAZA 4.
+- Konfiguracja nie ma pamięci podręcznej (każdy `Write-MwpLog` czyta plik ustawień) — jeśli w GUI okaże się to wolne, rozważyć bezpieczną pamięć podręczną z kontrolą daty pliku.
 - Profile zgodności PSScriptAnalyzer dotyczą Windows 10 1809 / PS 5.1 i PS 7.0 — nowszych brak (D-018). Przy nowej wersji PSScriptAnalyzer sprawdzić, czy pojawiły się profile Windows 11 / PS 7.4+.
 - `tests/Modules.Tests.ps1`: lista oczekiwanych modułów trzeba uzupełnić o nowe moduły przy ich tworzeniu (`MWP.Remote` w FAZIE 3; `MWP.Disks`, `MWP.Processes`, `MWP.Accounts`, `MWP.Rdp`, `MWP.Screenshot` w FAZACH 15–18).
-- `config/settings.example.json`: sekcja `targets` (komputery docelowe, nazwa zastępcza) i migracja `schemaVersion` w FAZIE 3 (D-019). Manifesty modułów: pola kontraktu w FAZIE 2.
+- `config/settings.example.json`: sekcja `targets` (komputery docelowe, nazwa zastępcza) i migracja `schemaVersion` w FAZIE 3 (D-019) — krok migracji dopisać w `Invoke-MwpSettingsMigration` (`$steps`). Manifesty modułów: pola kontraktu dodane w FAZIE 2.
 - Testy `Launcher.Tests.ps1` uruchamiają launcher w nowym procesie (ok. 2–3 s); przy rozbudowie launchera (GUI w FAZIE 4) trzeba dodać tryb bez okna do testów.
 
 ## Otwarte pytania do użytkownika
@@ -73,7 +82,7 @@ Fazy od FAZY 2 do FAZY 21 (patrz tabela). Istnieje tylko szkielet: moduły mają
 - Windows 11 Pro, wersja 26H2, kompilacja 26300.9711 (`winver`) — potwierdzone w FAZIE 1.
 - PowerShell 5.1.26100.9711 — potwierdzone (D-013). PowerShell 7.6.7 — zainstalowany 2026-10-23 z instalatora MSI (oficjalne wydanie na GitHubie, D-022); `(Get-Command pwsh).Source` = `C:\Program Files\PowerShell\7\pwsh.exe` (w PATH maszyny).
 - Narzędzia: Pester 6.2.0, PSScriptAnalyzer 1.25.0 (CurrentUser), osobno dla 5.1 (`Documents\WindowsPowerShell\Modules`) i 7.x (`Documents\PowerShell\Modules`).
-- Uruchamianie PowerShella w kodzie (wejście do FAZY 3): launcher i `tests\Launcher.Tests.ps1` uruchamiają ponownie bieżący host przez `(Get-Process -Id $PID).Path` (`Start-MyWindowsPower.ps1:79` i `:105`, `tests\Launcher.Tests.ps1:13` i `:18`); nigdzie nie ma zakodowanej ścieżki instalacji.
+- Uruchamianie PowerShella w kodzie (wejście do FAZY 3): launcher i `tests\Launcher.Tests.ps1` uruchamiają ponownie bieżący host przez `(Get-Process -Id $PID).Path` (`Start-MyWindowsPower.ps1:90` i `:120`, `tests\Launcher.Tests.ps1:13` i `:18`); tak samo `Request-MwpElevation` (domyślny `-HostPath`) i `Get-MwpEnvironment` (`HostPath`); nigdzie nie ma zakodowanej ścieżki instalacji.
 
 ## Materiały użytkownika
 
@@ -87,5 +96,7 @@ Fazy od FAZY 2 do FAZY 21 (patrz tabela). Istnieje tylko szkielet: moduły mają
 ## Punkty do weryfikacji na Windows 11
 
 - ~~Launcher i `tests\Invoke-Checks.ps1` w PowerShell 7.x~~ — **zweryfikowane 2026-10-23**: `tests\Invoke-Checks.ps1` w PowerShell 7.6.7 (Core) i 5.1.26100.9711 (Desktop): PSScriptAnalyzer bez uwag, Pester 175/175 (w tym testy launchera uruchamianego w bieżącym hoście). Pierwszy przebieg w 7.x ujawnił błąd testu `schemaVersion` (`[long]` zamiast `[int]`), poprawiony w `tests\Repository.Tests.ps1`. **Ponowna weryfikacja po przejściu na MSI (2026-10-23)**, każda wersja w nowym procesie: 5.1.26100.9711 — 0 uwag, 175/175; 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`) — 0 uwag, 175/175.
+- **FAZA 2 — weryfikacja testami zakończona 2026-10-23**, każda wersja w nowym procesie: 5.1.26100.9711 — 0 uwag, 393/393; 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`) — 0 uwag, 393/393 (baza przed zmianami: 175/175 w obu).
+- FAZA 2, ręcznie (zmienia system lub pokazuje UAC, wymaga zgody użytkownika): `New-MwpRestorePoint` jako administrator — utworzenie punktu, komunikat przy limicie 24 h i przy wyłączonej ochronie systemu (kod 1058); `.\Start-MyWindowsPower.ps1 -Elevate` — monit UAC i jego anulowanie; pierwszy zapis logu i rejestru cofnięć w prawdziwym `%LOCALAPPDATA%\MyWindowsPower`.
 - Połączenie z komputerem zdalnym, `Invoke-MwpOnTarget` i zachowanie przy utracie łączności (FAZA 3 i fazy obszarów).
 - Zachowanie launchera przy zasadzie wykonywania `Restricted`/`AllSigned` (FAZA 1; przy `RemoteSigned` działa).

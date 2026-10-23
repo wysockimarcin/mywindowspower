@@ -29,7 +29,7 @@
             IgnoreCommands = @(
                 'Describe', 'Context', 'It', 'Should', 'Mock',
                 'BeforeDiscovery', 'BeforeAll', 'AfterAll', 'BeforeEach', 'AfterEach',
-                'Invoke-Pester', 'New-PesterConfiguration',
+                'Invoke-Pester', 'New-PesterConfiguration', 'InModuleScope',
                 'Get-Verb'
             )
         }

@@ -13,6 +13,22 @@
     VariablesToExport    = @()
     AliasesToExport      = @()
     PrivateData          = @{
+        # Kontrakt modułu MyWindowsPower (ARCHITEKTURA.md, „Kontrakt modułu"; D-024).
+        # Capabilities i SupportedPresentationModes uzupełnia faza obszaru.
+        MWP    = @{
+            ContractVersion            = 1
+            Id                         = 'Cleanup'
+            Name                       = 'Czyszczenie dysku'
+            EntryPoint                 = 'Get-MwpCleanupModuleInfo'
+            MinimumHostVersion         = '0.2.0'
+            Dependencies               = @(
+                @{ Id = 'Core'; MinimumVersion = '0.2.0' }
+            )
+            Capabilities               = @()
+            SupportedPresentationModes = @()
+            RequiredPermissions        = @('User')
+            ConfigurationSchema        = @{}
+        }
         PSData = @{
             ProjectUri = 'https://github.com/wysockimarcin/mywindowspower'
         }

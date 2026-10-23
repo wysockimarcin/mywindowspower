@@ -1,0 +1,21 @@
+{
+    "schemaVersion": 1,
+    "description": "Lista ochronna MyWindowsPower: elementy krytyczne dla działania systemu lub zarządzania zdalnego, domyślnie zablokowane przed wyłączeniem lub usunięciem. Pole name może zawierać symbole wieloznaczne (-like). Listę usług dopracowuje FAZA 7.",
+    "items": [
+        { "category": "Service", "name": "RpcSs", "reason": "Zdalne wywołania procedur (RPC); bez tej usługi system nie działa." },
+        { "category": "Service", "name": "RpcEptMapper", "reason": "Mapowanie punktów końcowych RPC; wymagane przez RPC." },
+        { "category": "Service", "name": "DcomLaunch", "reason": "Uruchamianie serwerów DCOM; usługa krytyczna systemu." },
+        { "category": "Service", "name": "LSM", "reason": "Menedżer sesji lokalnych; wymagany do logowania." },
+        { "category": "Service", "name": "SamSs", "reason": "Menedżer kont zabezpieczeń (SAM); wymagany do logowania." },
+        { "category": "Service", "name": "ProfSvc", "reason": "Usługa profilów użytkowników; wymagana do logowania." },
+        { "category": "Service", "name": "PlugPlay", "reason": "Plug and Play; wymagana do obsługi urządzeń." },
+        { "category": "Service", "name": "Power", "reason": "Zarządzanie zasilaniem; usługa krytyczna systemu." },
+        { "category": "Service", "name": "EventLog", "reason": "Dziennik zdarzeń; potrzebny do diagnostyki i audytu." },
+        { "category": "Service", "name": "Winmgmt", "reason": "WMI/CIM; wymagana przez MyWindowsPower i zarządzanie zdalne." },
+        { "category": "Service", "name": "WinRM", "reason": "Zdalne zarządzanie (PowerShell Remoting); wyłączenie odcina komputer zdalny." },
+        { "category": "Service", "name": "BFE", "reason": "Base Filtering Engine; wymagana przez zaporę i IPsec." },
+        { "category": "Service", "name": "mpssvc", "reason": "Zapora Windows Defender." },
+        { "category": "Service", "name": "WinDefend", "reason": "Microsoft Defender Antivirus; nie osłabiamy zabezpieczeń Windows." },
+        { "category": "Service", "name": "CryptSvc", "reason": "Usługi kryptograficzne; wymagane m.in. przez Windows Update i podpisy." }
+    ]
+}

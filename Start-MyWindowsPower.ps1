@@ -9,7 +9,9 @@
     - sprawdza system (Windows 11; starsze wersje tylko z ostrzeżeniem),
     - sprawdza tryb STA wymagany przez WPF i w razie potrzeby uruchamia się ponownie z -STA,
     - wypisuje status uprawnień administratora,
-    - importuje moduły z src/Modules (najpierw MWP.Core).
+    - importuje moduły z src/Modules (najpierw MWP.Core), sprawdzając kontrakt każdego modułu
+      (Get-MwpModuleDefinition: wersja hosta, zależności); moduł z błędnym kontraktem nie jest ładowany,
+    - z parametrem -Elevate uruchamia się ponownie z uprawnieniami administratora (monit UAC).
 
     Launcher niczego nie zmienia w systemie. Okno GUI powstanie w FAZIE 4.
 
@@ -17,15 +19,24 @@
     Wyłącza ponowne uruchomienie w trybie STA. Ustawiany automatycznie przy ponownym
     uruchomieniu, żeby nie dopuścić do pętli.
 
+.PARAMETER Elevate
+    Prosi o uprawnienia administratora: gdy ich brak, uruchamia launcher ponownie przez UAC
+    (Request-MwpElevation) i kończy bieżący proces.
+
 .OUTPUTS
     Kod wyjścia 0, gdy wszystkie moduły się zaimportowały; 1 w przypadku błędu.
 
 .EXAMPLE
     .\Start-MyWindowsPower.ps1
+
+.EXAMPLE
+    .\Start-MyWindowsPower.ps1 -Elevate
 #>
 [CmdletBinding()]
 param(
-    [switch] $NoRelaunch
+    [switch] $NoRelaunch,
+
+    [switch] $Elevate
 )
 
 Set-StrictMode -Version Latest
@@ -102,7 +113,11 @@ if ($environment.ApartmentState -ne [Threading.ApartmentState]::STA) {
     }
 
     Write-LauncherMessage 'Wątek nie działa w trybie STA. Ponowne uruchomienie z parametrem -STA...' -Level Warning
-    & $environment.HostPath -NoProfile -STA -File $PSCommandPath -NoRelaunch
+    $relaunchArguments = @('-NoRelaunch')
+    if ($Elevate) {
+        $relaunchArguments += '-Elevate'
+    }
+    & $environment.HostPath -NoProfile -STA -File $PSCommandPath @relaunchArguments
     exit $LASTEXITCODE
 }
 
@@ -133,10 +148,27 @@ $moduleDirs = @(Get-ChildItem -LiteralPath $modulesRoot -Directory -Filter 'MWP.
         Sort-Object -Property @{ Expression = { $_.Name -ne 'MWP.Core' } }, Name)
 
 $failed = 0
+$definitions = $null
 foreach ($dir in $moduleDirs) {
     $manifest = Join-Path -Path $dir.FullName -ChildPath ($dir.Name + '.psd1')
     try {
+        # Kontrakt pozostałych modułów sprawdza MWP.Core, więc dostępny jest dopiero po jego imporcie.
+        if ($null -ne $definitions) {
+            $definition = @($definitions | Where-Object { $_.ModuleName -eq $dir.Name }) | Select-Object -First 1
+            if ($null -ne $definition -and -not $definition.IsValid) {
+                throw ("niepoprawny kontrakt modułu: {0}" -f ($definition.Errors -join ' '))
+            }
+        }
+
         Import-Module -Name $manifest -Force -ErrorAction Stop
+
+        if ($dir.Name -eq 'MWP.Core') {
+            $definitions = @(Get-MwpModuleDefinition -ModulesRoot $modulesRoot)
+            $core = @($definitions | Where-Object { $_.ModuleName -eq 'MWP.Core' }) | Select-Object -First 1
+            if ($null -ne $core -and -not $core.IsValid) {
+                throw ("niepoprawny kontrakt modułu: {0}" -f ($core.Errors -join ' '))
+            }
+        }
         Write-LauncherMessage ("  [OK]   {0}" -f $dir.Name) -Level Ok
     }
     catch {
@@ -151,5 +183,21 @@ if ($failed -gt 0) {
 }
 
 Write-LauncherMessage ("Zaimportowano moduły: {0}." -f $moduleDirs.Count) -Level Ok
+
+if ($Elevate) {
+    if ($environment.IsAdmin) {
+        Write-LauncherMessage 'Uprawnienia administratora są już aktywne.' -Level Ok
+    }
+    else {
+        $elevation = Request-MwpElevation -FilePath $PSCommandPath -HostPath $environment.HostPath
+        if (-not $elevation.Success) {
+            Write-LauncherMessage $elevation.Message -Level Error
+            exit 1
+        }
+        Write-LauncherMessage $elevation.Message -Level Ok
+        exit 0
+    }
+}
+
 Write-LauncherMessage 'Okno aplikacji (GUI) zostanie dodane w FAZIE 4.'
 exit 0

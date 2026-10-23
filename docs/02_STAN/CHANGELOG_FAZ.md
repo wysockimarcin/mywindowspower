@@ -17,6 +17,20 @@
 
 ---
 
+## FAZA 2 — Rdzeń i bezpieczeństwo zmian (2026-10-23)
+- Status: ZAKOŃCZONA
+- Commit: `FAZA 2: rdzeń MWP.Core, bezpieczeństwo zmian i kontrakt modułu` — hash do uzupełnienia na starcie FAZY 3
+- Baza przed zmianami: PowerShell 5.1.26100.9711 i 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`, MSI, nie MSIX) — 0 uwag, 175/175 w obu. Hash FAZY 1 (`286fcfb`) był już wpisany we wszystkich miejscach.
+- Zrobiono: `MWP.Core` 0.2.0 (wersja hosta) — środowisko (`Get-MwpEnvironment`, `Test-MwpAdmin`), elewacja na życzenie (`Request-MwpElevation`, launcher `-Elevate`), log `Write-MwpLog` (JSON Lines, plik dzienny, rotacja, muteks, ukrywanie sekretów), konfiguracja `Get-MwpSetting`/`Set-MwpSetting` (szablon + plik lokalny, zapis atomowy, uszkodzony plik, migracje), `New-MwpResult` i `Format-MwpOperationTarget`, rejestr cofnięć (`Save-`/`Get-MwpUndoEntry`, `Invoke-MwpUndo`), `New-MwpRestorePoint` (CIM), lista ochronna (`Data/protected-items.json`, `Test-`/`Get-MwpProtectedItem`), kontrakt modułu `PrivateData.MWP` w 11 manifestach z `Get-MwpModuleDefinition` i `Test-MwpModuleDefinition`; launcher waliduje kontrakty; komputer docelowy (domyślnie `localhost`) w logu, wpisie cofnięcia i wyniku, bez globalnego „bieżącego komputera"; wzorzec funkcji zmieniającej system w `ARCHITEKTURA.md` (przykład: `Set-MwpSetting`); ADR D-023…D-029 i D-030; `PROMPT_FAZA_3.md` uzupełniony o bazę testów i dług techniczny.
+- Testy: 393 (było 175): +22 w `Modules.Tests.ps1`, +196 w `tests/Modules/MWP.Core/` (9 plików, mocki CIM, `Start-Process`, administratora i ścieżek danych). Wynik końcowy, każda wersja w nowym procesie: 5.1.26100.9711 — 0 uwag, 393/393; 7.6.7 — 0 uwag, 393/393. BOM UTF-8 i CRLF sprawdzone we wszystkich zmienionych plikach `.ps1`/`.psm1`/`.psd1`.
+- Poprawki w trakcie: `[IO.File]::Replace` z `$null` (pusty tekst w .NET → `[NullString]::Value`), walidacja Id wpisu cofnięcia przed odczytem katalogu, `Count` na pojedynczym obiekcie w 5.1 (test), nazwy komputerów w testach przez zmienne (`PSAvoidUsingComputerNameHardcoded`).
+- Niezrobione / odroczone: kontekst wykonania zamiast przejściowego `-ComputerName`, punkt przywracania zdalnie, pula runspace'ów → FAZA 3/4; retencja wpisów cofnięć, lokalne rozszerzenia listy ochronnej, obsługa `ConfigurationSchema` → dług techniczny w `STAN_PROJEKTU.md`.
+- Decyzje: D-023 … D-030
+- Do weryfikacji na Windows 11 (ręcznie, za zgodą): prawdziwy punkt przywracania jako administrator (limit 24 h, wyłączona ochrona), `-Elevate` z monitem UAC, pierwszy zapis w `%LOCALAPPDATA%\MyWindowsPower`.
+- Następna faza: FAZA 3 — Komputery docelowe i połączenia zdalne
+
+---
+
 ## Korekta dokumentacji po FAZIE 1 — przywrócenie zarządzania zdalnego (2026-10-23)
 - Status: ZAKOŃCZONA (korekta, nie nowa faza)
 - Commit: `FAZA 1: korekta dokumentacji — zarządzanie komputerami zdalnymi (D-019…D-021)` — `a776ca9`

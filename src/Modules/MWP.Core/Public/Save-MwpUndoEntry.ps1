@@ -4,7 +4,8 @@
         Zapisuje w rejestrze cofnięć stan sprzed zmiany i sposób jej cofnięcia.
 
     .DESCRIPTION
-        Wpis to plik JSON w %LOCALAPPDATA%\MyWindowsPower\undo\<Id>.json (zapis atomowy).
+        Wpis to plik JSON <katalog danych>\undo\<Id>.json (zapis atomowy); katalog danych to
+        domyślnie <folder aplikacji>\data, ustawienie dataPath (D-032).
         Cofnięcie nie jest zapisywane jako kod, tylko jako nazwa polecenia MyWindowsPower
         (Verb-MwpNoun) i jego parametry; Invoke-MwpUndo wywołuje to polecenie. Dzięki temu
         z pliku nie da się uruchomić dowolnego kodu, a wpis działa w każdym procesie i runspace.

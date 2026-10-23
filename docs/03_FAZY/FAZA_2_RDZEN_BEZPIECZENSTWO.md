@@ -9,7 +9,7 @@ Wspólny fundament `MWP.Core`, dzięki któremu każda późniejsza zmiana syste
 FAZA 1 zakończona.
 
 ## Zakres
-- Logowanie: `Write-MwpLog` (poziomy, plik dzienny w `%LOCALAPPDATA%\MyWindowsPower\logs\`, rotacja).
+- Logowanie: `Write-MwpLog` (poziomy, plik dzienny w `%LOCALAPPDATA%\MyWindowsPower\logs\`, rotacja). Po korekcie D-032: `<katalog danych>\logs\`, domyślnie `data\logs\` w folderze aplikacji.
 - Konfiguracja: odczyt i zapis ustawień (`Get-MwpSetting`, `Set-MwpSetting`), źródło `config/settings.local.json` z wartościami domyślnymi z szablonu.
 - Wykrywanie środowiska: `Test-MwpAdmin`, wersja PS, build Windows.
 - Elewacja: uruchomienie ponowne z uprawnieniami administratora na życzenie (`Start-Process -Verb RunAs`).
@@ -47,7 +47,7 @@ GUI, logika obszarów, kontekst wykonania, połączenia zdalne i instancje modu�
 Kolejny moduł może użyć wzorca bez dopisywania własnej infrastruktury logowania i cofania, a rdzeń nie zakłada komputera lokalnego.
 
 ## Do weryfikacji na Windows 11
-Punkt przywracania (wymaga administratora i włączonej ochrony systemu), elewacja, zapis w `%LOCALAPPDATA%`.
+Punkt przywracania (wymaga administratora i włączonej ochrony systemu), elewacja, zapis w folderze `data` obok aplikacji i zachowanie w folderze niezapisywalnym (D-032; przed korektą: zapis w `%LOCALAPPDATA%`).
 
 ## Wyniki
 Zakończona 2026-10-23. Weryfikacja checklisty (wszystkie punkty ZROBIONE):
@@ -74,6 +74,18 @@ Testy: 393 (było 175): +22 w `tests/Modules.Tests.ps1` (kontrakt każdego z 11 
 Wykryte różnice 5.1/7.x (opisane w `ARCHITEKTURA.md`): brak `Count` na pojedynczym `PSCustomObject` w 5.1 (błąd testu w pierwszym przebiegu 5.1, poprawiony), daty z `ConvertFrom-Json`, `$null` → pusty tekst w metodach .NET (`[NullString]::Value`).
 
 DO WERYFIKACJI NA WINDOWS (ręcznie, wymaga zgody użytkownika, bo zmienia system lub pokazuje UAC): utworzenie prawdziwego punktu przywracania jako administrator i komunikat przy limicie 24 h oraz przy wyłączonej ochronie systemu; `.\Start-MyWindowsPower.ps1 -Elevate` (monit UAC, anulowanie); pierwszy zapis logu i rejestru cofnięć w prawdziwym `%LOCALAPPDATA%\MyWindowsPower`.
+
+## Korekta D-032 — miejsce danych aplikacji (2026-10-23)
+Katalog danych z klucza `dataPath` (domyślnie `<folder aplikacji>\data`, ścieżka względna od folderu aplikacji, bezwzględna ze zmiennymi środowiskowymi, UNC); niezapisywalny → `%LOCALAPPDATA%\MyWindowsPower` z ostrzeżeniem w wyniku i logu, tam też `settings.local.json`; ponawianie zapisu logu przy blokadzie pliku.
+
+| Punkt | Dowód |
+|---|---|
+| `Get-MwpDataPath` z `dataPath` i trybem zapasowym | `src/Modules/MWP.Core/Private/Get-MwpDataPath.ps1`, `Private/Test-MwpDirectoryWritable.ps1`; `tests/Modules/MWP.Core/DataPath.Tests.ps1` (domyślna ścieżka, względna niezależna od bieżącego katalogu, `..`, bezwzględna ze zmienną środowiskową, spacje, polskie znaki i `[ ]`, UNC, niezapisywalny katalog, nieznana zmienna, `C:dane` i `\dane`, pamięć wyniku) |
+| `dataPath` w szablonie | `config/settings.example.json` (`"dataPath": ""`) |
+| `settings.local.json` w trybie zapasowym | `Private/Get-MwpConfigPath.ps1` (`-ForWrite`), `Public/Set-MwpSetting.ps1`; `DataPath.Tests.ps1` (zapis i odczyt z `%LOCALAPPDATA%`, pierwszeństwo pliku w `config`, odczyt bez pliku próbnego) |
+| Ostrzeżenie w logu i ponawianie zapisu | `Public/Write-MwpLog.ps1`; `DataPath.Tests.ps1` (`DataPath.Fallback` raz na proces, blokada pliku przez inny proces, trwała blokada) |
+| Brak zapisu do profilu i repozytorium | `DataPath.Tests.ps1` (porównanie stanu `%LOCALAPPDATA%\MyWindowsPower`, `data\` i `config\` repozytorium przed i po testach); `.gitignore` `/data/`, `tests/Repository.Tests.ps1` |
+| Testy i analiza | `.\tests\Invoke-Checks.ps1`, każda wersja w nowym procesie: 5.1.26100.9711 — 0 uwag, 420/420; 7.6.7 — 0 uwag, 420/420 (było 393/393) |
 
 ## Następna faza
 FAZA 3 — Komputery docelowe i połączenia zdalne. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_3.md`.

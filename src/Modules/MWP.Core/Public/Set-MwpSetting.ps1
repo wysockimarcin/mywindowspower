@@ -2,6 +2,7 @@
     <#
     .SYNOPSIS
         Zmienia ustawienie aplikacji w config\settings.local.json (zapis atomowy, z cofnięciem).
+        Gdy folder config jest niezapisywalny: %LOCALAPPDATA%\MyWindowsPower\settings.local.json (D-032).
 
     .DESCRIPTION
         Przykład wzorca funkcji zmieniającej stan (ARCHITEKTURA.md, „Wzorzec funkcji zmieniającej
@@ -60,7 +61,12 @@
             }
         }
         $local[$Name] = $Value
-        Write-MwpJsonFile -Path $data.Paths.Local -InputObject $local
+        # Pierwszy zapis: gdy folder config jest niezapisywalny, plik trafia do katalogu zapasowego (D-032).
+        $localPath = $data.Paths.Local
+        if (-not (Test-Path -LiteralPath $localPath)) {
+            $localPath = (Get-MwpConfigPath -ForWrite).Local
+        }
+        Write-MwpJsonFile -Path $localPath -InputObject $local
 
         $undo = Save-MwpUndoEntry -Module 'MWP.Core' -Operation $common.Operation -Target $Name -ComputerName $computerName `
             -Description ("Przywrócenie ustawienia '{0}' do wartości '{1}'" -f $Name, $before) `

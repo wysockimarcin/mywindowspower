@@ -13,7 +13,10 @@ Describe 'Write-MwpLog' {
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\Modules\MWP.Core\MWP.Core.psd1') -Force
         $null = New-Item -ItemType Directory -Path (Join-Path -Path $TestDrive -ChildPath 'config') -Force
         Copy-Item -LiteralPath (Join-Path -Path $root -ChildPath 'config\settings.example.json') -Destination (Join-Path -Path $TestDrive -ChildPath 'config\settings.example.json')
-        Mock -ModuleName MWP.Core Get-MwpDataPath { Join-Path -Path $TestDrive -ChildPath $Kind }
+        Mock -ModuleName MWP.Core Get-MwpDataPath {
+            $path = Join-Path -Path $TestDrive -ChildPath $Kind
+            if (Get-Variable -Name Detailed -ValueOnly -ErrorAction SilentlyContinue) { [pscustomobject]@{ Path = $path; Root = $TestDrive; Configured = ''; IsFallback = $false; Warning = $null } } else { $path }
+        }
         Mock -ModuleName MWP.Core Get-MwpConfigPath {
             [pscustomobject]@{
                 Example = Join-Path -Path $TestDrive -ChildPath 'config\settings.example.json'

@@ -4,10 +4,14 @@
         Zapisuje wpis w dziennym pliku logu aplikacji (JSON Lines) z nazwą komputera docelowego.
 
     .DESCRIPTION
-        Plik: %LOCALAPPDATA%\MyWindowsPower\logs\mwp-RRRR-MM-DD.log, jeden wpis JSON na linię
-        (UTF-8 bez BOM). Przy tworzeniu pliku nowego dnia starsze pliki są usuwane zgodnie
+        Plik: <katalog danych>\logs\mwp-RRRR-MM-DD.log (domyślnie <folder aplikacji>\data\logs,
+        ustawienie dataPath, D-032), jeden wpis JSON na linię (UTF-8 bez BOM). Przy tworzeniu pliku nowego dnia starsze pliki są usuwane zgodnie
         z ustawieniem logRetentionDays. Wpisy poniżej poziomu logLevel są pomijane.
         Zapis jest chroniony muteksem, więc wiele runspace'ów i procesów może logować naraz.
+        Chwilowa blokada pliku przez inny program (np. synchronizację OneDrive) powoduje kilka
+        ponownych prób (łącznie ok. 1,5 s), a nie utratę wpisu. Gdy katalog danych jest
+        niezapisywalny, log trafia do katalogu zapasowego, a pierwszy wpis w procesie poprzedza
+        ostrzeżenie o tym (operacja DataPath.Fallback).
         Sekrety w -Data są ukrywane. Błąd zapisu logu nie przerywa operacji (tylko ostrzeżenie).
 
     .PARAMETER ComputerName
@@ -51,13 +55,28 @@
             $retentionDays = [int]$settings['logRetentionDays']
         }
 
-        $directory = Get-MwpDataPath -Kind Logs
-        if (-not (Test-Path -LiteralPath $directory)) {
-            $null = New-Item -ItemType Directory -Path $directory -Force
-        }
+        $dataPath = Get-MwpDataPath -Kind Logs -Settings $settings -Detailed
+        $directory = $dataPath.Path
+        $null = [IO.Directory]::CreateDirectory($directory)
 
         $now = Get-Date
         $path = Join-Path -Path $directory -ChildPath ('mwp-{0:yyyy-MM-dd}.log' -f $now)
+        $text = ''
+        $fallbackWarning = $null
+        if ($dataPath.IsFallback -and -not $script:MwpDataPathWarningLogged.ContainsKey($dataPath.Warning)) {
+            $fallbackWarning = $dataPath.Warning
+            $warningEntry = [ordered]@{
+                timestamp = $now.ToString('o')
+                level     = 'Warning'
+                computer  = 'localhost'
+                source    = 'MWP.Core'
+                operation = 'DataPath.Fallback'
+                message   = $fallbackWarning
+                user      = [Environment]::UserName
+                processId = $PID
+            }
+            $text = (ConvertTo-Json -InputObject $warningEntry -Compress) + [Environment]::NewLine
+        }
         $entry = [ordered]@{
             timestamp = $now.ToString('o')
             level     = $Level
@@ -71,7 +90,7 @@
         if ($PSBoundParameters.ContainsKey('Data')) {
             $entry['data'] = ConvertTo-MwpLogSafeData -InputObject $Data
         }
-        $line = (ConvertTo-Json -InputObject $entry -Depth 8 -Compress) + [Environment]::NewLine
+        $text += (ConvertTo-Json -InputObject $entry -Depth 8 -Compress) + [Environment]::NewLine
 
         $isNewFile = -not (Test-Path -LiteralPath $path)
         $encoding = New-Object -TypeName System.Text.UTF8Encoding -ArgumentList $false
@@ -89,7 +108,26 @@
                 Write-Warning 'Nie zapisano wpisu w logu: plik logu jest zajęty.'
                 return
             }
-            [IO.File]::AppendAllText($path, $line, $encoding)
+            $retryDelays = @(50, 100, 200, 400, 800)
+            for ($attempt = 0; ; $attempt++) {
+                try {
+                    [IO.File]::AppendAllText($path, $text, $encoding)
+                    break
+                }
+                catch {
+                    $exception = $_.Exception
+                    while ($exception -is [Management.Automation.MethodInvocationException] -and $null -ne $exception.InnerException) {
+                        $exception = $exception.InnerException
+                    }
+                    # Ponawiamy tylko blokadę pliku (IOException), nie brak uprawnień ani brak katalogu.
+                    $isMissing = $exception -is [IO.DirectoryNotFoundException] -or $exception -is [IO.FileNotFoundException]
+                    $isLock = $exception -is [IO.IOException] -and -not $isMissing
+                    if (-not $isLock -or $attempt -ge $retryDelays.Count) {
+                        throw
+                    }
+                    Start-Sleep -Milliseconds $retryDelays[$attempt]
+                }
+            }
         }
         finally {
             if ($acquired) {
@@ -98,6 +136,10 @@
             $mutex.Dispose()
         }
 
+        if ($null -ne $fallbackWarning) {
+            $script:MwpDataPathWarningLogged[$fallbackWarning] = $true
+            Write-Warning $fallbackWarning
+        }
         if ($isNewFile) {
             Invoke-MwpLogRotation -Directory $directory -RetentionDays $retentionDays -Today $now
         }

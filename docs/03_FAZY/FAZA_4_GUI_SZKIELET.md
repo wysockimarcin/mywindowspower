@@ -24,6 +24,8 @@ FAZY 1, 2 i 3 zakończone.
 - Widoki `Ustawienia` (motyw, lista komputerów docelowych: dodawanie, edycja, usuwanie, zgodnie z decyzją o uwierzytelnianiu z FAZY 3) i `O programie`.
 - **Widok „Moduły" (D-031):** lista modułów wbudowanych i zainstalowanych (nazwa, `Id`, wersja, pochodzenie, stan walidacji); instalacja z pliku `.mwpmod` (wybór pliku, `Test-MwpModulePackage`, okno potwierdzenia z nazwą, wersją, `RequiredPermissions` i SHA-256 paczki, potem `Install-MwpModulePackage`); odinstalowanie modułu zainstalowanego z potwierdzeniem zawierającym jego nazwę (`Uninstall-MwpModulePackage`; zamyka otwarte instancje). Moduły bazowe i wbudowane bez przycisku odinstalowania. Logika instalacji jest w `MWP.Core` (FAZA 3), nie w kodzie widoku; długie operacje w tle.
 
+- **Katalog danych (D-032):** w `Ustawieniach` edycja `dataPath` (pole z podglądem ścieżki wynikowej, sprawdzenie zapisywalności, ostrzeżenie o trybie zapasowym `%LOCALAPPDATA%\MyWindowsPower`) i przycisk „Przenieś dane” (przeniesienie `logs` i `undo` do nowego katalogu: klasa Zmiana, podgląd, log, potwierdzenie, w tle, błąd nie zostawia danych w połowie; bez automatycznej migracji przy starcie). Przeniesienie modułów z paczek z `src/Modules/Installed` do katalogu danych (skanowanie w `Get-MwpModuleDefinition` i launcherze, przeniesienie istniejących instalacji, aktualizacja `.gitignore` i testów). Stan katalogu danych (ścieżka, tryb zapasowy) w `O programie` lub pasku stanu przez funkcję publiczną `MWP.Core` (`Get-MwpDataPath` jest wewnętrzna). Wybór miejsca przy instalacji — dopiero z instalatorem aplikacji.
+
 ## Poza zakresem
 Logika i dane obszarów, widgety Dashboardu (FAZA 5), uruchamianie samodzielne (FAZA 19).
 
@@ -39,6 +41,7 @@ Logika i dane obszarów, widgety Dashboardu (FAZA 5), uruchamianie samodzielne (
 - [ ] Tryby Embedded i Separate window
 - [ ] Widoki `Ustawienia` (w tym komputery docelowe) i `O programie`
 - [ ] Widok „Moduły": lista wbudowanych i zainstalowanych, instalacja z `.mwpmod` z oknem potwierdzenia (nazwa, wersja, uprawnienia, SHA-256), odinstalowanie z potwierdzeniem nazwą modułu (D-031)
+- [ ] Katalog danych (D-032): edycja `dataPath` w `Ustawieniach`, przycisk „Przenieś dane”, moduły z paczek w katalogu danych
 - [ ] Wspólne style i okno potwierdzenia z podglądem zmian
 - [ ] Launcher uruchamia okno GUI
 - [ ] Analiza statyczna i testy logiki (nie GUI) przechodzą

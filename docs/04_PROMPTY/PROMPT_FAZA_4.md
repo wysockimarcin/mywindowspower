@@ -21,6 +21,7 @@ Cel: okno WPF będące hostem modułów: nawigacja, motywy, bezpieczne wykonywan
 - tryby Embedded i Separate window,
 - widoki `Ustawienia` (w tym komputery docelowe) i `O programie`,
 - widok „Moduły" (D-031): lista wbudowanych i zainstalowanych, instalacja z pliku `.mwpmod` z oknem potwierdzenia (nazwa, wersja, `RequiredPermissions`, SHA-256), odinstalowanie z potwierdzeniem zawierającym nazwę modułu; logika w `MWP.Core` z FAZY 3, nie w kodzie widoku,
+- katalog danych (D-032): edycja `dataPath` w `Ustawieniach` (podgląd ścieżki, zapisywalność, ostrzeżenie o trybie zapasowym), przycisk „Przenieś dane” (logs i undo; Zmiana z podglądem, logiem i potwierdzeniem, w tle), przeniesienie modułów z paczek z `src/Modules/Installed` do katalogu danych; logika w `MWP.Core`, nie w kodzie widoku,
 - widoki-zaślepki dla wszystkich obszarów, wspólne style, okno potwierdzenia z podglądem zmian,
 - zgodność z PS 5.1 i 7.x.
 Jeśli środowisko nie jest Windows, napisz kod i testy statyczne, a punkty wymagające uruchomienia zapisz jako „DO WERYFIKACJI NA WINDOWS". Nie wykonuj pracy z innych faz.

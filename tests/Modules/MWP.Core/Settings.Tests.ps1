@@ -15,7 +15,10 @@ Describe 'Ustawienia aplikacji' {
         $configDirectory = Join-Path -Path $TestDrive -ChildPath 'config'
         $null = New-Item -ItemType Directory -Path $configDirectory -Force
         Copy-Item -LiteralPath (Join-Path -Path $root -ChildPath 'config\settings.example.json') -Destination (Join-Path -Path $configDirectory -ChildPath 'settings.example.json')
-        Mock -ModuleName MWP.Core Get-MwpDataPath { Join-Path -Path $TestDrive -ChildPath $Kind }
+        Mock -ModuleName MWP.Core Get-MwpDataPath {
+            $path = Join-Path -Path $TestDrive -ChildPath $Kind
+            if (Get-Variable -Name Detailed -ValueOnly -ErrorAction SilentlyContinue) { [pscustomobject]@{ Path = $path; Root = $TestDrive; Configured = ''; IsFallback = $false; Warning = $null } } else { $path }
+        }
         Mock -ModuleName MWP.Core Get-MwpConfigPath {
             [pscustomobject]@{
                 Example = Join-Path -Path $TestDrive -ChildPath 'config\settings.example.json'

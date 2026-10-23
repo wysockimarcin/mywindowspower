@@ -90,7 +90,7 @@ Zakres można zawężać. Usunięcie obszaru wymaga wpisu w `DECYZJE.md` i zmian
 - Uprawnienia administratora tylko dla operacji, które ich wymagają.
 - Brak zewnętrznych zależności ponad moduły Pester i PSScriptAnalyzer (dev) oraz narzędzia wbudowane w Windows (`winget`, `powercfg`, `netsh` itd.).
 - Komputery zdalne: tylko kanały wbudowane w Windows (np. WinRM/CIM, RDP), bez własnego agenta. Poświadczenia nigdy w jawnym tekście, w repozytorium ani w logach. Operacje zmieniające system na komputerze zdalnym wymagają potwierdzenia z nazwą komputera.
-- Dane i logi zostają na komputerach użytkownika.
+- Dane i logi zostają na komputerach użytkownika. Aplikacja ma jednego użytkownika i może leżeć w dowolnym folderze; moduły i dane (log, rejestr cofnięć) są domyślnie w folderze aplikacji (`data\`), a miejsce danych można zmienić kluczem `dataPath` w konfiguracji. Gdy folder jest niezapisywalny, dane trafiają do `%LOCALAPPDATA%\MyWindowsPower` z ostrzeżeniem (D-032).
 
 ## Materiały od użytkownika (opcjonalne)
 

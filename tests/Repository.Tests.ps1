@@ -48,6 +48,19 @@ Describe 'Plik .gitignore' {
     It 'wyklucza lokalne ustawienia użytkownika' {
         Get-Content -LiteralPath (Join-Path -Path $root -ChildPath '.gitignore') | Should -Contain 'config/settings.local.json'
     }
+
+    It 'wyklucza katalog danych aplikacji /data/ w katalogu głównym (D-032)' {
+        Get-Content -LiteralPath (Join-Path -Path $root -ChildPath '.gitignore') | Should -Contain '/data/'
+    }
+
+    It 'nie wyklucza danych modułów, np. src/Modules/MWP.Core/Data/protected-items.json' {
+        if (-not (Get-Command -Name git -ErrorAction SilentlyContinue)) {
+            Set-ItResult -Skipped -Because 'brak polecenia git'
+            return
+        }
+        $null = & git -C $root check-ignore -q -- 'src/Modules/MWP.Core/Data/protected-items.json'
+        $LASTEXITCODE | Should -Be 1 -Because 'plik danych modułu musi zostać w repozytorium'
+    }
 }
 
 Describe 'Materiały dla kolejnych faz' {

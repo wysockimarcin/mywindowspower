@@ -4,6 +4,10 @@ logs/
 *.tmp
 .cache/
 
+# Dane aplikacji: logi i rejestr cofnięć w folderze aplikacji (D-032). Ukośnik na początku:
+# tylko katalog główny (bez niego Git w Windows pominąłby też src/Modules/MWP.Core/Data/).
+/data/
+
 # Konfiguracja lokalna użytkownika (szablon: config/settings.example.json)
 config/settings.local.json
 

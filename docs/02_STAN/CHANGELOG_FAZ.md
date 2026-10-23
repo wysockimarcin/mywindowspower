@@ -17,6 +17,17 @@
 
 ---
 
+## Korekta FAZY 2 — miejsce danych aplikacji (2026-10-23)
+- Status: ZAKOŃCZONA (korekta, nie nowa faza)
+- Commit: `FAZA 2 (korekta): miejsce danych aplikacji w folderze aplikacji (D-032)` — hash do uzupełnienia na starcie FAZY 3; hash korekty D-031: `aa92c91`
+- Powód: aplikacja jest używana przez jednego użytkownika i może leżeć w dowolnym folderze; dane (log, rejestr cofnięć) mają być domyślnie obok aplikacji, z możliwością zmiany przez konfigurację. D-026 i D-028 zapisywały je w `%LOCALAPPDATA%\MyWindowsPower`.
+- Zrobiono: D-032; `Get-MwpDataPath` (klucz `dataPath`, domyślnie `<folder aplikacji>\data`, ścieżka względna od folderu aplikacji, bezwzględna ze zmiennymi środowiskowymi i UNC, tryb zapasowy `%LOCALAPPDATA%\MyWindowsPower` z ostrzeżeniem, `-Detailed`, `-Kind Fallback`), nowa `Test-MwpDirectoryWritable` (próba utworzenia i usunięcia pliku, wynik pamiętany w procesie), `Get-MwpConfigPath -ForWrite` i `Set-MwpSetting` (plik lokalny w trybie zapasowym), `Write-MwpLog` (ostrzeżenie `DataPath.Fallback` raz na proces, do 5 ponowień zapisu przy blokadzie pliku), `Write-MwpJsonFile` (tworzenie katalogu metodą .NET); `dataPath` w `config/settings.example.json`; `/data/` w `.gitignore`; opisy w `Write-MwpLog`, `Save-MwpUndoEntry`, `ARCHITEKTURA`, `CONTEXT`, `FAZA_2`, `STAN_PROJEKTU`; punkty D-032 w `PROMPT_FAZA_3.md` i w planie FAZY 4 (`FAZA_4_GUI_SZKIELET.md`, `PROMPT_FAZA_4.md`, `PLAN_FAZ.md`).
+- Testy: nowy `tests/Modules/MWP.Core/DataPath.Tests.ps1` (25 testów: domyślna ścieżka, względna, bezwzględna ze zmienną, spacje i polskie znaki, UNC, niezapisywalny katalog, niepoprawne ścieżki, ustawienia w trybie zapasowym, blokada pliku logu przez inny proces, brak zapisu do prawdziwego profilu i folderu repozytorium); `Repository.Tests.ps1` +2 (`/data/` w `.gitignore`, `Data/` modułu nie jest pomijany) i +4 automatyczne testy kodowania nowych plików. `.\tests\Invoke-Checks.ps1`, każda wersja w nowym procesie: 5.1.26100.9711 — 0 uwag, 420/420; 7.6.7 — 0 uwag, 420/420 (baza 393/393). BOM UTF-8 i CRLF zachowane.
+- Niezrobione / odroczone: edycja `dataPath` i „Przenieś dane” w Ustawieniach oraz przeniesienie modułów z paczek do katalogu danych — FAZA 4; wybór miejsca przy instalacji — z instalatorem aplikacji; migracji starych danych nie ma (decyzja).
+- Decyzje: D-032 (zastępuje miejsce danych z D-026 i D-028 oraz odrzucenie `./data/` w D-015 i D-019)
+- Do weryfikacji na Windows 11 (ręcznie): pierwszy zapis w `data` obok aplikacji i zachowanie w folderze niezapisywalnym.
+- Następna faza: FAZA 3 — Komputery docelowe i połączenia zdalne
+
 ## Korekta dokumentacji po FAZIE 2 — instalacja i usuwanie modułów z paczki (2026-10-23)
 - Status: ZAKOŃCZONA (korekta, nie nowa faza)
 - Commit: `FAZA 2 (korekta): instalacja i usuwanie modułów z paczki (D-031)` — hash do uzupełnienia na starcie FAZY 3 (razem z hashem FAZY 2)

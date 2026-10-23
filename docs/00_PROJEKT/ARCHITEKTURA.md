@@ -28,6 +28,7 @@ mywindowspower/
 ├── config/
 │   ├── settings.example.json       ← szablon ustawień (do repo)
 │   └── settings.local.json         ← ustawienia lokalne, w tym komputery docelowe (poza repo, FAZA 2–3)
+├── data/                           ← (D-032) dane aplikacji: logs/, undo/ (poza repo, `/data/` w .gitignore; miejsce z klucza dataPath)
 ├── src/
 │   ├── Modules/
 │   │   ├── MWP.<Obszar>/           ← budowa każdego modułu:
@@ -105,10 +106,11 @@ Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.2.0) jest wersją hosta (D-024). F
 |---|---|---|
 | Środowisko | `Get-MwpEnvironment`, `Test-MwpAdmin` | wersja PS i edycja, Windows 11 (kompilacja ≥ 22000), administrator, STA, ścieżka programu; dotyczą procesu hosta (`localhost`) |
 | Elewacja | `Request-MwpElevation` | na życzenie, nowy proces tego samego PowerShella przez UAC (D-027) |
-| Logowanie | `Write-MwpLog` | plik dzienny JSON Lines, komputer w każdym wpisie, rotacja, muteks, ukrywanie sekretów (D-026) |
+| Logowanie | `Write-MwpLog` | plik dzienny JSON Lines, komputer w każdym wpisie, rotacja, muteks, ponawianie przy blokadzie pliku, ukrywanie sekretów (D-026, D-032) |
+| Katalog danych | `Get-MwpDataPath` (wewnętrzna), `Test-MwpDirectoryWritable` | `dataPath` z konfiguracji, domyślnie `<folder aplikacji>\data`; tryb zapasowy `%LOCALAPPDATA%\MyWindowsPower` z ostrzeżeniem (D-032) |
 | Konfiguracja | `Get-MwpSetting`, `Set-MwpSetting` | szablon + plik lokalny, zapis atomowy, odporność na uszkodzony plik, migracje `schemaVersion` (D-025) |
 | Wynik | `New-MwpResult`, `Format-MwpOperationTarget` | standardowy obiekt wyniku; opis celu z nazwą komputera do potwierdzeń |
-| Cofanie | `Save-MwpUndoEntry`, `Get-MwpUndoEntry`, `Invoke-MwpUndo` | rejestr cofnięć w `%LOCALAPPDATA%\MyWindowsPower\undo\` (D-028) |
+| Cofanie | `Save-MwpUndoEntry`, `Get-MwpUndoEntry`, `Invoke-MwpUndo` | rejestr cofnięć w `<katalog danych>\undo\` (D-028, D-032) |
 | Punkt przywracania | `New-MwpRestorePoint` | CIM `SystemRestore`; limit częstotliwości i wyłączona ochrona obsłużone (D-029) |
 | Lista ochronna | `Test-MwpProtectedItem`, `Get-MwpProtectedItem` | dane w `MWP.Core\Data\protected-items.json` (D-029) |
 | Kontrakt modułu | `Get-MwpModuleDefinition`, `Test-MwpModuleDefinition` | odkrywanie bez importu, walidacja wersji i zależności (D-024); w FAZIE 2 tylko `src/Modules`, od FAZY 3 także `src/Modules/Installed` (D-031) |
@@ -324,9 +326,10 @@ Konsekwencje dla kodu (obowiązują od FAZY 2):
 
 ## Logi i konfiguracja
 
-- Logi (D-026): `%LOCALAPPDATA%\MyWindowsPower\logs\mwp-RRRR-MM-DD.log`, jeden wpis JSON na linię (UTF-8 bez BOM): `timestamp`, `level`, `computer`, `source`, `operation`, `message`, `user`, `processId`, opcjonalnie `data`. Próg `logLevel` (Debug/Info/Warning/Error), rotacja przy pierwszym wpisie dnia wg `logRetentionDays`. Operacje na komputerze zdalnym są logowane na hoście z nazwą komputera.
-- Rejestr cofnięć (D-028): `%LOCALAPPDATA%\MyWindowsPower\undo\<GUID>.json`.
-- Konfiguracja użytkownika: `config/settings.local.json` (poza repozytorium); szablon `config/settings.example.json` z polem `schemaVersion` jest jednocześnie źródłem wartości domyślnych (D-025). Od FAZY 3 zawiera sekcję `targets` (komputery docelowe: `localhost` i zdalne); nazwy prawdziwych komputerów, adresy i poświadczenia nigdy nie trafiają do repozytorium ani do szablonu.
+- Katalog danych (D-032): klucz `dataPath` w konfiguracji; pusty (domyślnie) = `<folder aplikacji>\data`; ścieżka względna liczona od folderu aplikacji (`$PSScriptRoot`, nie bieżący katalog); bezwzględna (dysk lub UNC) może zawierać zmienne środowiskowe. Zna go wyłącznie `Get-MwpDataPath` (`-Kind Root|Logs|Undo|Fallback`, `-Detailed`). Katalog niezapisywalny (próba utworzenia i usunięcia pliku, wynik pamiętany do końca procesu) lub ścieżka niepoprawna → tryb zapasowy `%LOCALAPPDATA%\MyWindowsPower` z ostrzeżeniem w wyniku i w logu (`DataPath.Fallback`, raz na proces). W trybie zapasowym także `settings.local.json` (gdy folder `config` jest niezapisywalny; istniejący plik w `config` ma pierwszeństwo). Bez automatycznej migracji starych danych. Moduły z paczek zostają w `src/Modules/Installed` do FAZY 4.
+- Logi (D-026, D-032): `<katalog danych>\logs\mwp-RRRR-MM-DD.log`, jeden wpis JSON na linię (UTF-8 bez BOM): `timestamp`, `level`, `computer`, `source`, `operation`, `message`, `user`, `processId`, opcjonalnie `data`. Próg `logLevel` (Debug/Info/Warning/Error), rotacja przy pierwszym wpisie dnia wg `logRetentionDays`. Operacje na komputerze zdalnym są logowane na hoście z nazwą komputera. Chwilowa blokada pliku (np. OneDrive) → do 5 ponowień (ok. 1,5 s), potem ostrzeżenie bez przerywania operacji.
+- Rejestr cofnięć (D-028, D-032): `<katalog danych>\undo\<GUID>.json`.
+- Konfiguracja użytkownika: `config/settings.local.json` (poza repozytorium; w trybie zapasowym `%LOCALAPPDATA%\MyWindowsPower\settings.local.json`, D-032); szablon `config/settings.example.json` z polem `schemaVersion` jest jednocześnie źródłem wartości domyślnych (D-025). Od FAZY 3 zawiera sekcję `targets` (komputery docelowe: `localhost` i zdalne); nazwy prawdziwych komputerów, adresy i poświadczenia nigdy nie trafiają do repozytorium ani do szablonu.
 - Zasady (D-015, wdrożone w FAZIE 2, D-025): zapis atomowy (plik tymczasowy, potem `File.Replace`/`File.Move`); uszkodzony plik nie blokuje startu — wartości domyślne, ostrzeżenie i log, a plik zostaje zachowany jako `settings.local.json.corrupt-RRRRMMDD-GGmmss`; nowsza `schemaVersion` niż obsługiwana → wartości domyślne, plik bez zmian; starsza → migracje krok po kroku (`Invoke-MwpSettingsMigration`); `Set-MwpSetting` przyjmuje tylko klucze z szablonu i wartość zgodnego typu.
 
 ## Testy

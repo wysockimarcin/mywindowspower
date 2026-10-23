@@ -3,6 +3,11 @@
 
 Set-StrictMode -Version Latest
 
+# Pamięć wyników Test-MwpDirectoryWritable (ścieżka -> bool) i ostrzeżeń o katalogu zapasowym
+# już zapisanych w logu (D-032). Nie dotyczy komputera docelowego (D-019).
+$script:MwpWritableDirectoryCache = @{}
+$script:MwpDataPathWarningLogged = @{}
+
 $public = @(Get-ChildItem -Path (Join-Path -Path $PSScriptRoot -ChildPath 'Public') -Filter '*.ps1' -File -ErrorAction SilentlyContinue)
 $private = @(Get-ChildItem -Path (Join-Path -Path $PSScriptRoot -ChildPath 'Private') -Filter '*.ps1' -File -ErrorAction SilentlyContinue)
 

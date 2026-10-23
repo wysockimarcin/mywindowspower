@@ -22,9 +22,8 @@
     )
 
     $directory = Split-Path -Parent $Path
-    if (-not (Test-Path -LiteralPath $directory)) {
-        $null = New-Item -ItemType Directory -Path $directory -Force
-    }
+    # Metoda .NET zamiast New-Item -Path: nawiasy [ ] w ścieżce nie są traktowane jak wzorzec.
+    $null = [IO.Directory]::CreateDirectory($directory)
 
     $json = ConvertTo-Json -InputObject $InputObject -Depth $Depth
     $temp = '{0}.{1}.tmp' -f $Path, [guid]::NewGuid().ToString('N')

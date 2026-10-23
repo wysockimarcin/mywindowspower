@@ -59,7 +59,6 @@ Fazy od FAZY 2 do FAZY 21 (patrz tabela). Istnieje tylko szkielet: moduły mają
 - Profile zgodności PSScriptAnalyzer dotyczą Windows 10 1809 / PS 5.1 i PS 7.0 — nowszych brak (D-018). Przy nowej wersji PSScriptAnalyzer sprawdzić, czy pojawiły się profile Windows 11 / PS 7.4+.
 - `tests/Modules.Tests.ps1`: lista oczekiwanych modułów trzeba uzupełnić o nowe moduły przy ich tworzeniu (`MWP.Remote` w FAZIE 3; `MWP.Disks`, `MWP.Processes`, `MWP.Accounts`, `MWP.Rdp`, `MWP.Screenshot` w FAZACH 15–18).
 - `config/settings.example.json`: sekcja `targets` (komputery docelowe, nazwa zastępcza) i migracja `schemaVersion` w FAZIE 3 (D-019). Manifesty modułów: pola kontraktu w FAZIE 2.
-- Zmiany w kodzie po korekcie dokumentacji nie były uruchamiane (brak Windows i `pwsh` w środowisku korekty): komunikat launchera („FAZIE 4") i nazwa testu w `Repository.Tests.ps1`. Przy najbliższym `.\tests\Invoke-Checks.ps1` upewnić się, że przechodzi (test sprawdza BOM).
 - Testy `Launcher.Tests.ps1` uruchamiają launcher w nowym procesie (ok. 2–3 s); przy rozbudowie launchera (GUI w FAZIE 4) trzeba dodać tryb bez okna do testów.
 
 ## Otwarte pytania do użytkownika
@@ -67,13 +66,12 @@ Fazy od FAZY 2 do FAZY 21 (patrz tabela). Istnieje tylko szkielet: moduły mają
 - Opis komputera zdalnego do zarządzania (system, czy ma włączony WinRM, domena czy grupa robocza, konto do logowania) — pytania na początku FAZY 3, odpowiedzi do `DECYZJE.md`.
 - Składnia samodzielnego launchera (`apprun`) — do zatwierdzenia w FAZIE 19.
 - Zakres shadowingu RDP i zrzutów ekranu zdalnego komputera — po zbadaniu ograniczeń w FAZIE 18.
-- Czy zainstalować PowerShell 7.x, żeby testować zgodność z 7.x na komputerze użytkownika? (obecnie brak `pwsh`; nie blokuje prac)
 
 ## Znane środowisko docelowe
 
 - Komputery docelowe (D-019): `localhost` (poniżej) oraz jeden komputer zdalny; jego nazwa i parametry są tylko w `config/settings.local.json` (poza repozytorium). System i konfiguracja komputera zdalnego — do ustalenia w FAZIE 3.
 - Windows 11 Pro, wersja 26H2, kompilacja 26300.9711 (`winver`) — potwierdzone w FAZIE 1.
-- PowerShell 5.1.26100.9711 — potwierdzone. **PowerShell 7 nie jest zainstalowany** (D-013).
+- PowerShell 5.1.26100.9711 — potwierdzone (D-013). PowerShell 7.6.7 — zainstalowany 2026-10-23 przez winget (pakiet MSIX, D-022).
 - Narzędzia: Pester 6.2.0, PSScriptAnalyzer 1.25.0 (CurrentUser).
 
 ## Materiały użytkownika
@@ -87,6 +85,6 @@ Fazy od FAZY 2 do FAZY 21 (patrz tabela). Istnieje tylko szkielet: moduły mają
 
 ## Punkty do weryfikacji na Windows 11
 
-- Launcher i `tests\Invoke-Checks.ps1` w PowerShell 7.x (`pwsh`) — brak `pwsh` na komputerze użytkownika (FAZA 1).
+- ~~Launcher i `tests\Invoke-Checks.ps1` w PowerShell 7.x~~ — **zweryfikowane 2026-10-23**: `tests\Invoke-Checks.ps1` w PowerShell 7.6.7 (Core) i 5.1.26100.9711 (Desktop): PSScriptAnalyzer bez uwag, Pester 175/175 (w tym testy launchera uruchamianego w bieżącym hoście). Pierwszy przebieg w 7.x ujawnił błąd testu `schemaVersion` (`[long]` zamiast `[int]`), poprawiony w `tests\Repository.Tests.ps1`.
 - Połączenie z komputerem zdalnym, `Invoke-MwpOnTarget` i zachowanie przy utracie łączności (FAZA 3 i fazy obszarów).
 - Zachowanie launchera przy zasadzie wykonywania `Restricted`/`AllSigned` (FAZA 1; przy `RemoteSigned` działa).

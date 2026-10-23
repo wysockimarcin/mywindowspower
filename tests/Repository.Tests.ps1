@@ -38,7 +38,9 @@ Describe 'Szablon ustawień config/settings.example.json' {
     It 'istnieje i jest poprawnym JSON-em z polem schemaVersion' {
         $path | Should -Exist
         $settings = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
-        $settings.schemaVersion | Should -BeOfType [int]
+        # ConvertFrom-Json zwraca liczby całkowite jako [int] w 5.1, a jako [long] w 7.x.
+        ($settings.schemaVersion -is [int] -or $settings.schemaVersion -is [long]) |
+            Should -BeTrue -Because 'schemaVersion musi być liczbą całkowitą'
     }
 }
 

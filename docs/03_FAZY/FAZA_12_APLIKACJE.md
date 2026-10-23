@@ -1,4 +1,4 @@
-# FAZA 11 — Aplikacje i winget
+# FAZA 12 — Aplikacje i winget
 
 **Status:** DO ZROBIENIA
 
@@ -6,7 +6,7 @@
 Porządek w zainstalowanych programach: lista, aktualizacje, odinstalowanie.
 
 ## Zależności
-FAZY 2 i 3 zakończone.
+FAZY 2, 3 i 4 zakończone.
 
 ## Zakres
 - Moduł `MWP.Apps`: lista programów z rejestru (`Uninstall`, 64/32 bit, użytkownik/maszyna) oraz pakietów Appx (`Get-AppxPackage`), z filtrami i sortowaniem.
@@ -16,6 +16,7 @@ FAZY 2 i 3 zakończone.
 - Zapis informacji o odinstalowanej aplikacji w logu (nazwa, wersja, wydawca); cofnięcie = ponowna instalacja przez winget, jeśli pakiet jest w repozytorium.
 - Widok `Apps.xaml`, operacje w tle z postępem.
 - Testy Pester z mockami `winget`.
+- Obsługa komputera docelowego (D-019): lista z rejestru (HKLM; HKCU tylko dla wskazanego profilu) działa zdalnie. **Do zbadania:** `winget` i pakiety Appx w kontekście sesji zdalnej bez zalogowanego użytkownika bywają niedostępne; zakres zdalny ustal po sprawdzeniu i zapisz w `DECYZJE.md`.
 
 ## Poza zakresem
 Instalacja z plików `.msi`/`.exe` spoza winget, czyszczenie resztek po odinstalowaniu.
@@ -28,16 +29,17 @@ Instalacja z plików `.msi`/`.exe` spoza winget, czyszczenie resztek po odinstal
 - [ ] Wyszukiwanie i instalacja pakietu
 - [ ] Widok `Apps.xaml`
 - [ ] Testy Pester, PSScriptAnalyzer
-- [ ] Dokumentacja zaktualizowana, commit `FAZA 11: ...`
+- [ ] Działa dla `localhost` i dla komputera zdalnego (kontekst wykonania `-Context`, błąd połączenia obsłużony na poziomie instancji)
+- [ ] Dokumentacja zaktualizowana, commit `FAZA 12: ...`
 
 ## Kryteria ukończenia
 Pakietów systemowych nie da się usunąć z GUI; parsowanie `winget` działa przy polskim systemie.
 
 ## Do weryfikacji na Windows 11
-`winget` na realnym systemie, odinstalowanie aplikacji testowej.
+`winget` na realnym systemie, odinstalowanie aplikacji testowej. Dodatkowo test na komputerze zdalnym użytkownika (obsługa zdalna, utrata połączenia).
 
 ## Wyniki
 (wypełnia Claude po zakończeniu fazy)
 
 ## Następna faza
-FAZA 12 — Prywatność i tweaki. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_12.md`.
+FAZA 13 — Prywatność i tweaki. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_13.md`.

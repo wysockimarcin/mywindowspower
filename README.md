@@ -1,11 +1,12 @@
 # mywindowspower
 
-Osobisty panel do zarządzania systemem Windows 11, napisany w PowerShellu z interfejsem graficznym WPF/XAML.
+Osobisty panel do zarządzania systemami Windows 11 — komputerem lokalnym (`localhost`) i komputerami zdalnymi — napisany w PowerShellu z interfejsem graficznym WPF/XAML.
 
 - **Platforma:** Windows 11
 - **Język:** PowerShell (działa w 7.x i w wbudowanym 5.1)
 - **GUI:** WPF + XAML, motyw jasny/ciemny
 - **Uruchamianie:** skryptem `.ps1`
+- **Komputery:** `localhost` i komputery zdalne; niezależne moduły, wiele instancji modułu, Dashboard z widgetami (zob. `docs/00_PROJEKT/ARCHITEKTURA.md`)
 
 ## Status
 
@@ -27,7 +28,7 @@ W katalogu repozytorium:
 .\Start-MyWindowsPower.ps1
 ```
 
-Launcher sprawdza wersję PowerShella, system i tryb STA (w razie potrzeby uruchamia się ponownie z `-STA`), wypisuje status administratora i importuje moduły z `src/Modules`. Niczego nie zmienia w systemie. Okno GUI pojawi się od FAZY 3.
+Launcher sprawdza wersję PowerShella, system i tryb STA (w razie potrzeby uruchamia się ponownie z `-STA`), wypisuje status administratora i importuje moduły z `src/Modules`. Niczego nie zmienia w systemie. Okno GUI pojawi się od FAZY 4, a obsługa komputerów zdalnych powstaje w FAZIE 3 (wymagania po stronie komputera zdalnego zostaną opisane tutaj w FAZIE 21).
 
 Jeśli PowerShell blokuje skrypty, ustaw dla swojego konta `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 

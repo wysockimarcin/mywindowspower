@@ -11,7 +11,7 @@
     - wypisuje status uprawnień administratora,
     - importuje moduły z src/Modules (najpierw MWP.Core).
 
-    Launcher niczego nie zmienia w systemie. Okno GUI powstanie w FAZIE 3.
+    Launcher niczego nie zmienia w systemie. Okno GUI powstanie w FAZIE 4.
 
 .PARAMETER NoRelaunch
     Wyłącza ponowne uruchomienie w trybie STA. Ustawiany automatycznie przy ponownym
@@ -151,5 +151,5 @@ if ($failed -gt 0) {
 }
 
 Write-LauncherMessage ("Zaimportowano moduły: {0}." -f $moduleDirs.Count) -Level Ok
-Write-LauncherMessage 'Okno aplikacji (GUI) zostanie dodane w FAZIE 3.'
+Write-LauncherMessage 'Okno aplikacji (GUI) zostanie dodane w FAZIE 4.'
 exit 0

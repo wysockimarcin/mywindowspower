@@ -1,4 +1,4 @@
-# FAZA 8 — Czyszczenie dysku
+# FAZA 9 — Czyszczenie dysku
 
 **Status:** DO ZROBIENIA
 
@@ -6,7 +6,7 @@
 Bezpieczne zwalnianie miejsca na dysku. To jedyny obszar z trwałym usuwaniem plików, więc bezpieczeństwo ma pierwszeństwo przed funkcjonalnością.
 
 ## Zależności
-FAZY 2 i 3 zakończone.
+FAZY 2, 3 i 4 zakończone.
 
 ## Zakres
 - Moduł `MWP.Cleanup`: definicje kategorii (dane, nie kod): pliki tymczasowe użytkownika (`%TEMP%`), `Windows\Temp`, kosz, pamięć podręczna miniatur, raporty błędów (WER), pamięć podręczna `SoftwareDistribution\Download`, Delivery Optimization, logi.
@@ -17,6 +17,7 @@ FAZY 2 i 3 zakończone.
 - Analiza magazynu składników: `DISM /Online /Cleanup-Image /AnalyzeComponentStore` (tylko analiza w tej fazie, czyszczenie opcjonalnie z ostrzeżeniem).
 - Widok `Cleanup.xaml`, operacje w tle z postępem i anulowaniem.
 - Testy Pester na katalogach tymczasowych utworzonych w teście (nigdy na realnych ścieżkach systemu).
+- Obsługa komputera docelowego (D-019): dla komputera zdalnego tylko lokalizacje systemowe (np. `Windows\Temp`, pamięć podręczna Windows Update); profile użytkowników zdalnych tylko po jawnym wyborze. Zasada „nigdy nie dotyka plików użytkownika" obowiązuje bezwzględnie; potwierdzenie czyszczenia zawiera nazwę komputera.
 
 ## Poza zakresem
 Czyszczenie przeglądarek, rejestru, duplikatów plików.
@@ -30,16 +31,17 @@ Czyszczenie przeglądarek, rejestru, duplikatów plików.
 - [ ] Analiza składników DISM
 - [ ] Widok `Cleanup.xaml`, postęp i anulowanie
 - [ ] Testy Pester na katalogach testowych
-- [ ] Dokumentacja zaktualizowana, commit `FAZA 8: ...`
+- [ ] Działa dla `localhost` i dla komputera zdalnego (kontekst wykonania `-Context`, błąd połączenia obsłużony na poziomie instancji)
+- [ ] Dokumentacja zaktualizowana, commit `FAZA 9: ...`
 
 ## Kryteria ukończenia
 Test sprawdza, że żadna operacja nie wychodzi poza zdefiniowane ścieżki; domyślnie nic nie jest usuwane bez potwierdzenia.
 
 ## Do weryfikacji na Windows 11
-Skan i czyszczenie realnych kategorii, najpierw `-WhatIf`.
+Skan i czyszczenie realnych kategorii, najpierw `-WhatIf`. Dodatkowo test na komputerze zdalnym użytkownika (obsługa zdalna, utrata połączenia).
 
 ## Wyniki
 (wypełnia Claude po zakończeniu fazy)
 
 ## Następna faza
-FAZA 9 — Windows Update. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_9.md`.
+FAZA 10 — Windows Update. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_10.md`.

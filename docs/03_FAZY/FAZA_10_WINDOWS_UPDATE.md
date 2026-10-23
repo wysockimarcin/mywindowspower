@@ -1,4 +1,4 @@
-# FAZA 9 — Windows Update
+# FAZA 10 — Windows Update
 
 **Status:** DO ZROBIENIA
 
@@ -6,7 +6,7 @@
 Kontrola nad aktualizacjami Windows bez zewnętrznych modułów.
 
 ## Zależności
-FAZY 2 i 3 zakończone.
+FAZY 2, 3 i 4 zakończone.
 
 ## Zakres
 - Moduł `MWP.Update` oparty o wbudowane API COM (`Microsoft.Update.Session`): wyszukiwanie oczekujących aktualizacji, historia aktualizacji, informacja o wymaganym restarcie.
@@ -16,6 +16,7 @@ FAZY 2 i 3 zakończone.
 - Instalacja aktualizacji: tylko jeśli da się to zrobić bezpiecznie przez COM, z potwierdzeniem; w przeciwnym razie odeślij do Ustawień Windows i zapisz w `DECYZJE.md`.
 - Widok `Update.xaml`, operacje w tle z postępem.
 - Testy Pester z mockami COM.
+- Obsługa komputera docelowego (D-019): **ograniczenie do zbadania** — metody pobierania i instalacji Windows Update Agent (COM) bywają niedostępne w sesji zdalnej. Odczyt stanu, historia, stan usług i reset komponentów zdalnie; instalację zdalną dodaj tylko, jeśli da się ją wykonać bez osłabiania zabezpieczeń (np. przez zadanie harmonogramu), inaczej odrocz z wpisem.
 
 ## Poza zakresem
 Ukrywanie sterowników, zarządzanie WSUS, moduł `PSWindowsUpdate` (zewnętrzna zależność).
@@ -29,16 +30,17 @@ Ukrywanie sterowników, zarządzanie WSUS, moduł `PSWindowsUpdate` (zewnętrzna
 - [ ] Decyzja o instalacji aktualizacji zapisana w `DECYZJE.md`
 - [ ] Widok `Update.xaml`
 - [ ] Testy Pester, PSScriptAnalyzer
-- [ ] Dokumentacja zaktualizowana, commit `FAZA 9: ...`
+- [ ] Działa dla `localhost` i dla komputera zdalnego (kontekst wykonania `-Context`, błąd połączenia obsłużony na poziomie instancji)
+- [ ] Dokumentacja zaktualizowana, commit `FAZA 10: ...`
 
 ## Kryteria ukończenia
 Wszystko działa bez dodatkowych modułów; reset jest odwracalny (zachowane stare foldery).
 
 ## Do weryfikacji na Windows 11
-Wyszukiwanie przez COM, pauza, reset komponentów (administrator).
+Wyszukiwanie przez COM, pauza, reset komponentów (administrator). Dodatkowo test na komputerze zdalnym użytkownika (obsługa zdalna, utrata połączenia).
 
 ## Wyniki
 (wypełnia Claude po zakończeniu fazy)
 
 ## Następna faza
-FAZA 10 — Sieć. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_10.md`.
+FAZA 11 — Sieć. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_11.md`.

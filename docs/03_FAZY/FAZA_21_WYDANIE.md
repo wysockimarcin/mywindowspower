@@ -1,4 +1,4 @@
-# FAZA 15 — Dokumentacja i wydanie
+# FAZA 21 — Dokumentacja i wydanie
 
 **Status:** DO ZROBIENIA
 
@@ -6,10 +6,11 @@
 Zamknięcie projektu: kompletna dokumentacja użytkowa i oznaczone wydanie.
 
 ## Zależności
-FAZA 14 zakończona.
+FAZA 20 zakończona.
 
 ## Zakres
 - `README.md` pełny: opis, wymagania (Windows 11, PS 5.1 lub 7.x), uruchamianie, ekrany/obszary, bezpieczeństwo zmian.
+- Sekcja o komputerach zdalnych: wymagania po stronie zdalnego komputera (np. WinRM), dodawanie komputera w `Ustawieniach`, uwierzytelnianie, ograniczenia znane z `DECYZJE.md`; użycie `apprun` (FAZA 19).
 - Uruchamianie skryptu: `ExecutionPolicy` (np. `powershell -ExecutionPolicy Bypass -File .\Start-MyWindowsPower.ps1` dla jednej sesji), `Unblock-File` dla pobranych plików, uruchamianie jako administrator.
 - Instrukcja użytkownika `docs/06_UZYTKOWNIK/INSTRUKCJA.md` (po polsku, obszar po obszarze, z opisem cofania zmian).
 - Opcjonalny skrypt tworzący skrót `.lnk` na pulpicie.
@@ -24,12 +25,13 @@ Nowe funkcje, `.exe`.
 ## Checklista
 - [ ] `README.md` pełny
 - [ ] Instrukcja uruchamiania (ExecutionPolicy, Unblock-File, administrator)
+- [ ] Sekcja o komputerach zdalnych w README i instrukcji
 - [ ] `docs/06_UZYTKOWNIK/INSTRUKCJA.md`
 - [ ] Skrypt skrótu (opcjonalnie)
 - [ ] Finalny `CHANGELOG`, `STAN_PROJEKTU.md`
 - [ ] Zgodność `ARCHITEKTURA.md` z kodem
 - [ ] Tag `v1.0.0`
-- [ ] Commit `FAZA 15: ...`
+- [ ] Commit `FAZA 21: ...`
 
 ## Kryteria ukończenia
 Osoba bez wiedzy o projekcie uruchomi go na czystym Windows 11 wyłącznie według README.

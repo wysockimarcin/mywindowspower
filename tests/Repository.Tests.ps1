@@ -49,7 +49,7 @@ Describe 'Plik .gitignore' {
 }
 
 Describe 'Materiały dla kolejnych faz' {
-    It 'zawiera mockup głównego okna docs/design/mockup-pulpit.png (FAZA 3)' {
+    It 'zawiera mockup głównego okna docs/design/mockup-pulpit.png (FAZA 4)' {
         Join-Path -Path $root -ChildPath 'docs\design\mockup-pulpit.png' | Should -Exist
     }
 }

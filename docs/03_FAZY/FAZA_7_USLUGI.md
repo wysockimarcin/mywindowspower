@@ -1,4 +1,4 @@
-# FAZA 6 — Usługi Windows
+# FAZA 7 — Usługi Windows
 
 **Status:** DO ZROBIENIA
 
@@ -6,7 +6,7 @@
 Bezpieczny przegląd i zmiana usług Windows.
 
 ## Zależności
-FAZY 2 i 3 zakończone.
+FAZY 2, 3 i 4 zakończone.
 
 ## Zakres
 - Moduł `MWP.Services`: lista usług (`Get-Service` + `Win32_Service` dla typu uruchomienia, konta, ścieżki, opisu), filtry (stan, typ, wyszukiwanie), start/stop/restart.
@@ -17,6 +17,7 @@ FAZY 2 i 3 zakończone.
 - Eksport i import profilu usług (JSON) z podglądem różnic.
 - Widok `Services.xaml`; operacje w tle.
 - Testy Pester z mockami.
+- Obsługa komputera docelowego (D-019): odczyt i zmiany usług przez kontekst wykonania; lista ochronna obowiązuje identycznie dla komputera zdalnego; nazwy usług walidowane przed użyciem w poleceniach. Widget „Status usług" dla Dashboardu.
 
 ## Poza zakresem
 Edycja ścieżek binarnych usług, usuwanie usług.
@@ -30,16 +31,17 @@ Edycja ścieżek binarnych usług, usuwanie usług.
 - [ ] Eksport/import profilu z podglądem różnic
 - [ ] Widok `Services.xaml`
 - [ ] Testy Pester, PSScriptAnalyzer
-- [ ] Dokumentacja zaktualizowana, commit `FAZA 6: ...`
+- [ ] Działa dla `localhost` i dla komputera zdalnego (kontekst wykonania `-Context`, błąd połączenia obsłużony na poziomie instancji)
+- [ ] Dokumentacja zaktualizowana, commit `FAZA 7: ...`
 
 ## Kryteria ukończenia
 Usług z listy ochronnej nie da się wyłączyć z GUI; każda zmiana jest w logu i odwracalna.
 
 ## Do weryfikacji na Windows 11
-Zmiana typu uruchomienia i stanu na usłudze testowej (nie krytycznej), z uprawnieniami administratora.
+Zmiana typu uruchomienia i stanu na usłudze testowej (nie krytycznej), z uprawnieniami administratora. Dodatkowo test na komputerze zdalnym użytkownika (obsługa zdalna, utrata połączenia).
 
 ## Wyniki
 (wypełnia Claude po zakończeniu fazy)
 
 ## Następna faza
-FAZA 7 — Autostart i harmonogram. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_7.md`.
+FAZA 8 — Autostart i harmonogram. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_8.md`.

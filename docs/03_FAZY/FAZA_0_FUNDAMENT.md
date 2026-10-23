@@ -27,8 +27,8 @@ Jakikolwiek kod aplikacji.
 - [x] `docs/00_PROJEKT/` — CONTEXT, ARCHITEKTURA, DECYZJE, SLOWNIK
 - [x] `docs/01_PLAN/PLAN_FAZ.md`
 - [x] `docs/02_STAN/` — STAN_PROJEKTU, CHANGELOG_FAZ
-- [x] `docs/03_FAZY/` — plik dla każdej fazy 0–15
-- [x] `docs/04_PROMPTY/` — prompt dla każdej fazy 0–15
+- [x] `docs/03_FAZY/` — plik dla każdej fazy 0–15 (numeracja sprzed D-020; obecnie 0–21)
+- [x] `docs/04_PROMPTY/` — prompt dla każdej fazy 0–15 (numeracja sprzed D-020; obecnie 0–21)
 - [x] `docs/05_PROCES/PROCEDURA_FAZY.md`
 - [x] Commit `FAZA 0: ...`
 - [ ] `git push` (wykonuje użytkownik)

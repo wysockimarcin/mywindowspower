@@ -50,6 +50,26 @@ Describe 'Rejestr cofnięć' {
             New-MwpResult -Success (-not $Fail) -Message $message -ComputerName $ComputerName
         }
 
+        function global:Set-MwpUndoContextProbe {
+            [CmdletBinding(SupportsShouldProcess)]
+            param(
+                [string] $Value,
+                [PSTypeName('MWP.ExecutionContext')] [object] $Context,
+                [string] $RecordPath
+            )
+
+            $computer = if ($null -ne $Context) { $Context.ComputerName } else { 'localhost (domyślnie)' }
+            if ($PSCmdlet.ShouldProcess($Value)) {
+                @{ Value = $Value; ComputerName = $computer } | ConvertTo-Json | Set-Content -LiteralPath $RecordPath -Encoding UTF8
+            }
+            New-MwpResult -Success $true -Message 'Sonda: ok' -ComputerName $computer
+        }
+
+        function Get-FakeContext {
+            param([string] $Name, [string] $Mode = 'Remote')
+            [pscustomobject]@{ PSTypeName = 'MWP.ExecutionContext'; ComputerName = $Name; Mode = $Mode }
+        }
+
         $entryArguments = @{
             Module      = 'Testy'
             Operation   = 'Test.Change'
@@ -63,6 +83,7 @@ Describe 'Rejestr cofnięć' {
 
     AfterAll {
         Remove-Item -LiteralPath 'Function:\Set-MwpUndoTestProbe' -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath 'Function:\Set-MwpUndoContextProbe' -Force -ErrorAction SilentlyContinue
         Remove-Module -Name MWP.Core -Force -ErrorAction SilentlyContinue
     }
 
@@ -203,6 +224,57 @@ Describe 'Rejestr cofnięć' {
 
         It 'zgłasza nieznany wpis' {
             (Invoke-MwpUndo -Id ([guid]::NewGuid().ToString())).Success | Should -BeFalse
+        }
+    }
+
+    Context 'Invoke-MwpUndo z kontekstem wykonania (FAZA 3)' {
+        BeforeAll {
+            $contextArguments = $entryArguments.Clone()
+            $contextArguments.UndoCommand = 'Set-MwpUndoContextProbe'
+        }
+
+        It 'wpis z komputera zdalnego dla polecenia z -Context wymaga kontekstu' {
+            $entry = Save-MwpUndoEntry @contextArguments -ComputerName $remoteComputer -UndoParameters @{ Value = 'A'; RecordPath = $record }
+
+            $result = Invoke-MwpUndo -Id $entry.Id
+
+            $result.Success | Should -BeFalse
+            $result.Message | Should -Match 'wymaga kontekstu'
+            $record | Should -Not -Exist
+            (Get-MwpUndoEntry -Id $entry.Id).Status | Should -Be 'Pending'
+        }
+
+        It 'przekazuje kontekst komputera z wpisu do polecenia cofającego' {
+            $entry = Save-MwpUndoEntry @contextArguments -ComputerName $remoteComputer -UndoParameters @{ Value = 'A'; RecordPath = $record }
+
+            $result = Invoke-MwpUndo -Id $entry.Id -Context (Get-FakeContext -Name $remoteComputer)
+
+            $result.Success | Should -BeTrue
+            $result.ComputerName | Should -Be 'PC-ZDALNY'
+            (Get-Content -LiteralPath $record -Raw -Encoding UTF8 | ConvertFrom-Json).ComputerName | Should -Be 'PC-ZDALNY'
+        }
+
+        It 'odrzuca kontekst innego komputera niż we wpisie' {
+            $entry = Save-MwpUndoEntry @contextArguments -ComputerName $remoteComputer -UndoParameters @{ Value = 'A'; RecordPath = $record }
+
+            $result = Invoke-MwpUndo -Id $entry.Id -Context (Get-FakeContext -Name $computerOne)
+
+            $result.Success | Should -BeFalse
+            $result.Message | Should -Match 'Kontekst dotyczy komputera'
+            $record | Should -Not -Exist
+        }
+
+        It 'wpis lokalny bez kontekstu wywołuje polecenie bez -Context (komputer lokalny domyślnie)' {
+            $entry = Save-MwpUndoEntry @contextArguments -UndoParameters @{ Value = 'A'; RecordPath = $record }
+
+            (Invoke-MwpUndo -Id $entry.Id).Success | Should -BeTrue
+            (Get-Content -LiteralPath $record -Raw -Encoding UTF8 | ConvertFrom-Json).ComputerName | Should -Be 'localhost (domyślnie)'
+        }
+
+        It 'wpis lokalny przyjmuje kontekst lokalny' {
+            $entry = Save-MwpUndoEntry @contextArguments -UndoParameters @{ Value = 'A'; RecordPath = $record }
+
+            (Invoke-MwpUndo -Id $entry.Id -Context (Get-FakeContext -Name 'localhost' -Mode 'Local')).Success | Should -BeTrue
         }
     }
 }

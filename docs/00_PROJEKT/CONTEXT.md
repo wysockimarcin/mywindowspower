@@ -45,7 +45,7 @@ Wniosek dla projektu: **zgodność z 5.1 jest wymaganiem podstawowym** (D-002, D
 | Komputer | Opis |
 |---|---|
 | `localhost` | Komputer lokalny opisany wyżej. Operacje wykonywane bezpośrednio, bez zdalnego wywołania. |
-| Komputer zdalny | Jeden zdalny komputer użytkownika (nazwa tylko w `config/settings.local.json`). **PowerShell 7 nie jest na nim zainstalowany** (informacja od użytkownika, 2026-10-23) — kod wykonywany zdalnie musi działać w Windows PowerShell 5.1. System, konfiguracja WinRM, domena lub grupa robocza i konto — **do ustalenia z użytkownikiem na początku FAZY 3**. |
+| Komputer zdalny | Jeden zdalny komputer użytkownika (nazwa tylko w `config/settings.local.json`). **Windows 11, grupa robocza, WinRM włączony (HTTP, port 5985), logowanie kontem podawanym przez `Get-Credential` na żądanie** (odpowiedzi z FAZY 3, D-033). **PowerShell 7 nie jest na nim zainstalowany** — kod wykonywany zdalnie musi działać w Windows PowerShell 5.1. Komputer lokalny potrzebuje wpisu tej nazwy w `TrustedHosts` klienta WinRM (ręcznie, instrukcja w `ARCHITEKTURA.md`). |
 
 Nazw prawdziwych komputerów, adresów i poświadczeń nie zapisujemy w repozytorium (szablon: `config/settings.example.json`).
 
@@ -80,7 +80,7 @@ Zakres można zawężać. Usunięcie obszaru wymaga wpisu w `DECYZJE.md` i zmian
 - Pakowanie do `.exe`, instalator, aktualizacje automatyczne.
 - Własny agent lub serwer zdalny, aktualizacje modułów (nową wersję modułu instaluje się po odinstalowaniu starej; instalacja i usuwanie modułów z paczki są w zakresie, D-031), wielojęzyczność, licencjonowanie.
 - Instalowanie czegokolwiek na komputerach zdalnych (moduły instaluje się tylko lokalnie, D-031).
-- Zdalne komputery z systemem innym niż Windows (do potwierdzenia w FAZIE 3, gdy użytkownik opisze komputer zdalny).
+- Zdalne komputery z systemem innym niż Windows (potwierdzone w FAZIE 3: komputer zdalny użytkownika to Windows 11, D-033).
 - Obsługa Windows 10 i starszych (nie jest wymagana; nie psuj, ale nie testuj).
 - Zbieranie telemetrii lub wysyłanie danych poza komputery użytkownika.
 

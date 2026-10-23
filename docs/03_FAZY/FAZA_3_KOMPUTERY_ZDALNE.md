@@ -1,6 +1,6 @@
 # FAZA 3 — Komputery docelowe i połączenia zdalne
 
-**Status:** DO ZROBIENIA
+**Status:** ZAKOŃCZONA (2026-10-23; połączenie z prawdziwym komputerem zdalnym — do weryfikacji ręcznej na Windows 11)
 
 ## Cel
 Aplikacja zarządza komputerem lokalnym (`localhost`) i komputerami zdalnymi (D-019). Ta faza dostarcza model komputera docelowego, jawny kontekst wykonania, warstwę połączeń i model instancji modułu. Korzystają z nich wszystkie późniejsze moduły. Nie istnieje globalny „bieżący komputer": każda instancja modułu ma własny kontekst.
@@ -34,20 +34,20 @@ FAZY 1 i 2 zakończone.
 GUI (wybór komputera w oknie, statusy połączeń, widok „Moduły" → FAZA 4), logika obszarów (FAZY 5–18), instalator i konfiguracja zdalnego komputera przez aplikację (tylko instrukcja; dotyczy konfiguracji komputera zdalnego, nie instalacji modułów — ta jest w zakresie, D-031), aktualizacja modułów przez host (poza projektem, D-031), usuwanie widgetów odinstalowanego modułu (FAZA 5).
 
 ## Checklista
-- [ ] Pytania o komputer zdalny zadane, odpowiedzi w `DECYZJE.md`
-- [ ] Moduł `MWP.Remote` z manifestem i testem importu
-- [ ] Rejestr komputerów, `localhost` zawsze dostępny, szablon `targets` w `settings.example.json`
-- [ ] `New-MwpExecutionContext` (niezmienny kontekst)
-- [ ] `New-MwpModuleInstance` i cykl życia instancji
-- [ ] `Connect-`/`Disconnect-`/`Test-MwpTarget`, `Invoke-MwpOnTarget` (lokalnie i zdalnie)
-- [ ] Decyzja o transporcie i uwierzytelnianiu w `DECYZJE.md`, opis w `ARCHITEKTURA.md`
-- [ ] Izolacja błędów i stany połączenia
-- [ ] `Test-MwpModulePackage`, `Install-MwpModulePackage`, `Uninstall-MwpModulePackage` (D-031)
-- [ ] `Get-MwpModuleDefinition` skanuje `src/Modules` i `src/Modules/Installed` (zgodność wsteczna testów), launcher importuje moduły zainstalowane
-- [ ] Rejestr zainstalowanych modułów w `settings.local.json`, zamykanie instancji przy odinstalowaniu, moduły bazowe i wbudowane nieusuwalne
-- [ ] Testy paczek (wyjście poza folder, dwa foldery główne, kolizja `Id`, brak zależności, błąd w trakcie instalacji, odinstalowanie modułu bazowego i wbudowanego)
-- [ ] Testy Pester (w tym dwie instancje i utrata połączenia) przechodzą, PSScriptAnalyzer bez uwag
-- [ ] Dokumentacja zaktualizowana, commit `FAZA 3: ...`
+- [x] Pytania o komputer zdalny zadane, odpowiedzi w `DECYZJE.md` — D-033 (Windows 11, WinRM HTTP 5985, grupa robocza, Get-Credential na żądanie)
+- [x] Moduł `MWP.Remote` z manifestem i testem importu — `src/Modules/MWP.Remote/`, `tests/Modules.Tests.ps1` (lista oczekiwanych modułów)
+- [x] Rejestr komputerów, `localhost` zawsze dostępny, szablon `targets` w `settings.example.json` — `Get-`/`Add-`/`Remove-MwpTarget`, `schemaVersion` 2 z migracją; `Targets.Tests.ps1`, `Settings.Tests.ps1`
+- [x] `New-MwpExecutionContext` (niezmienny kontekst) — `ExecutionContext.Tests.ps1`
+- [x] `New-MwpModuleInstance` i cykl życia instancji — `Initialize-`/`Close-`/`Get-MwpModuleInstance`; `Instances.Tests.ps1`
+- [x] `Connect-`/`Disconnect-`/`Test-MwpTarget`, `Invoke-MwpOnTarget` (lokalnie i zdalnie) — zdalnie z mockami adaptera transportu; `Connection.Tests.ps1`; prawdziwe połączenie: DO WERYFIKACJI NA WINDOWS
+- [x] Decyzja o transporcie i uwierzytelnianiu w `DECYZJE.md`, opis w `ARCHITEKTURA.md` — D-034, sekcje „Kontekst wykonania…", „Komputery docelowe i połączenia zdalne", instrukcja konfiguracji
+- [x] Izolacja błędów i stany połączenia — D-036; `Connection.Tests.ps1` (utrata połączenia z jednym komputerem), `Instances.Tests.ps1`, `Operations.Tests.ps1` (limit równoległości, limit czasu, anulowanie)
+- [x] `Test-MwpModulePackage`, `Install-MwpModulePackage`, `Uninstall-MwpModulePackage` (D-031) — oraz `Get-MwpInstalledModule`; `ModulePackage.Tests.ps1`
+- [x] `Get-MwpModuleDefinition` skanuje `src/Modules` i `src/Modules/Installed` (zgodność wsteczna testów), launcher importuje moduły zainstalowane — `ModuleContract.Tests.ps1`, `Launcher.Tests.ps1` (kopia aplikacji na TestDrive)
+- [x] Rejestr zainstalowanych modułów w `settings.local.json`, zamykanie instancji przy odinstalowaniu, moduły bazowe i wbudowane nieusuwalne — `ModulePackage.Tests.ps1`
+- [x] Testy paczek (wyjście poza folder, dwa foldery główne, kolizja `Id`, brak zależności, błąd w trakcie instalacji, odinstalowanie modułu bazowego i wbudowanego) — `ModulePackage.Tests.ps1`
+- [x] Testy Pester (w tym dwie instancje i utrata połączenia) przechodzą, PSScriptAnalyzer bez uwag — 5.1.26100.9711 i 7.6.7: 0 uwag, 660/660
+- [x] Dokumentacja zaktualizowana, commit `FAZA 3: ...`
 
 ## Kryteria ukończenia
 Funkcja obszaru może wykonać operację dla `localhost` albo komputera zdalnego tym samym interfejsem, a awaria jednego komputera nie wpływa na pozostałe instancje. Moduł z poprawnej paczki `.mwpmod` instaluje się do `src/Modules/Installed/`, jest odkrywany i importowany przez launcher i daje się odinstalować bez śladów poza logami i rejestrem cofnięć; błędna paczka jest odrzucana i niczego nie zostawia.
@@ -56,7 +56,16 @@ Funkcja obszaru może wykonać operację dla `localhost` albo komputera zdalnego
 Połączenie z komputerem zdalnym użytkownika (uwierzytelnienie, `Invoke-MwpOnTarget`, odczyt), test na `localhost`, zachowanie przy wyłączonym komputerze zdalnym i przy złych poświadczeniach. Instalacja i odinstalowanie przykładowej paczki `.mwpmod` na prawdziwym dysku (poza `TestDrive`) i import modułu przez launcher.
 
 ## Wyniki
-(wypełnia Claude po zakończeniu fazy)
+Zakończona 2026-10-23.
+
+- **Baza przed zmianami:** `.\tests\Invoke-Checks.ps1` w nowych procesach — 5.1.26100.9711: 0 uwag, 420/420; 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`): 0 uwag, 420/420.
+- **Wynik końcowy:** 5.1.26100.9711 — 0 uwag, 660/660; 7.6.7 — 0 uwag, 660/660 (+240 testów).
+- **`MWP.Remote` 0.3.0 (moduł bazowy):** rejestr komputerów (`Get-`/`Add-`/`Remove-MwpTarget`), kontekst wykonania (`New-MwpExecutionContext`, pola tylko do odczytu, obiekt połączenia ze stanem), połączenia (`Connect-`/`Disconnect-`/`Test-MwpTarget`), wykonanie (`Invoke-MwpOnTarget`, `Get-MwpCimSessionParameter`), operacje asynchroniczne w puli runspace'ów (`Start-`/`Wait-`/`Stop-MwpOperation`), instancje modułów (`New-`/`Initialize-`/`Close-`/`Get-MwpModuleInstance`), adapter transportu WinRM/CIM w funkcjach prywatnych.
+- **`MWP.Core` 0.3.0:** paczki modułów (`Test-`/`Install-`/`Uninstall-MwpModulePackage`, `Get-MwpInstalledModule`), odkrywanie w dwóch katalogach (`Source`, `IsBase`), `-Context` w `New-MwpRestorePoint` (punkt na komputerze zdalnym) i `Invoke-MwpUndo`, wspólny zapis ustawień lokalnych (`Write-MwpLocalSetting`), szablon ustawień w schemacie 2 z migracją zachowującą `dataPath`.
+- **Launcher:** importuje moduły z `src/Modules/Installed` po wbudowanych.
+- **Decyzje:** D-033 (komputer zdalny), D-034 (transport i uwierzytelnianie), D-035 (kontekst i instancje; rozstrzyga dług D-024 i przejściowe `-ComputerName`), D-036 (wykonanie zdalne, izolacja, pula), D-037 (paczki, schemat 2).
+- **Test dymny (tylko odczyt) na localhost w 5.1:** `Invoke-MwpOnTarget` i `Start-`/`Wait-MwpOperation` zwróciły wersję PowerShella i nazwę systemu.
+- **Ograniczenia:** połączenie z prawdziwym komputerem zdalnym nie było wykonywane w tej rozmowie (wymaga poświadczeń i wpisu `TrustedHosts`, które wykonuje użytkownik); ścieżki zdalne są pokryte testami z mockami adaptera transportu.
 
 ## Następna faza
 FAZA 4 — Szkielet GUI i host modułów. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_4.md`.

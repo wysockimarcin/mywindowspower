@@ -48,7 +48,11 @@ Describe 'Start-MyWindowsPower.ps1' {
         }
 
         It 'importuje wszystkie moduły' {
-            $count = @(Get-ChildItem -Path (Join-Path -Path (Split-Path -Parent $launcher) -ChildPath 'src\Modules') -Directory -Filter 'MWP.*').Count
+            $modules = Join-Path -Path (Split-Path -Parent $launcher) -ChildPath 'src\Modules'
+            $count = @(Get-ChildItem -Path $modules -Directory -Filter 'MWP.*').Count
+            if (Test-Path -LiteralPath (Join-Path -Path $modules -ChildPath 'Installed')) {
+                $count += @(Get-ChildItem -Path (Join-Path -Path $modules -ChildPath 'Installed') -Directory -Filter 'MWP.*').Count
+            }
             $result.Text | Should -Match ("Zaimportowano moduły: {0}\." -f $count)
         }
     }
@@ -62,6 +66,48 @@ Describe 'Start-MyWindowsPower.ps1' {
             $result.Text | Should -Match 'Ponowne uruchomienie z parametrem -STA'
             $result.Text | Should -Match 'Tryb wątku: STA'
             $result.ExitCode | Should -Be 0
+        }
+    }
+
+    Context 'moduł zainstalowany z paczki (src\Modules\Installed, D-031)' {
+        BeforeAll {
+            # Kopia aplikacji na TestDrive: instalacja nie dotyka folderu repozytorium.
+            $repository = Split-Path -Parent $launcher
+            $app = Join-Path -Path $TestDrive -ChildPath 'Aplikacja'
+            $null = New-Item -ItemType Directory -Path (Join-Path -Path $app -ChildPath 'src') -Force
+            $null = New-Item -ItemType Directory -Path (Join-Path -Path $app -ChildPath 'config') -Force
+            Copy-Item -LiteralPath $launcher -Destination $app
+            Copy-Item -LiteralPath (Join-Path -Path $repository -ChildPath 'src\Modules') -Destination (Join-Path -Path $app -ChildPath 'src') -Recurse
+            Remove-Item -LiteralPath (Join-Path -Path $app -ChildPath 'src\Modules\Installed') -Recurse -Force -ErrorAction SilentlyContinue
+            Copy-Item -LiteralPath (Join-Path -Path $repository -ChildPath 'config\settings.example.json') -Destination (Join-Path -Path $app -ChildPath 'config')
+            $builtInCount = @(Get-ChildItem -LiteralPath (Join-Path -Path $app -ChildPath 'src\Modules') -Directory -Filter 'MWP.*').Count
+
+            $probe = Join-Path -Path $app -ChildPath 'src\Modules\Installed\MWP.Probe'
+            $null = New-Item -ItemType Directory -Path $probe -Force
+            $manifest = @(
+                '@{'
+                "    RootModule = 'MWP.Probe.psm1'"
+                "    ModuleVersion = '1.0.0'"
+                "    Description = 'Moduł testowy z paczki'"
+                "    PowerShellVersion = '5.1'"
+                "    FunctionsToExport = @('Get-MwpProbeModuleInfo')"
+                "    PrivateData = @{ MWP = @{ ContractVersion = 1; Id = 'Probe'; Name = 'Sonda'; EntryPoint = 'Get-MwpProbeModuleInfo'; MinimumHostVersion = '0.3.0';"
+                "        Dependencies = @(@{ Id = 'Core'; MinimumVersion = '0.3.0' }); Capabilities = @('Read'); SupportedPresentationModes = @('CLI');"
+                "        RequiredPermissions = @('User'); ConfigurationSchema = @{} } }"
+                '}'
+            ) -join "`r`n"
+            Set-Content -LiteralPath (Join-Path -Path $probe -ChildPath 'MWP.Probe.psd1') -Value $manifest -Encoding UTF8
+            Set-Content -LiteralPath (Join-Path -Path $probe -ChildPath 'MWP.Probe.psm1') -Encoding UTF8 `
+                -Value "function Get-MwpProbeModuleInfo { 'MWP.Probe' }`r`nExport-ModuleMember -Function Get-MwpProbeModuleInfo"
+
+            $output = & $hostPath -NoProfile -STA -File (Join-Path -Path $app -ChildPath 'Start-MyWindowsPower.ps1') 2>&1 | ForEach-Object { "$_" }
+            $installedResult = [pscustomobject]@{ ExitCode = $LASTEXITCODE; Text = $output -join [Environment]::NewLine }
+        }
+
+        It 'importuje moduł zainstalowany po wbudowanych i kończy się kodem 0' {
+            $installedResult.ExitCode | Should -Be 0 -Because $installedResult.Text
+            $installedResult.Text | Should -Match 'MWP\.Probe \(z paczki\)'
+            $installedResult.Text | Should -Match ("Zaimportowano moduły: {0}\." -f ($builtInCount + 1))
         }
     }
 }

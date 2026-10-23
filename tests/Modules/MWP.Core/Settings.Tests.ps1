@@ -92,6 +92,51 @@ Describe 'Ustawienia aplikacji' {
         }
     }
 
+    Context 'migracja schematu 1 -> 2 (FAZA 3)' {
+        It 'szablon ma schemaVersion 2 i klucze targets, installedModules, modules' {
+            $defaults.schemaVersion | Should -Be 2
+            @($defaults.PSObject.Properties.Name) | Should -Contain 'targets'
+            @($defaults.PSObject.Properties.Name) | Should -Contain 'installedModules'
+            @($defaults.PSObject.Properties.Name) | Should -Contain 'modules'
+        }
+
+        It 'wpis przykładowy w szablonie nie zawiera prawdziwej nazwy komputera ani hasła' {
+            $example = @($defaults.targets)
+            $example.Count | Should -Be 1
+            $example[0].isExample | Should -BeTrue
+            $example[0].name | Should -Be 'NAZWA-KOMPUTERA'
+            @($example[0].PSObject.Properties.Name) | Should -Not -Contain 'password'
+        }
+
+        It 'plik w schemacie 1 jest migrowany bez ostrzeżeń i zachowuje dataPath oraz inne nadpisania' {
+            Set-Content -LiteralPath $localPath -Value '{ "schemaVersion": 1, "dataPath": "Dane MWP", "logLevel": "Debug" }' -Encoding UTF8
+
+            $settings = Get-MwpSetting -WarningVariable warnings
+            $warnings | Should -BeNullOrEmpty
+            $settings.dataPath | Should -Be 'Dane MWP'
+            $settings.logLevel | Should -Be 'Debug'
+            @($settings.targets).Count | Should -Be 0 -Because 'migracja dodaje pustą listę zamiast wpisu przykładowego'
+            @($settings.installedModules).Count | Should -Be 0
+        }
+
+        It 'pierwszy zapis po migracji zapisuje schemaVersion 2 i zachowuje dataPath' {
+            Set-Content -LiteralPath $localPath -Value '{ "schemaVersion": 1, "dataPath": "Dane MWP" }' -Encoding UTF8
+
+            (Set-MwpSetting -Name theme -Value 'Dark').Success | Should -BeTrue
+
+            $saved = Get-Content -LiteralPath $localPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            $saved.schemaVersion | Should -Be 2
+            $saved.dataPath | Should -Be 'Dane MWP'
+            $saved.theme | Should -Be 'Dark'
+            @($saved.PSObject.Properties.Name) | Should -Contain 'targets'
+        }
+
+        It 'przyjmuje pustą listę jako wartość ustawienia (np. ostatni komputer usunięty z rejestru)' {
+            (Set-MwpSetting -Name targets -Value @()).Success | Should -BeTrue
+            @(Get-MwpSetting -Name targets).Count | Should -Be 0
+        }
+    }
+
     Context 'zapis' {
         It 'zapisuje wartość atomowo i zwraca wynik z wpisem cofnięcia' {
             $result = Set-MwpSetting -Name logLevel -Value 'Debug'
@@ -103,7 +148,7 @@ Describe 'Ustawienia aplikacji' {
             $result.After | Should -Be 'Debug'
             $result.UndoId | Should -Not -BeNullOrEmpty
             Get-MwpSetting -Name logLevel | Should -Be 'Debug'
-            (Get-Content -LiteralPath $localPath -Raw -Encoding UTF8 | ConvertFrom-Json).schemaVersion | Should -Be 1
+            (Get-Content -LiteralPath $localPath -Raw -Encoding UTF8 | ConvertFrom-Json).schemaVersion | Should -Be $defaults.schemaVersion
             @(Get-ChildItem -LiteralPath $configDirectory -Filter '*.tmp').Count | Should -Be 0
             (Get-MwpUndoEntry -Id $result.UndoId).UndoCommand | Should -Be 'Set-MwpSetting'
         }

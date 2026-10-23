@@ -5,14 +5,22 @@
 
     .DESCRIPTION
         Wywołuje polecenie przywracające zapisane we wpisie (UndoCommand z UndoParameters).
-        Gdy polecenie ma parametr ComputerName, a wpis go nie podaje, przekazywany jest komputer
-        z wpisu (D-019). Obsługuje -WhatIf i -Confirm; potwierdzenie zawiera nazwę komputera.
+        Komputer docelowy (D-019): gdy podano -Context (kontekst wykonania z MWP.Remote), musi on
+        dotyczyć komputera z wpisu i jest przekazywany poleceniu, które ma parametr Context.
+        Bez kontekstu: polecenie z parametrem ComputerName dostaje komputer z wpisu; wpisu
+        z komputera zdalnego dla polecenia, które wymaga kontekstu, nie da się cofnąć bez -Context. Obsługuje -WhatIf i -Confirm; potwierdzenie zawiera nazwę komputera.
         Po udanym cofnięciu wpis dostaje status Undone; po nieudanym zostaje Pending z opisem
         błędu (można ponowić). Samo cofnięcie jest zwykłą zmianą, więc polecenie przywracające
         zapisuje własny wpis cofnięcia.
 
+    .PARAMETER Context
+        Kontekst wykonania (MWP.ExecutionContext) komputera, na którym wykonano zmianę.
+
     .EXAMPLE
         Get-MwpUndoEntry -Status Pending | Select-Object -First 1 | Invoke-MwpUndo -WhatIf
+
+    .EXAMPLE
+        Invoke-MwpUndo -Id $result.UndoId -Context $context
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium', DefaultParameterSetName = 'ById')]
     [OutputType([pscustomobject])]
@@ -23,7 +31,10 @@
 
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'ByEntry')]
         [PSTypeName('MWP.UndoEntry')]
-        [object] $InputObject
+        [object] $InputObject,
+
+        [PSTypeName('MWP.ExecutionContext')]
+        [object] $Context
     )
 
     process {
@@ -50,7 +61,25 @@
         foreach ($key in $entry.UndoParameters.Keys) {
             $parameters[$key] = $entry.UndoParameters[$key]
         }
-        if ($command.Parameters.ContainsKey('ComputerName') -and -not $parameters.ContainsKey('ComputerName')) {
+        $entryIsLocal = Test-MwpLocalComputer -ComputerName $entry.ComputerName
+        if ($null -ne $Context) {
+            $sameComputer = if ($entryIsLocal) { $Context.Mode -eq 'Local' } else { $Context.ComputerName -eq $entry.ComputerName }
+            if (-not $sameComputer) {
+                return New-MwpResult @common -Success $false `
+                    -Message ("Kontekst dotyczy komputera '{0}', a wpis {1} — komputera '{2}'." -f $Context.ComputerName, $entry.Id, $entry.ComputerName)
+            }
+        }
+        if ($command.Parameters.ContainsKey('Context')) {
+            $parameters.Remove('ComputerName')
+            if ($null -ne $Context) {
+                $parameters['Context'] = $Context
+            }
+            elseif (-not $entryIsLocal) {
+                return New-MwpResult @common -Success $false `
+                    -Message ("Cofnięcie zmiany na komputerze zdalnym '{0}' wymaga kontekstu wykonania (-Context)." -f $entry.ComputerName)
+            }
+        }
+        elseif ($command.Parameters.ContainsKey('ComputerName') -and -not $parameters.ContainsKey('ComputerName')) {
             $parameters['ComputerName'] = $entry.ComputerName
         }
 

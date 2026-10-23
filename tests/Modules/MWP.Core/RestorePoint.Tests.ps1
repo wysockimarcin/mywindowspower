@@ -101,12 +101,13 @@ Describe 'New-MwpRestorePoint' {
         $result.ErrorMessage | Should -Match 'Brak dostępu'
     }
 
-    It 'komputer zdalny jest odrzucany do czasu FAZY 3, z jego nazwą w wyniku' {
+    It 'komputer zdalny podany samą nazwą (bez kontekstu) jest odrzucany, z jego nazwą w wyniku' {
         $result = New-MwpRestorePoint -Description 'Test' -ComputerName $remoteComputer
 
         $result.Success | Should -BeFalse
         $result.ComputerName | Should -Be 'PC-ZDALNY'
         $result.Message | Should -Match 'PC-ZDALNY'
+        $result.Message | Should -Match '-Context'
         Should -Invoke Invoke-CimMethod -ModuleName MWP.Core -Times 0 -Exactly
     }
 

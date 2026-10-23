@@ -12,7 +12,7 @@ BeforeDiscovery {
 
     # Obszary z docs/00_PROJEKT/ARCHITEKTURA.md (sekcja „Docelowa struktura repozytorium").
     $expectedModules = @(
-        'MWP.Core', 'MWP.Dashboard', 'MWP.Power', 'MWP.Services', 'MWP.Startup', 'MWP.Cleanup',
+        'MWP.Core', 'MWP.Remote', 'MWP.Dashboard', 'MWP.Power', 'MWP.Services', 'MWP.Startup', 'MWP.Cleanup',
         'MWP.Update', 'MWP.Network', 'MWP.Apps', 'MWP.Tweaks', 'MWP.Security'
     ) | ForEach-Object { @{ Name = $_ } }
 

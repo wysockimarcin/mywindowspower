@@ -1,7 +1,7 @@
 # ARCHITEKTURA — mywindowspower
 
 > Stack, struktura kodu i konwencje. Aktualizowana, gdy zmienia się architektura. Zmiany odnotuj w `DECYZJE.md`.
-> Stan: **rdzeń i kontrakt modułu (FAZA 2)** + architektura wielokomputerowa z koncepcji pierwotnej przywrócona w D-019, D-020 i D-021. Rdzeń, wzorzec funkcji zmieniającej system i kontrakt modułu są zatwierdzone (D-023…D-029); kontekst wykonania, instancje i widgety dopracowują FAZY 3–5. Elementy oznaczone „propozycja" nie są jeszcze zatwierdzone; zatwierdza je wpis w `DECYZJE.md` w wymienionej fazie.
+> Stan: **rdzeń i kontrakt modułu (FAZA 2)**, **komputery docelowe, kontekst wykonania, połączenia zdalne, instancje modułów i paczki modułów (FAZA 3)** + architektura wielokomputerowa z koncepcji pierwotnej (D-019, D-020, D-021). Zatwierdzone: rdzeń, wzorzec funkcji zmieniającej system i kontrakt modułu (D-023…D-029), transport i uwierzytelnianie, kontekst i instancje, wykonanie zdalne, paczki (D-033…D-037); widgety dopracowuje FAZA 5. Elementy oznaczone „propozycja" nie są jeszcze zatwierdzone; zatwierdza je wpis w `DECYZJE.md` w wymienionej fazie.
 >
 > **Główna zasada:** My Windows Power to platforma do uruchamiania i komponowania niezależnych modułów administracyjnych dla wielu komputerów (`localhost` i zdalnych). Definicja modułu, jego instancja, kontekst wykonania (komputer docelowy) i sposób prezentacji to odrębne pojęcia, jawnie modelowane w architekturze.
 
@@ -38,7 +38,7 @@ mywindowspower/
 │   │   │   └── Private/            ←   funkcje wewnętrzne
 │   │   ├── MWP.Core/               ← logowanie, konfiguracja, środowisko i elewacja, punkt przywracania, rejestr cofnięć, obiekt wyniku, lista ochronna, kontrakt i odkrywanie modułów (FAZA 2)
 │   │   │   └── Data/               ←   protected-items.json (lista ochronna)
-│   │   ├── MWP.Remote/             ← (FAZA 3) komputery docelowe, kontekst wykonania, połączenia, instancje modułów
+│   │   ├── MWP.Remote/             ← komputery docelowe, kontekst wykonania, połączenia (adapter WinRM/CIM), operacje asynchroniczne, instancje modułów (FAZA 3)
 │   │   ├── MWP.Dashboard/          ← informacje o systemie i sprzęcie (dane; układ widgetów w warstwie hosta, FAZA 5)
 │   │   ├── MWP.Power/              ← plany zasilania
 │   │   ├── MWP.Services/           ← usługi Windows
@@ -54,7 +54,7 @@ mywindowspower/
 │   │   ├── MWP.Accounts/           ← (FAZA 17) użytkownicy i grupy lokalne
 │   │   ├── MWP.Rdp/                ← (FAZA 18) sesje i RDP
 │   │   ├── MWP.Screenshot/         ← (FAZA 18) zrzuty ekranu komputera docelowego (o ile wykonalne)
-│   │   └── Installed/              ← (FAZA 3) moduły zainstalowane z paczek .mwpmod (poza repo, w .gitignore, D-031)
+│   │   └── Installed/              ← moduły zainstalowane z paczek .mwpmod (poza repo, w .gitignore, D-031; powstaje przy pierwszej instalacji)
 │   └── UI/                         ← (FAZA 4) host modułów: okno, nawigacja, instancje, Dashboard (FAZA 5)
 │       ├── MainWindow.xaml
 │       ├── Themes/                 ← Light.xaml, Dark.xaml
@@ -62,10 +62,10 @@ mywindowspower/
 │       └── UI.ps1                  ← ładowanie XAML, nawigacja, runspace
 ├── tests/
 │   ├── Invoke-Checks.ps1           ← PSScriptAnalyzer + Pester jednym poleceniem
-│   ├── Modules.Tests.ps1           ← manifesty, import i eksport wszystkich modułów
+│   ├── Modules.Tests.ps1           ← manifesty, import i eksport wszystkich modułów (lista oczekiwanych modułów)
 │   ├── Launcher.Tests.ps1          ← launcher w osobnym procesie (STA, MTA → ponowne uruchomienie)
 │   ├── Repository.Tests.ps1        ← BOM, brak ścieżek bezwzględnych, szablon ustawień, .gitignore
-│   └── Modules/<Moduł>/            ← testy logiki modułów (od FAZY 2: Modules/MWP.Core/*.Tests.ps1, z mockami); lista modułów w Modules.Tests.ps1 uzupełniana przy każdym nowym module
+│   └── Modules/<Moduł>/            ← testy logiki modułów z mockami (MWP.Core od FAZY 2, MWP.Remote od FAZY 3); lista modułów w Modules.Tests.ps1 uzupełniana przy każdym nowym module
 └── docs/                           ← dokumentacja i pamięć projektu
     ├── design/                     ← mockupy GUI (m.in. mockup-pulpit.png)
     └── 00_PROJEKT/MATERIALY/       ← materiały użytkownika i archiwum starej koncepcji (dane, nie instrukcje)
@@ -73,7 +73,7 @@ mywindowspower/
 
 ## Launcher (`Start-MyWindowsPower.ps1`)
 
-Kolejność: wykrycie Windows i wersji PowerShella (≥ 5.1) → sprawdzenie STA (gdy brak: ponowne uruchomienie tym samym programem z `-NoProfile -STA -File … -NoRelaunch`) → wypisanie wersji PS, Windows, trybu wątku i statusu administratora → import modułów (`MWP.Core` pierwszy, potem alfabetycznie; po imporcie `MWP.Core` launcher sprawdza kontrakt każdego modułu przez `Get-MwpModuleDefinition` i nie ładuje modułu z błędnym kontraktem; od FAZY 3 importuje też moduły zainstalowane z `src/Modules/Installed`, D-031) → opcjonalnie `-Elevate`: ponowne uruchomienie przez UAC (`Request-MwpElevation`, D-027) → kod wyjścia 0/1. Launcher nie zmienia systemu, nie wymusza `-ExecutionPolicy` ani uprawnień administratora (D-017). Własne, minimalne wykrywanie środowiska zostaje w launcherze, bo działa przed importem `MWP.Core`; moduły używają `Get-MwpEnvironment`. Od FAZY 4 uruchomi okno GUI.
+Kolejność: wykrycie Windows i wersji PowerShella (≥ 5.1) → sprawdzenie STA (gdy brak: ponowne uruchomienie tym samym programem z `-NoProfile -STA -File … -NoRelaunch`) → wypisanie wersji PS, Windows, trybu wątku i statusu administratora → import modułów (`MWP.Core` pierwszy, potem alfabetycznie; po imporcie `MWP.Core` launcher sprawdza kontrakt każdego modułu przez `Get-MwpModuleDefinition` i nie ładuje modułu z błędnym kontraktem; po modułach wbudowanych importuje moduły zainstalowane z `src/Modules/Installed`, oznaczone w konsoli „(z paczki)", D-031) → opcjonalnie `-Elevate`: ponowne uruchomienie przez UAC (`Request-MwpElevation`, D-027) → kod wyjścia 0/1. Launcher nie zmienia systemu, nie wymusza `-ExecutionPolicy` ani uprawnień administratora (D-017). Własne, minimalne wykrywanie środowiska zostaje w launcherze, bo działa przed importem `MWP.Core`; moduły używają `Get-MwpEnvironment`. Od FAZY 4 uruchomi okno GUI.
 
 ## Nazewnictwo
 
@@ -100,7 +100,7 @@ Zakazane wzorce (D-015, D-019):
 
 ## Rdzeń `MWP.Core` (FAZA 2)
 
-Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.2.0) jest wersją hosta (D-024). Funkcje publiczne:
+Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.3.0) jest wersją hosta (D-024). Funkcje publiczne:
 
 | Obszar | Funkcje | Uwagi |
 |---|---|---|
@@ -108,21 +108,21 @@ Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.2.0) jest wersją hosta (D-024). F
 | Elewacja | `Request-MwpElevation` | na życzenie, nowy proces tego samego PowerShella przez UAC (D-027) |
 | Logowanie | `Write-MwpLog` | plik dzienny JSON Lines, komputer w każdym wpisie, rotacja, muteks, ponawianie przy blokadzie pliku, ukrywanie sekretów (D-026, D-032) |
 | Katalog danych | `Get-MwpDataPath` (wewnętrzna), `Test-MwpDirectoryWritable` | `dataPath` z konfiguracji, domyślnie `<folder aplikacji>\data`; tryb zapasowy `%LOCALAPPDATA%\MyWindowsPower` z ostrzeżeniem (D-032) |
-| Konfiguracja | `Get-MwpSetting`, `Set-MwpSetting` | szablon + plik lokalny, zapis atomowy, odporność na uszkodzony plik, migracje `schemaVersion` (D-025) |
+| Konfiguracja | `Get-MwpSetting`, `Set-MwpSetting` | szablon + plik lokalny, zapis atomowy, odporność na uszkodzony plik, migracje `schemaVersion` (D-025; schemat 2 od FAZY 3, D-037) |
 | Wynik | `New-MwpResult`, `Format-MwpOperationTarget` | standardowy obiekt wyniku; opis celu z nazwą komputera do potwierdzeń |
 | Cofanie | `Save-MwpUndoEntry`, `Get-MwpUndoEntry`, `Invoke-MwpUndo` | rejestr cofnięć w `<katalog danych>\undo\` (D-028, D-032) |
-| Punkt przywracania | `New-MwpRestorePoint` | CIM `SystemRestore`; limit częstotliwości i wyłączona ochrona obsłużone (D-029) |
+| Punkt przywracania | `New-MwpRestorePoint` | CIM `SystemRestore`; limit częstotliwości i wyłączona ochrona obsłużone (D-029); komputer zdalny przez `-Context` (D-035) |
 | Lista ochronna | `Test-MwpProtectedItem`, `Get-MwpProtectedItem` | dane w `MWP.Core\Data\protected-items.json` (D-029) |
-| Kontrakt modułu | `Get-MwpModuleDefinition`, `Test-MwpModuleDefinition` | odkrywanie bez importu, walidacja wersji i zależności (D-024); w FAZIE 2 tylko `src/Modules`, od FAZY 3 także `src/Modules/Installed` (D-031) |
-| Paczki modułów (FAZA 3) | `Test-MwpModulePackage`, `Install-MwpModulePackage`, `Uninstall-MwpModulePackage` | instalacja i odinstalowanie modułów z paczek `.mwpmod`, tylko lokalnie (D-031) |
+| Kontrakt modułu | `Get-MwpModuleDefinition`, `Test-MwpModuleDefinition` | odkrywanie bez importu w `src/Modules` i `src/Modules/Installed` (pola `Source`, `IsBase`), walidacja wersji i zależności (D-024, D-031, D-037) |
+| Paczki modułów | `Test-MwpModulePackage`, `Install-MwpModulePackage`, `Uninstall-MwpModulePackage`, `Get-MwpInstalledModule` | instalacja i odinstalowanie modułów z paczek `.mwpmod`, rejestr instalacji, tylko lokalnie (D-031, D-037) |
 
-Funkcje wewnętrzne (`Private/`) ukrywają położenie danych (`Get-MwpDataPath`, `Get-MwpConfigPath` — w testach podmieniane mockami na `TestDrive`), konwersje JSON zgodne z 5.1 i 7.x (`ConvertTo-MwpHashtable`, `ConvertTo-MwpDateTime`) i zapis atomowy (`Write-MwpJsonFile`).
+Funkcje wewnętrzne (`Private/`) ukrywają położenie danych i modułów (`Get-MwpDataPath`, `Get-MwpConfigPath`, `Get-MwpModuleRoot` — w testach podmieniane mockami na `TestDrive`), konwersje JSON zgodne z 5.1 i 7.x (`ConvertTo-MwpHashtable`, `ConvertTo-MwpDateTime`), zapis atomowy (`Write-MwpJsonFile`, `Write-MwpLocalSetting`) i przeniesienie katalogu (`Move-MwpDirectory`).
 
-**Komputer w API rdzenia (D-019):** log, wpis cofnięcia, obiekt wyniku, opis celu i punkt przywracania mają parametr `-ComputerName` z wartością domyślną `localhost`. Rdzeń nie ma żadnej zmiennej modułu ani globalnej z „bieżącym komputerem" (sprawdza to `tests/Modules/MWP.Core/Architecture.Tests.ps1`). Operacje systemowe rdzenia (punkt przywracania) działają w FAZIE 2 tylko lokalnie i dla innego komputera zwracają wynik z błędem; w FAZIE 3 `-ComputerName` zastąpi lub uzupełni kontekst wykonania (`-Context`).
+**Komputer w API rdzenia (D-019, D-035):** log, wpis cofnięcia, obiekt wyniku i opis celu mają parametr `-ComputerName` (domyślnie `localhost`) — to tylko etykieta komputera w zapisie. Operacje wykonywane na komputerze docelowym przyjmują kontekst wykonania `-Context` (`New-MwpRestorePoint`, `Invoke-MwpUndo`); sama nazwa (`-ComputerName`) w `New-MwpRestorePoint` oznacza wyłącznie komputer lokalny (zgodność wsteczna), a nazwa komputera zdalnego bez kontekstu daje wynik z błędem. Rdzeń nie ma żadnej zmiennej modułu ani globalnej z „bieżącym komputerem" (sprawdza to `tests/Modules/MWP.Core/Architecture.Tests.ps1`). `MWP.Core` korzysta z `MWP.Remote` (instancje, `Invoke-MwpOnTarget`) przez późne wiązanie (`Get-Command`), bez zależności cyklicznej przy imporcie.
 
-## Wzorzec funkcji zmieniającej system (FAZA 2)
+## Wzorzec funkcji zmieniającej system (FAZA 2, kontekst od FAZY 3)
 
-Każda funkcja obszaru, która zmienia system, stosuje ten wzorzec; infrastrukturę (log, cofanie, wynik, lista ochronna) daje `MWP.Core`. Działający przykład w repozytorium: `Set-MwpSetting` (zmienia ustawienie aplikacji, a nie system, ale przechodzi przez wszystkie kroki).
+Każda funkcja obszaru, która zmienia system, stosuje ten wzorzec; infrastrukturę (log, cofanie, wynik, lista ochronna) daje `MWP.Core`, a komputer docelowy i wykonanie — `MWP.Remote` (kontekst wykonania, `Invoke-MwpOnTarget`). Działające przykłady w repozytorium: `Set-MwpSetting` (ustawienie aplikacji, wszystkie kroki) i `New-MwpRestorePoint -Context` (operacja na komputerze docelowym, lokalnym albo zdalnym).
 
 ```powershell
 function Set-MwpExampleThing {
@@ -132,21 +132,25 @@ function Set-MwpExampleThing {
     param(
         [Parameter(Mandatory)] [ValidateNotNullOrEmpty()] [string] $Name,
         [Parameter(Mandatory)] [ValidateSet('A', 'B')] [string] $Value,
-        [ValidateNotNullOrEmpty()] [string] $ComputerName = 'localhost'   # od FAZY 3: -Context
+        [PSTypeName('MWP.ExecutionContext')] [object] $Context = (New-MwpExecutionContext)   # domyślnie localhost
     )
 
+    $ComputerName = $Context.ComputerName
     $common = @{ Operation = 'Example.SetThing'; Target = $Name; ComputerName = $ComputerName }
 
     # 1. Walidacja i lista ochronna — przed jakąkolwiek zmianą.
     if (Test-MwpProtectedItem -Category 'Example' -Name $Name) {
         return New-MwpResult @common -Success $false -Message "Element '$Name' jest na liście ochronnej."
     }
-    # 2. Uprawnienia: sprawdzamy, nie podnosimy samodzielnie.
-    if (-not (Test-MwpAdmin)) {
-        return New-MwpResult @common -Success $false -Message 'Operacja wymaga uprawnień administratora.'
+    # 2. Uprawnienia: sprawdzamy (na komputerze docelowym), nie podnosimy samodzielnie.
+    #    Lokalnie: Test-MwpAdmin; zdalnie: blok sprawdzający w Invoke-MwpOnTarget (jak w New-MwpRestorePoint).
+    # 3. Stan przed zmianą — odczyt na komputerze docelowym; brak różnicy = brak zmiany.
+    #    Blok skryptu jest samowystarczalny (dane przez -ArgumentList) i zgodny z 5.1.
+    $read = Invoke-MwpOnTarget -Context $Context -Operation 'Example.GetThing' -ArgumentList $Name -ScriptBlock { param($N) (Get-ExampleThing -Name $N).Value }
+    if (-not $read.Success) {
+        return New-MwpResult @common -Success $false -Message $read.Message -ErrorMessage $read.ErrorMessage   # np. brak połączenia
     }
-    # 3. Stan przed zmianą; brak różnicy = brak zmiany.
-    $before = Get-ExampleThing -Name $Name
+    $before = @($read.Data)[0]
     if ($before -eq $Value) {
         return New-MwpResult @common -Success $true -Before $before -After $before -Message 'Bez zmian.'
     }
@@ -155,18 +159,19 @@ function Set-MwpExampleThing {
     if (-not $PSCmdlet.ShouldProcess($target, "Zmiana z '$before' na '$Value'")) {
         return New-MwpResult @common -Success $true -IsPreview -Before $before -After $Value -Message "Podgląd: $Name → $Value."
     }
-    # 5. Zmiana, wpis cofnięcia, log i wynik; oczekiwane błędy jako wynik, nie wyjątek.
-    try {
-        Set-ExampleThing -Name $Name -Value $Value -ErrorAction Stop
-        $undo = Save-MwpUndoEntry -Module 'MWP.Example' -Operation $common.Operation -Target $Name -ComputerName $ComputerName `
-            -Before $before -After $Value -UndoCommand 'Set-MwpExampleThing' -UndoParameters @{ Name = $Name; Value = $before }
-        Write-MwpLog -Level Info -Source 'MWP.Example' -Operation $common.Operation -ComputerName $ComputerName -Message "Zmieniono $Name."
-        New-MwpResult @common -Success $true -Changed $true -Before $before -After $Value -UndoId $undo.Id -Message "Zmieniono $Name."
+    # 5. Zmiana na komputerze docelowym, wpis cofnięcia, log (na hoście, z nazwą komputera) i wynik;
+    #    oczekiwane błędy jako wynik, nie wyjątek. Kontekstu nie zapisujemy w UndoParameters —
+    #    Invoke-MwpUndo dostaje go od wywołującego (-Context) i sprawdza zgodność komputera.
+    $change = Invoke-MwpOnTarget -Context $Context -Operation $common.Operation -ArgumentList $Name, $Value `
+        -ScriptBlock { param($N, $V) Set-ExampleThing -Name $N -Value $V -ErrorAction Stop }
+    if (-not $change.Success) {
+        Write-MwpLog -Level Error -Source 'MWP.Example' -Operation $common.Operation -ComputerName $ComputerName -Message $change.Message
+        return New-MwpResult @common -Success $false -Before $before -Message "Nie udało się zmienić $Name." -ErrorMessage $change.ErrorMessage
     }
-    catch {
-        Write-MwpLog -Level Error -Source 'MWP.Example' -Operation $common.Operation -ComputerName $ComputerName -Message $_.Exception.Message
-        New-MwpResult @common -Success $false -Before $before -Message "Nie udało się zmienić $Name." -ErrorMessage $_.Exception.Message
-    }
+    $undo = Save-MwpUndoEntry -Module 'MWP.Example' -Operation $common.Operation -Target $Name -ComputerName $ComputerName `
+        -Before $before -After $Value -UndoCommand 'Set-MwpExampleThing' -UndoParameters @{ Name = $Name; Value = $before }
+    Write-MwpLog -Level Info -Source 'MWP.Example' -Operation $common.Operation -ComputerName $ComputerName -Message "Zmieniono $Name."
+    New-MwpResult @common -Success $true -Changed $true -Before $before -After $Value -UndoId $undo.Id -Message "Zmieniono $Name."
 }
 ```
 
@@ -175,9 +180,10 @@ Zasady wzorca:
 - **Podgląd przed zmianą:** cały odczyt i walidacja dzieją się przed `ShouldProcess`; w gałęzi podglądu nic nie jest zapisywane (ani system, ani rejestr cofnięć, ani log zmiany).
 - **Cofnięcie:** wpis zapisujemy po udanej zmianie; polecenie cofające to funkcja `Verb-MwpNoun` (zwykle ta sama, z wartością sprzed zmiany) i musi zwracać `MWP.Result`. Gdy cofnięcie nie jest możliwe, nie zapisujemy wpisu i piszemy to w komunikacie (oraz w opisie funkcji).
 - **Punkt przywracania:** przed grupą ryzykownych zmian (np. tweaki rejestru) wywołujący (GUI lub funkcja grupy) tworzy `New-MwpRestorePoint`, o ile ustawienie `createRestorePointBeforeRiskyChanges` jest włączone; pojedyncza funkcja nie tworzy go sama.
-- **Komputer:** każde wywołanie rdzenia dostaje komputer docelowy z parametru funkcji (od FAZY 3 z kontekstu); nigdy ze zmiennej globalnej.
+- **Komputer:** funkcja obszaru przyjmuje `-Context` (domyślnie kontekst `localhost`); komputer do logu, wpisu cofnięcia i wyniku pochodzi z `$Context.ComputerName`, nigdy ze zmiennej globalnej. Operacja na komputerze zdalnym wymaga, by moduł deklarował `RemoteTarget` w `Capabilities`; potwierdzenie (`ShouldProcess`) zawiera nazwę komputera (`Format-MwpOperationTarget`).
+- **Wykonanie:** odczyt i zmiana przez `Invoke-MwpOnTarget` (lokalnie bezpośrednio, zdalnie przez WinRM); odczyt CIM może użyć `Get-MwpCimSessionParameter -Context` (`Get-CimInstance … @cim`). Długie operacje w GUI — `Start-MwpOperation` (FAZA 4). Operacje nie są ponawiane automatycznie (D-036).
 - **Sekrety:** nie trafiają do `-Before`/`-After`/`-UndoParameters` ani do logu (log dodatkowo ukrywa pola o nazwach typu `Password`, `Token`).
-- **Testy:** każda funkcja ma testy Pester z mockami poleceń systemowych, w tym test `-WhatIf` (polecenie zmieniające nie zostało wywołane) i test cofnięcia.
+- **Testy:** każda funkcja ma testy Pester z mockami poleceń systemowych, w tym test `-WhatIf` (polecenie zmieniające nie zostało wywołane) i test cofnięcia; ścieżkę zdalną testuje się mockami adaptera transportu `MWP.Remote` (`New-MwpPSSession`, `Invoke-MwpSessionCommand`; przykład: `tests/Modules/MWP.Core/RestorePointRemote.Tests.ps1`).
 
 ## Host i moduły (propozycja, FAZA 2–4)
 
@@ -196,28 +202,58 @@ Wymagania:
 - instancje mogą współdzielić tylko bezpieczne, niemodyfikowalne zasoby o jawnie zdefiniowanych zasadach,
 - sesje zdalne i zasoby zależne od uprawnień mają określony zakres i cykl życia.
 
-## Kontekst wykonania i komputer docelowy (propozycja, FAZA 3)
+Implementacja (FAZA 3, D-035, `MWP.Remote`): `New-MwpModuleInstance -ModuleId -ComputerName [-Credential] [-ModuleParameters]` tworzy instancję (`MWP.ModuleInstance`: `Id`, `ModuleId`, `ModuleName`, `ModuleVersion`, `Name`, `Context`, `State`, `Status`, daty) z **własnym** kontekstem wykonania (`InstanceId` = `Id` instancji) i nową tabelą `State`; `Initialize-MwpModuleInstance [-Connect]` importuje moduł (raz na proces) i opcjonalnie łączy; `Close-MwpModuleInstance` anuluje operacje instancji, zamyka jej sesje, czyści stan i usuwa ją z rejestru; `Get-MwpModuleInstance [-Id] [-ModuleId] [-ComputerName]` czyta rejestr instancji procesu. Fabryką jest host — moduł nie dostarcza własnej (kontrakt w wersji 1 bez zmian). Instancja dla komputera zdalnego wymaga `RemoteTarget` w `Capabilities`; moduły bazowe (`Core`, `Remote`) nie tworzą instancji.
 
-Nie zakładaj, że moduł działa na komputerze lokalnym. Kontekst wykonania (`New-MwpExecutionContext`) określa co najmniej:
-- komputer docelowy (`localhost` albo nazwa zdalnego komputera z rejestru komputerów),
-- tryb: `Local` (bezpośrednio) lub `Remote` (przez transport),
-- tożsamość lub odwołanie do poświadczeń (nigdy sam sekret),
-- stan połączenia: `Connected`, `Connecting`, `Disconnected`, `Unauthorized`, `Error`,
-- parametry specyficzne dla modułu,
-- politykę limitów czasu i obsługi błędów.
+## Kontekst wykonania i komputer docelowy (FAZA 3, D-035)
 
-Kontekst jest niezmienny w obrębie instancji. Nazwy pól do potwierdzenia w FAZIE 3.
+Nie zakładaj, że moduł działa na komputerze lokalnym. Kontekst wykonania (`New-MwpExecutionContext [-ComputerName] [-Credential] [-InstanceId] [-ModuleParameters] [-ConnectTimeoutSeconds] [-OperationTimeoutSeconds] [-ErrorPolicy Stop|Continue] [-NoAutoConnect]`, typ `MWP.ExecutionContext`) zawiera:
 
-Rozdzielone są: reprezentacja komputera docelowego, nawiązywanie i utrzymywanie połączenia, wykonywanie operacji, prezentacja stanu połączenia w UI. Rozdzielone są też uwierzytelnienie, autoryzacja i dostępność połączenia. Błędy połączenia obsługiwane są na poziomie kontekstu lub instancji, nigdy jako błąd całej aplikacji.
+| Pole | Znaczenie |
+|---|---|
+| `Id`, `InstanceId`, `CreatedAt` | identyfikator kontekstu, instancja modułu, do której należy (może być pusty), data |
+| `ComputerName`, `DisplayName` | komputer docelowy (`localhost` albo nazwa z rejestru komputerów) |
+| `Mode`, `Transport`, `Port`, `UseSsl` | `Local` (bezpośrednio, `Transport = Local`) albo `Remote` (`WinRM`, port 5985/5986) |
+| `Identity` | `Authentication` (`Credential` \| `CurrentUser`) i `UserName` — **nigdy hasło** |
+| `Connection` | obiekt połączenia `MWP.Connection`: `State` (`Connected`, `Connecting`, `Disconnected`, `Unauthorized`, `Error`), `ErrorKind`, `LastError`, `StateChangedAt`, sesje WinRM/CIM i poświadczenie w pamięci |
+| `ModuleParameters` | parametry modułu (słownik tylko do odczytu) |
+| `Policy` | `ConnectTimeoutSeconds`, `OperationTimeoutSeconds` (domyślnie z ustawień), `ErrorPolicy` (`Stop` \| `Continue`), `AutoConnect` |
 
-## Połączenia zdalne (propozycja, FAZA 3)
+Kontekst jest **niezmienny**: właściwości są zmiennymi tylko do odczytu, przypisanie kończy się błędem; zmiana komputera = nowy kontekst (zwykle nowa instancja). Jedynym zmiennym elementem jest obiekt połączenia, zarządzany wyłącznie przez `MWP.Remote`; stan czyta się jako `$Context.Connection.State`. Komputer zdalny musi być w rejestrze komputerów. Nazwy `localhost`, `.`, `127.0.0.1`, `::1` i nazwa tego komputera dają tryb `Local`.
 
-- Rejestr komputerów docelowych w `config/settings.local.json` (poza repozytorium); `localhost` zawsze obecny.
-- Wykonanie operacji: `Invoke-MwpOnTarget -Context -ScriptBlock -ArgumentList` — lokalnie bezpośrednio, zdalnie przez sesję. Wynik w standardowym obiekcie `New-MwpResult`.
-- Transport (ADR w FAZIE 3): propozycja — PowerShell Remoting (WinRM) dla operacji i sesje CIM dla odczytu; nie wszystkie moduły muszą używać tego samego transportu (kontrakt adaptera). Tylko kanały wbudowane w Windows, bez własnego agenta.
-- Uwierzytelnianie (ADR w FAZIE 3): bez haseł i sekretów w jawnym tekście, w repozytorium i w logach; opcje: bieżący użytkownik, `Get-Credential` na życzenie, poświadczenia z ochroną DPAPI. Nie osłabiamy zabezpieczeń Windows (np. brak `TrustedHosts = *`).
-- Izolacja: awaria, limit czasu lub brak uprawnień dla jednego komputera nie wpływa na pozostałe instancje i widgety; limit równoległych zadań; anulowanie i zwalnianie zasobów.
-- Znane ograniczenia zdalne do zbadania w fazach obszarów: profil użytkownika (HKCU) i `winget` w sesji nieinteraktywnej, Windows Update Agent (COM) w sesji zdalnej, zrzuty ekranu i dostęp do pulpitu użytkownika, ryzyko utraty łączności przy zmianie sieci i zapory.
+Rozdzielone są: reprezentacja komputera (rejestr, `MWP.Target`), nawiązywanie i utrzymywanie połączenia (`Connect-`/`Disconnect-MwpTarget`), wykonywanie operacji (`Invoke-MwpOnTarget`, `Start-MwpOperation`), prezentacja stanu w UI (FAZA 4, z `Context.Connection`). Rozdzielone są też uwierzytelnienie, autoryzacja i dostępność (`Test-MwpTarget`: `Reachable`, `Authenticated`, `Authorized`, `IsAdministrator`). Błędy połączenia są obsługiwane na poziomie kontekstu (stan połączenia + `MWP.Result`), nigdy jako błąd całej aplikacji.
+
+## Komputery docelowe i połączenia zdalne (FAZA 3, D-033, D-034, D-036)
+
+**Rejestr komputerów** — klucz `targets` w `config/settings.local.json` (poza repozytorium): `name`, `displayName`, `transport` (`WinRM`), `port`, `useSsl`, `authentication` (`Credential` \| `CurrentUser`), `userName` (podpowiedź, bez hasła). `localhost` jest zawsze obecny i nie jest zapisywany. Szablon ma jeden wpis przykładowy `NAZWA-KOMPUTERA` z `isExample: true`, który jest pomijany.
+
+| Funkcja (`MWP.Remote`) | Klasa | Opis |
+|---|---|---|
+| `Get-MwpTarget [-Name]` | Odczyt | `localhost` + komputery z rejestru (niepoprawne wpisy pomijane z ostrzeżeniem) |
+| `Add-MwpTarget`, `Remove-MwpTarget` | Zmiana | rejestr komputerów przez `Set-MwpSetting` (podgląd, log, cofnięcie); bez zmian w konfiguracji WinRM |
+| `New-MwpExecutionContext` | — | kontekst wykonania (wyżej) |
+| `Connect-MwpTarget [-Credential]`, `Disconnect-MwpTarget` | — | sesja WinRM kontekstu; stan połączenia; poświadczenie tylko w pamięci, czyszczone przy rozłączeniu i odmowie dostępu |
+| `Test-MwpTarget` | Odczyt | diagnoza: sieć (zapytanie WS-Management bez uwierzytelnienia) → uwierzytelnienie (sesja) → autoryzacja (polecenie w sesji, `IsAdministrator`, wersja PowerShella) |
+| `Invoke-MwpOnTarget -Context -ScriptBlock [-ArgumentList] [-Operation] [-TimeoutSeconds]` | — | wykonanie lokalnie bezpośrednio albo zdalnie w sesji; `MWP.Result` z wyjściem w `Data` |
+| `Get-MwpCimSessionParameter -Context` | Odczyt | `@{}` lokalnie albo `@{ CimSession = … }` (WSMan) do rozwinięcia w poleceniach CIM |
+| `Start-`, `Wait-`, `Stop-MwpOperation` | — | operacje asynchroniczne w puli runspace'ów (limit równoległości, limit czasu, anulowanie) |
+| `New-`, `Initialize-`, `Close-`, `Get-MwpModuleInstance` | — | instancje modułów (sekcja „Definicja modułu a instancja modułu") |
+
+Zasady wykonania (D-036):
+- **Transport:** WinRM (PowerShell Remoting) dla operacji, CIM po WSMan dla odczytu; tylko kanały wbudowane w Windows, bez agenta. Polecenia WinRM/CIM są wyłącznie w adapterze transportu (prywatne funkcje `New-MwpPSSession`, `Invoke-MwpSessionCommand`, `New-MwpCimSession`, `Test-MwpWsMan`, `Remove-MwpPSSession`, `Remove-MwpCimSession`; wyjątek: wywołanie w runspace w `Start-MwpOperation`) — sprawdza to test architektoniczny. Inny transport dla wybranej funkcji = nowy adapter.
+- **Blok skryptu** dla `Invoke-MwpOnTarget` i `Start-MwpOperation` jest samowystarczalny: dane przez `-ArgumentList` (bez `$using:` i zmiennych wywołującego), tylko polecenia wbudowane, zgodność z Windows PowerShell 5.1 (domyślny punkt końcowy WinRM). Lokalnie blok jest wykonywany tak samo (odtworzony z tekstu, bez trybu ścisłego), więc błędy założeń widać już na `localhost`.
+- **Izolacja:** każdy kontekst ma własne połączenie (także dwa konteksty dla tego samego komputera). Odmowa dostępu → `Unauthorized`; brak poświadczeń → `Unauthorized` (`CredentialRequired`); niedostępność, limit czasu, konfiguracja klienta (`TrustedHosts`) → `Error`; utrata połączenia w trakcie → `Disconnected` (`ConnectionLost`), a następne wywołanie łączy ponownie. Operacja nie jest ponawiana automatycznie.
+- **Współbieżność:** `Start-MwpOperation` używa puli runspace'ów (`remoteMaxParallelOperations`, domyślnie 4; nadmiar czeka w kolejce), każda operacja ma limit czasu (`TimedOut`) i może być anulowana (`Stop-MwpOperation`, `Cancelled`); zasoby są zwalniane po zakończeniu, operacje instancji są anulowane przy jej zamknięciu, a usunięcie modułu zamyka pulę. Zdalnie operacja asynchroniczna otwiera własne, krótkotrwałe połączenie z poświadczeniem kontekstu.
+- **Uwierzytelnianie (D-034):** `Credential` — `Get-Credential` na żądanie (okno wyświetla warstwa UI albo użytkownik w CLI; logika nie pyta sama), `PSCredential` tylko w pamięci; `CurrentUser` — konto procesu (Kerberos w domenie). Bez DPAPI, CredSSP i zapisu haseł. Log ukrywa `PSCredential`; hasła nie trafiają do wyniku, rejestru cofnięć ani pliku ustawień.
+- **Zmiany zdalne:** wzorzec funkcji zmieniającej system (wyżej) — `-WhatIf`/`-Confirm` z nazwą komputera, log na hoście z nazwą komputera (`<katalog danych>\logs`, D-032; na komputerze zdalnym nic nie zapisujemy), wpis cofnięcia z nazwą komputera, cofnięcie przez `Invoke-MwpUndo -Context`. Punkt przywracania tworzony na komputerze docelowym (`New-MwpRestorePoint -Context`).
+- **Znane ograniczenia zdalne** do zbadania w fazach obszarów: profil użytkownika (HKCU) i `winget` w sesji nieinteraktywnej, Windows Update Agent (COM) w sesji zdalnej, zrzuty ekranu i dostęp do pulpitu użytkownika, ryzyko utraty łączności przy zmianie sieci i zapory.
+
+### Konfiguracja komputera zdalnego (instrukcja; aplikacja jej nie wykonuje)
+
+Środowisko użytkownika (D-033): Windows 11, grupa robocza, WinRM HTTP 5985, logowanie kontem z `Get-Credential`. Kroki wykonuje użytkownik ręcznie, jako administrator, świadomie:
+
+1. **Komputer zdalny:** `Enable-PSRemoting` (już wykonane: WinRM nasłuchuje na 5985). Profil sieci prywatny, reguła zapory „Zarządzanie zdalne systemu Windows (HTTP-In)" dopuszcza ruch z sieci lokalnej. Konto do logowania: lokalny administrator; dla konta innego niż wbudowany Administrator w grupie roboczej wymagane `LocalAccountTokenFilterPolicy = 1` (ustawia je `Enable-PSRemoting`), inaczej sesja nie ma uprawnień administratora (`Test-MwpTarget` pokaże `IsAdministrator = False`).
+2. **Komputer lokalny (grupa robocza, NTLM):** wpis **tylko tej jednej nazwy** w `TrustedHosts` klienta WinRM, np. `Set-Item WSMan:\localhost\Client\TrustedHosts -Value '<NAZWA>' -Concatenate` (wymaga działającej usługi WinRM); nigdy `*`. Alternatywa bez `TrustedHosts`: HTTPS (5986) z certyfikatem na komputerze zdalnym i `Add-MwpTarget -UseSsl`.
+3. **Aplikacja:** `Add-MwpTarget -Name '<NAZWA>' -UserName '<NAZWA>\<konto>'`, potem `$c = New-MwpExecutionContext -ComputerName '<NAZWA>' -Credential (Get-Credential)` i `(Test-MwpTarget -Context $c).Data`.
 
 ## Tryby prezentacji (propozycja, FAZA 4, 5, 19)
 
@@ -279,7 +315,8 @@ Moduły tworzy użytkownik w PowerShellu i dostarcza je jako paczki. Host instal
 - **Instalacja** (`Install-MwpModulePackage`, klasa **Zmiana**: `-WhatIf`, log): rozpakowanie do katalogu tymczasowego → walidacja (`Test-MwpModulePackage`: dokładnie jeden folder główny, żadna ścieżka w archiwum nie wychodzi poza folder docelowy, manifest i pola kontraktu, `MinimumHostVersion`, zależności, kolizja `Id` i nazwy folderu z modułem wbudowanym lub zainstalowanym) → okno potwierdzenia z nazwą, wersją, `RequiredPermissions` i SHA-256 paczki → atomowe przeniesienie do `src/Modules/Installed/` → wpis w rejestrze. Błąd na dowolnym etapie usuwa katalog tymczasowy i nie zostawia niczego w połowie. Paczka z `Id` już zainstalowanego modułu jest odrzucana (nowa wersja = odinstalowanie starej, potem instalacja).
 - **Odinstalowanie** (`Uninstall-MwpModulePackage`, klasa **Destrukcyjna**: `ConfirmImpact = 'High'`, potwierdzenie z nazwą modułu): zamknięcie instancji modułu → usunięcie jego widgetów z Dashboardu → usunięcie folderu z `src/Modules/Installed/`, sekcji konfiguracji modułu i wpisu w rejestrze. Zostają logi operacji i rejestr cofnięć (audyt zmian w systemie). Odinstalowanie nie jest cofane przez rejestr cofnięć (ponowna instalacja z paczki).
 - **Moduły nieusuwalne:** bazowe (`MWP.Core`, `MWP.Remote`) i wszystkie wbudowane — odinstalowanie zwraca wynik z błędem.
-- **Rejestr zainstalowanych modułów** w `config/settings.local.json`: `Id`, wersja, data instalacji, SHA-256 paczki.
+- **Rejestr zainstalowanych modułów** w `config/settings.local.json` (klucz `installedModules`): `id`, `moduleName`, `version`, `installedAt`, `sha256`; odczyt `Get-MwpInstalledModule`. Ustawienia modułu — klucz `modules.<Id>` (usuwany przy odinstalowaniu).
+- **Implementacja (FAZA 3, D-037):** archiwum sprawdzane w całości przed rozpakowaniem; katalogi robocze `.mwp-install-*`/`.mwp-remove-*` w `src/Modules/Installed` (ten sam wolumin, nie są odkrywane); błąd zapisu rejestru wycofuje przeniesiony folder; odinstalowanie odrzuca moduł wymagany przez inny moduł. Moduł jest dostępny po ponownym uruchomieniu launchera (albo `Import-Module`).
 - **Tylko lokalnie:** instalacja i usuwanie dotyczą komputera, na którym działa host; na komputerach zdalnych nic się nie instaluje (moduły wykonują tam operacje przez kontekst wykonania, D-019).
 
 ## Samodzielne uruchamianie (propozycja, FAZA 19)
@@ -288,7 +325,7 @@ Moduły deklarujące tryb Standalone lub CLI uruchamiają się bez głównego ok
 
 ## Model procesów i współbieżność (rozstrzygnięty w FAZIE 2, D-023)
 
-Moduły działają **w procesie hosta** jako zwykłe moduły PowerShella. Długie i zdalne operacje działają w **puli runspace'ów** z limitem równoległości, anulowaniem i limitem czasu na operację (implementacja: FAZA 3 dla operacji zdalnych, FAZA 4 dla GUI). Osobny proces tylko z uzasadnieniem: elewacja (nowy proces przez UAC, D-027) albo izolacja kodu, który może zawiesić lub zamknąć proces. Każda operacja ma zasady anulowania, limitów czasu, obsługi błędów i zwalniania zasobów.
+Moduły działają **w procesie hosta** jako zwykłe moduły PowerShella. Długie i zdalne operacje działają w **puli runspace'ów** z limitem równoległości, anulowaniem i limitem czasu na operację (implementacja w FAZIE 3: `Start-`/`Wait-`/`Stop-MwpOperation`, D-036; użycie w GUI: FAZA 4). Osobny proces tylko z uzasadnieniem: elewacja (nowy proces przez UAC, D-027) albo izolacja kodu, który może zawiesić lub zamknąć proces. Każda operacja ma zasady anulowania, limitów czasu, obsługi błędów i zwalniania zasobów.
 
 Konsekwencje dla kodu (obowiązują od FAZY 2):
 - funkcje logiki są bezstanowe: wszystko, co dotyczy komputera i instancji, przychodzi w parametrach; brak zmiennych modułu z kontekstem,
@@ -329,7 +366,7 @@ Konsekwencje dla kodu (obowiązują od FAZY 2):
 - Katalog danych (D-032): klucz `dataPath` w konfiguracji; pusty (domyślnie) = `<folder aplikacji>\data`; ścieżka względna liczona od folderu aplikacji (`$PSScriptRoot`, nie bieżący katalog); bezwzględna (dysk lub UNC) może zawierać zmienne środowiskowe. Zna go wyłącznie `Get-MwpDataPath` (`-Kind Root|Logs|Undo|Fallback`, `-Detailed`). Katalog niezapisywalny (próba utworzenia i usunięcia pliku, wynik pamiętany do końca procesu) lub ścieżka niepoprawna → tryb zapasowy `%LOCALAPPDATA%\MyWindowsPower` z ostrzeżeniem w wyniku i w logu (`DataPath.Fallback`, raz na proces). W trybie zapasowym także `settings.local.json` (gdy folder `config` jest niezapisywalny; istniejący plik w `config` ma pierwszeństwo). Bez automatycznej migracji starych danych. Moduły z paczek zostają w `src/Modules/Installed` do FAZY 4.
 - Logi (D-026, D-032): `<katalog danych>\logs\mwp-RRRR-MM-DD.log`, jeden wpis JSON na linię (UTF-8 bez BOM): `timestamp`, `level`, `computer`, `source`, `operation`, `message`, `user`, `processId`, opcjonalnie `data`. Próg `logLevel` (Debug/Info/Warning/Error), rotacja przy pierwszym wpisie dnia wg `logRetentionDays`. Operacje na komputerze zdalnym są logowane na hoście z nazwą komputera. Chwilowa blokada pliku (np. OneDrive) → do 5 ponowień (ok. 1,5 s), potem ostrzeżenie bez przerywania operacji.
 - Rejestr cofnięć (D-028, D-032): `<katalog danych>\undo\<GUID>.json`.
-- Konfiguracja użytkownika: `config/settings.local.json` (poza repozytorium; w trybie zapasowym `%LOCALAPPDATA%\MyWindowsPower\settings.local.json`, D-032); szablon `config/settings.example.json` z polem `schemaVersion` jest jednocześnie źródłem wartości domyślnych (D-025). Od FAZY 3 zawiera sekcję `targets` (komputery docelowe: `localhost` i zdalne); nazwy prawdziwych komputerów, adresy i poświadczenia nigdy nie trafiają do repozytorium ani do szablonu.
+- Konfiguracja użytkownika: `config/settings.local.json` (poza repozytorium; w trybie zapasowym `%LOCALAPPDATA%\MyWindowsPower\settings.local.json`, D-032); szablon `config/settings.example.json` z polem `schemaVersion` jest jednocześnie źródłem wartości domyślnych (D-025). Schemat 2 (FAZA 3, D-037) dodaje: `targets` (komputery zdalne; `localhost` jest zawsze obecny bez wpisu), `installedModules` (rejestr modułów z paczek), `modules` (ustawienia modułów), `remoteMaxParallelOperations`, `remoteConnectTimeoutSeconds`, `remoteOperationTimeoutSeconds`; migracja 1 → 2 zachowuje pozostałe klucze, w tym `dataPath`. Nazwy prawdziwych komputerów, adresy i poświadczenia nigdy nie trafiają do repozytorium ani do szablonu.
 - Zasady (D-015, wdrożone w FAZIE 2, D-025): zapis atomowy (plik tymczasowy, potem `File.Replace`/`File.Move`); uszkodzony plik nie blokuje startu — wartości domyślne, ostrzeżenie i log, a plik zostaje zachowany jako `settings.local.json.corrupt-RRRRMMDD-GGmmss`; nowsza `schemaVersion` niż obsługiwana → wartości domyślne, plik bez zmian; starsza → migracje krok po kroku (`Invoke-MwpSettingsMigration`); `Set-MwpSetting` przyjmuje tylko klucze z szablonu i wartość zgodnego typu.
 
 ## Testy
@@ -340,6 +377,8 @@ Konsekwencje dla kodu (obowiązują od FAZY 2):
 - Pliki testów zaczynają się od `#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.0.0' }` i atrybutu tłumiącego `PSUseDeclaredVarsMoreThanAssignments` (zakresy Pestera).
 
 ## Testy architektoniczne (FAZY 3–5 dodają je stopniowo, FAZA 20 domyka)
+
+Stan po FAZIE 3 (testy Pester z mockami): 3, 4, 7 (na poziomie kontekstów i instancji), 8, 9 i 11 — `tests/Modules/MWP.Remote/*.Tests.ps1`, `tests/Modules/MWP.Core/ModuleContract.Tests.ps1`, `ModulePackage.Tests.ps1`; 12 częściowo (`New-MwpRestorePoint -Context`). Dodatkowo `Architecture.Tests.ps1`: funkcje komputera docelowego przyjmują `-Context`, polecenia WinRM/CIM tylko w adapterze, brak zmian `TrustedHosts`, brak zmiennych modułu z komputerem lub poświadczeniami.
 
 1. Uruchomienie modułu samodzielnie bez hosta.
 2. Uruchomienie modułu wewnątrz hosta.

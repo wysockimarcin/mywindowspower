@@ -25,4 +25,8 @@
 | Widget | Uproszczony widok danych modułu na Dashboardzie; osobny kontrakt prezentacji, powiązany z instancją i komputerem |
 | Tryb prezentacji | Sposób pokazania modułu: Embedded, SeparateWindow, DashboardWidget, Standalone, CLI |
 | Transport | Mechanizm wykonania operacji na komputerze zdalnym (np. WinRM, CIM) |
+| Adapter transportu | Prywatne funkcje `MWP.Remote`, jedyne miejsce z poleceniami WinRM/CIM (`New-MwpPSSession`, `Invoke-MwpSessionCommand`, `New-MwpCimSession`…); w testach podmieniane mockami (D-034) |
+| Rejestr komputerów docelowych | Klucz `targets` w `config/settings.local.json` z komputerami zdalnymi; `localhost` jest zawsze obecny bez wpisu (`Get-`/`Add-`/`Remove-MwpTarget`) |
+| Stan połączenia | Pole `Context.Connection.State`: `Connected`, `Connecting`, `Disconnected`, `Unauthorized`, `Error`; jedyny zmienny element kontekstu wykonania (D-035) |
+| Operacja asynchroniczna | Blok wykonywany w puli runspace'ów (`Start-`/`Wait-`/`Stop-MwpOperation`) z limitem równoległości, limitem czasu i anulowaniem (D-036) |
 | ADR | Zapis decyzji architektonicznej (problem, opcje, kryteria, wybór, uzasadnienie, konsekwencje); w projekcie wpisy w `DECYZJE.md` |

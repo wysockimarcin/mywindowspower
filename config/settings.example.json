@@ -1,10 +1,27 @@
 {
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "theme": "System",
     "logLevel": "Info",
     "logRetentionDays": 30,
     "dryRunByDefault": true,
     "confirmChanges": true,
     "createRestorePointBeforeRiskyChanges": true,
-    "dataPath": ""
+    "dataPath": "",
+    "remoteMaxParallelOperations": 4,
+    "remoteConnectTimeoutSeconds": 30,
+    "remoteOperationTimeoutSeconds": 300,
+    "targets": [
+        {
+            "name": "NAZWA-KOMPUTERA",
+            "displayName": "Komputer zdalny (przykład, pomijany)",
+            "transport": "WinRM",
+            "port": 5985,
+            "useSsl": false,
+            "authentication": "Credential",
+            "userName": "",
+            "isExample": true
+        }
+    ],
+    "installedModules": [],
+    "modules": {}
 }

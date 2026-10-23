@@ -63,9 +63,19 @@ Describe 'Kontrakt modułu i odkrywanie modułów' {
     }
 
     Context 'moduły repozytorium' {
-        It 'odkrywa wszystkie moduły z src\Modules' {
+        It 'odkrywa wszystkie moduły z src\Modules (i src\Modules\Installed, jeśli istnieje)' {
             $expected = @(Get-ChildItem -LiteralPath $modulesRoot -Directory -Filter 'MWP.*').Count
+            $installed = Join-Path -Path $modulesRoot -ChildPath 'Installed'
+            if (Test-Path -LiteralPath $installed) {
+                $expected += @(Get-ChildItem -LiteralPath $installed -Directory -Filter 'MWP.*').Count
+            }
             @(Get-MwpModuleDefinition).Count | Should -Be $expected
+        }
+
+        It 'moduły repozytorium są wbudowane, a Core i Remote — bazowe' {
+            $definitions = @(Get-MwpModuleDefinition -ModulesRoot $modulesRoot)
+            $definitions | ForEach-Object { $_.Source | Should -Be 'BuiltIn' }
+            @($definitions | Where-Object { $_.IsBase } | ForEach-Object { $_.Id } | Sort-Object) | Should -Be @('Core', 'Remote')
         }
 
         It 'wszystkie moduły mają poprawny kontrakt' {
@@ -195,6 +205,58 @@ Describe 'Kontrakt modułu i odkrywanie modułów' {
 
             $validation.IsValid | Should -BeFalse
             $validation.Errors -join ' ' | Should -BeLike '*wymaga hosta*'
+        }
+    }
+
+    Context 'katalogi modułów wbudowanych i zainstalowanych (D-031)' {
+        BeforeAll {
+            $installedFixtures = Join-Path -Path $TestDrive -ChildPath 'Zainstalowane\Installed'
+        }
+
+        BeforeEach {
+            Remove-Item -LiteralPath (Join-Path -Path $TestDrive -ChildPath 'Zainstalowane') -Recurse -Force -ErrorAction SilentlyContinue
+            $null = New-Item -ItemType Directory -Path $installedFixtures -Force
+        }
+
+        It 'przyjmuje listę katalogów; katalog Installed daje moduły z Source = Installed' {
+            Add-TestModule -Name 'Base' -PrivateData (Get-TestContract -Id 'Base')
+            $directory = Join-Path -Path $installedFixtures -ChildPath 'MWP.Extra'
+            $null = New-Item -ItemType Directory -Path $directory -Force
+            $manifest = Join-Path -Path $directory -ChildPath 'MWP.Extra.psd1'
+            (Get-Content -LiteralPath (Join-Path -Path $fixtures -ChildPath 'MWP.Base\MWP.Base.psd1') -Raw -Encoding UTF8) -replace "Id = 'Base'", "Id = 'Extra'" |
+                Set-Content -LiteralPath $manifest -Encoding UTF8
+
+            $definitions = @(Get-MwpModuleDefinition -ModulesRoot $fixtures, $installedFixtures -HostVersion '0.2.0')
+
+            $definitions.Count | Should -Be 2
+            ($definitions | Where-Object { $_.Id -eq 'Base' }).Source | Should -Be 'BuiltIn'
+            ($definitions | Where-Object { $_.Id -eq 'Extra' }).Source | Should -Be 'Installed'
+            ($definitions | Where-Object { $_.Id -eq 'Extra' }).IsBase | Should -BeFalse
+            $definitions | ForEach-Object { $_.IsValid | Should -BeTrue -Because ($_.Errors -join ' ') }
+        }
+
+        It 'bez jawnej listy skanuje katalog wbudowany i Installed; brak Installed nie jest błędem' {
+            Add-TestModule -Name 'Base' -PrivateData (Get-TestContract -Id 'Base')
+            $missing = Join-Path -Path $TestDrive -ChildPath 'BrakKatalogu\Installed'
+            Mock -ModuleName MWP.Core Get-MwpModuleRoot { [pscustomobject]@{ BuiltIn = $fixtures; Installed = $missing } }
+
+            @(Get-MwpModuleDefinition -HostVersion '0.2.0').Id | Should -Be @('Base')
+        }
+
+        It 'jawnie podany, nieistniejący katalog jest błędem' {
+            { Get-MwpModuleDefinition -ModulesRoot (Join-Path -Path $TestDrive -ChildPath 'nie-ma') } | Should -Throw '*Nie znaleziono katalogu modułów*'
+        }
+
+        It 'ten sam folder modułu w dwóch katalogach to błąd walidacji obu' {
+            Add-TestModule -Name 'Base' -PrivateData (Get-TestContract -Id 'Base')
+            $directory = Join-Path -Path $installedFixtures -ChildPath 'MWP.Base'
+            $null = New-Item -ItemType Directory -Path $directory -Force
+            Copy-Item -LiteralPath (Join-Path -Path $fixtures -ChildPath 'MWP.Base\MWP.Base.psd1') -Destination $directory
+
+            $definitions = @(Get-MwpModuleDefinition -ModulesRoot $fixtures, $installedFixtures -HostVersion '0.2.0')
+
+            $definitions.Count | Should -Be 2
+            $definitions | ForEach-Object { $_.Errors -join ' ' | Should -Match 'kilku katalogach' }
         }
     }
 }

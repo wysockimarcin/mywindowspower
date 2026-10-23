@@ -53,6 +53,14 @@ Describe 'Plik .gitignore' {
         Get-Content -LiteralPath (Join-Path -Path $root -ChildPath '.gitignore') | Should -Contain '/data/'
     }
 
+    It 'wyklucza moduły zainstalowane z paczek src/Modules/Installed/ (D-031)' {
+        Get-Content -LiteralPath (Join-Path -Path $root -ChildPath '.gitignore') | Should -Contain 'src/Modules/Installed/'
+        if (Get-Command -Name git -ErrorAction SilentlyContinue) {
+            $null = & git -C $root check-ignore -q -- 'src/Modules/Installed/MWP.Przyklad/MWP.Przyklad.psd1'
+            $LASTEXITCODE | Should -Be 0 -Because 'moduły z paczek nie trafiają do repozytorium'
+        }
+    }
+
     It 'nie wyklucza danych modułów, np. src/Modules/MWP.Core/Data/protected-items.json' {
         if (-not (Get-Command -Name git -ErrorAction SilentlyContinue)) {
             Set-ItResult -Skipped -Because 'brak polecenia git'

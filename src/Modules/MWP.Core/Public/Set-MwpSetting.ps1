@@ -24,6 +24,7 @@
         [Parameter(Mandatory, Position = 1)]
         [AllowNull()]
         [AllowEmptyString()]
+        [AllowEmptyCollection()]
         [object] $Value
     )
 
@@ -54,19 +55,8 @@
     }
 
     try {
-        $local = [ordered]@{ schemaVersion = $data.Defaults['schemaVersion'] }
-        foreach ($key in $data.Local.Keys) {
-            if ($key -ne 'schemaVersion') {
-                $local[$key] = $data.Local[$key]
-            }
-        }
-        $local[$Name] = $Value
         # Pierwszy zapis: gdy folder config jest niezapisywalny, plik trafia do katalogu zapasowego (D-032).
-        $localPath = $data.Paths.Local
-        if (-not (Test-Path -LiteralPath $localPath)) {
-            $localPath = (Get-MwpConfigPath -ForWrite).Local
-        }
-        Write-MwpJsonFile -Path $localPath -InputObject $local
+        Write-MwpLocalSetting -Values @{ $Name = $Value } -Data $data
 
         $undo = Save-MwpUndoEntry -Module 'MWP.Core' -Operation $common.Operation -Target $Name -ComputerName $computerName `
             -Description ("Przywrócenie ustawienia '{0}' do wartości '{1}'" -f $Name, $before) `

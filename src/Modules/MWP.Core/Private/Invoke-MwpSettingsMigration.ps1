@@ -19,8 +19,22 @@
         [int] $TargetVersion
     )
 
-    # Schemat 1 jest pierwszy, więc nie ma jeszcze kroków migracji.
-    $steps = @{}
+    # Krok 1 -> 2 (FAZA 3): komputery docelowe (targets), rejestr modułów z paczek (installedModules)
+    # i ustawienia modułów (modules). Pozostałe klucze, w tym dataPath (D-032), zostają bez zmian.
+    $steps = @{
+        1 = {
+            param($Data)
+            foreach ($key in 'targets', 'installedModules') {
+                if (-not $Data.Contains($key)) {
+                    $Data[$key] = @()
+                }
+            }
+            if (-not $Data.Contains('modules')) {
+                $Data['modules'] = [ordered]@{}
+            }
+            $Data
+        }
+    }
 
     $warnings = New-Object -TypeName System.Collections.Generic.List[string]
     $current = [int]$Settings['schemaVersion']

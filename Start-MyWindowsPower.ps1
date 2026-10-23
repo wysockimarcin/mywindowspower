@@ -9,8 +9,9 @@
     - sprawdza system (Windows 11; starsze wersje tylko z ostrzeżeniem),
     - sprawdza tryb STA wymagany przez WPF i w razie potrzeby uruchamia się ponownie z -STA,
     - wypisuje status uprawnień administratora,
-    - importuje moduły z src/Modules (najpierw MWP.Core), sprawdzając kontrakt każdego modułu
-      (Get-MwpModuleDefinition: wersja hosta, zależności); moduł z błędnym kontraktem nie jest ładowany,
+    - importuje moduły z src/Modules (najpierw MWP.Core), a po nich moduły zainstalowane z paczek
+      (src/Modules/Installed, D-031), sprawdzając kontrakt każdego modułu (Get-MwpModuleDefinition:
+      wersja hosta, zależności); moduł z błędnym kontraktem nie jest ładowany,
     - z parametrem -Elevate uruchamia się ponownie z uprawnieniami administratora (monit UAC).
 
     Launcher niczego nie zmienia w systemie. Okno GUI powstanie w FAZIE 4.
@@ -143,9 +144,14 @@ if (-not (Test-Path -LiteralPath $modulesRoot)) {
     exit 1
 }
 
-# MWP.Core jako pierwszy, bo pozostałe moduły będą z niego korzystać.
+# MWP.Core jako pierwszy, bo pozostałe moduły będą z niego korzystać; moduły zainstalowane z paczek
+# (src\Modules\Installed, D-031) po wbudowanych.
+$installedRoot = Join-Path -Path $modulesRoot -ChildPath 'Installed'
 $moduleDirs = @(Get-ChildItem -LiteralPath $modulesRoot -Directory -Filter 'MWP.*' |
         Sort-Object -Property @{ Expression = { $_.Name -ne 'MWP.Core' } }, Name)
+if (Test-Path -LiteralPath $installedRoot -PathType Container) {
+    $moduleDirs += @(Get-ChildItem -LiteralPath $installedRoot -Directory -Filter 'MWP.*' | Sort-Object -Property Name)
+}
 
 $failed = 0
 $definitions = $null
@@ -154,7 +160,7 @@ foreach ($dir in $moduleDirs) {
     try {
         # Kontrakt pozostałych modułów sprawdza MWP.Core, więc dostępny jest dopiero po jego imporcie.
         if ($null -ne $definitions) {
-            $definition = @($definitions | Where-Object { $_.ModuleName -eq $dir.Name }) | Select-Object -First 1
+            $definition = @($definitions | Where-Object { $_.ManifestPath -eq $manifest }) | Select-Object -First 1
             if ($null -ne $definition -and -not $definition.IsValid) {
                 throw ("niepoprawny kontrakt modułu: {0}" -f ($definition.Errors -join ' '))
             }
@@ -163,13 +169,18 @@ foreach ($dir in $moduleDirs) {
         Import-Module -Name $manifest -Force -ErrorAction Stop
 
         if ($dir.Name -eq 'MWP.Core') {
-            $definitions = @(Get-MwpModuleDefinition -ModulesRoot $modulesRoot)
-            $core = @($definitions | Where-Object { $_.ModuleName -eq 'MWP.Core' }) | Select-Object -First 1
+            $roots = @($modulesRoot)
+            if (Test-Path -LiteralPath $installedRoot -PathType Container) {
+                $roots += $installedRoot
+            }
+            $definitions = @(Get-MwpModuleDefinition -ModulesRoot $roots)
+            $core = @($definitions | Where-Object { $_.ManifestPath -eq $manifest }) | Select-Object -First 1
             if ($null -ne $core -and -not $core.IsValid) {
                 throw ("niepoprawny kontrakt modułu: {0}" -f ($core.Errors -join ' '))
             }
         }
-        Write-LauncherMessage ("  [OK]   {0}" -f $dir.Name) -Level Ok
+        $label = if ($dir.Parent.FullName -eq $installedRoot) { '{0} (z paczki)' -f $dir.Name } else { $dir.Name }
+        Write-LauncherMessage ("  [OK]   {0}" -f $label) -Level Ok
     }
     catch {
         $failed++

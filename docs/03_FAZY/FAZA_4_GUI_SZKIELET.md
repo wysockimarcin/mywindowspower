@@ -26,6 +26,12 @@ FAZY 1, 2 i 3 zakończone.
 
 - **Katalog danych (D-032):** w `Ustawieniach` edycja `dataPath` (pole z podglądem ścieżki wynikowej, sprawdzenie zapisywalności, ostrzeżenie o trybie zapasowym `%LOCALAPPDATA%\MyWindowsPower`) i przycisk „Przenieś dane” (przeniesienie `logs` i `undo` do nowego katalogu: klasa Zmiana, podgląd, log, potwierdzenie, w tle, błąd nie zostawia danych w połowie; bez automatycznej migracji przy starcie). Przeniesienie modułów z paczek z `src/Modules/Installed` do katalogu danych (skanowanie w `Get-MwpModuleDefinition` i launcherze, przeniesienie istniejących instalacji, aktualizacja `.gitignore` i testów). Stan katalogu danych (ścieżka, tryb zapasowy) w `O programie` lub pasku stanu przez funkcję publiczną `MWP.Core` (`Get-MwpDataPath` jest wewnętrzna). Wybór miejsca przy instalacji — dopiero z instalatorem aplikacji.
 
+## Wejście z FAZY 3 (do uwzględnienia)
+- API: `New-MwpModuleInstance`/`Initialize-`/`Close-`/`Get-MwpModuleInstance`, `New-MwpExecutionContext`, `Connect-`/`Disconnect-`/`Test-MwpTarget`, `Start-`/`Wait-`/`Stop-MwpOperation` (pula runspace'ów z limitem `remoteMaxParallelOperations`), stan połączenia w `Context.Connection.State` (opis: `ARCHITEKTURA.md`, D-033…D-037).
+- Okno poświadczeń (`Get-Credential`) wyświetla GUI przy połączeniu z komputerem o uwierzytelnieniu `Credential`; logika go nie wyświetla (D-034). Stan `Unauthorized` z `ErrorKind = CredentialRequired` oznacza „poproś o poświadczenia".
+- Instancja dla komputera zdalnego wymaga `RemoteTarget` w `Capabilities` modułu. Moduły obszarów mają dziś puste `Capabilities`, więc test „dwie instancje dla dwóch komputerów" w GUI wymaga modułu-zaślepki z `RemoteTarget` (albo dodania tej możliwości w fazie obszaru).
+- Kontekst wykonania jest bezpieczny do odczytu w innych runspace'ach (bez kodu przy odczycie), ale sesja WinRM kontekstu należy do runspace'u, w którym powstała — operacje w tle uruchamiaj przez `Start-MwpOperation`.
+
 ## Poza zakresem
 Logika i dane obszarów, widgety Dashboardu (FAZA 5), uruchamianie samodzielne (FAZA 19).
 

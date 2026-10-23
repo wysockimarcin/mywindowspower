@@ -16,7 +16,10 @@
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string] $ModuleName
+        [string] $ModuleName,
+
+        [ValidateSet('BuiltIn', 'Installed')]
+        [string] $Source = 'BuiltIn'
     )
 
     $manifest = $null
@@ -66,9 +69,10 @@
             }
         })
 
+    $id = [string](& $get 'Id')
     [pscustomobject]@{
         PSTypeName                 = 'MWP.ModuleDefinition'
-        Id                         = [string](& $get 'Id')
+        Id                         = $id
         Name                       = [string](& $get 'Name')
         ModuleName                 = $ModuleName
         Version                    = $version
@@ -84,6 +88,8 @@
         ExportedFunctions          = $(if ($null -ne $manifest) { @($manifest['FunctionsToExport']) } else { @() })
         ManifestPath               = $ManifestPath
         ModuleBase                 = Split-Path -Parent $ManifestPath
+        Source                     = $Source
+        IsBase                     = $Source -eq 'BuiltIn' -and $id -in @('Core', 'Remote')
         Contract                   = $contract
         LoadError                  = $loadError
         IsValid                    = $false

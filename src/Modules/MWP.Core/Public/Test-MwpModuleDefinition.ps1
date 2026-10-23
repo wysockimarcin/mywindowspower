@@ -71,6 +71,9 @@
         elseif (@($AvailableDefinition | Where-Object { $_.Id -eq $Definition.Id -and $_.ManifestPath -ne $Definition.ManifestPath }).Count -gt 0) {
             $errors.Add(("Id '{0}' jest używane także przez inny moduł." -f $Definition.Id))
         }
+        if (@($AvailableDefinition | Where-Object { $_.ModuleName -eq $Definition.ModuleName -and $_.ManifestPath -ne $Definition.ManifestPath }).Count -gt 0) {
+            $errors.Add(("Folder modułu '{0}' występuje w kilku katalogach modułów." -f $Definition.ModuleName))
+        }
 
         if ([string]::IsNullOrWhiteSpace($Definition.Name)) {
             $errors.Add('Pole Name nie może być puste.')

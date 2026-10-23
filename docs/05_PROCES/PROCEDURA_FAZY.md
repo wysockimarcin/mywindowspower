@@ -9,9 +9,10 @@
 3. Przeczytaj w kolejności: `CLAUDE.md` → `docs/02_STAN/STAN_PROJEKTU.md` → `docs/00_PROJEKT/CONTEXT.md` → `ARCHITEKTURA.md` → `DECYZJE.md` → plik fazy `docs/03_FAZY/FAZA_<N>_*.md`.
 4. Wykonaj `git status` i `git log --oneline -10`.
 5. Zweryfikuj poprzednią fazę: czy w `STAN_PROJEKTU.md` ma status `ZAKOŃCZONA`, czy istnieje jej commit i wpis w `CHANGELOG_FAZ.md`. Jeśli nie: zatrzymaj się, zgłoś rozbieżność użytkownikowi.
-6. Uzupełnij w `CHANGELOG_FAZ.md` hash commita poprzedniej fazy (z `git log`).
-7. Ustaw status bieżącej fazy w `STAN_PROJEKTU.md` na `W TOKU`.
-8. Napisz użytkownikowi krótko: jaka to faza, co jest jej celem i co będzie zrobione.
+6. **Zapisz bazę testów przed zmianami.** W nowym terminalu uruchom `.\tests\Invoke-Checks.ps1` w PowerShell 5.1 (`powershell.exe`) i 7.x (`pwsh`); zapisz wersje (`$PSVersionTable.PSVersion`), ścieżkę `(Get-Command pwsh).Source`, liczbę uwag PSScriptAnalyzer i wynik Pester. Jeśli baza nie jest czysta (uwagi lub niezaliczone testy), zatrzymaj się i zgłoś to użytkownikowi, zanim cokolwiek zmienisz.
+7. Uzupełnij w `CHANGELOG_FAZ.md` hash commita poprzedniej fazy (z `git log`).
+8. Ustaw status bieżącej fazy w `STAN_PROJEKTU.md` na `W TOKU`.
+9. Napisz użytkownikowi krótko: jaka to faza, co jest jej celem i co będzie zrobione.
 
 ## B. Realizacja
 
@@ -22,7 +23,7 @@
 
 ## C. Zamknięcie fazy
 
-1. **Weryfikacja.** Dla każdego punktu checklisty ustal: ZROBIONE / CZĘŚCIOWO / NIEZROBIONE. Podaj dowód (plik, wynik testu, komenda). Uruchom Pester i PSScriptAnalyzer, jeśli środowisko na to pozwala.
+1. **Weryfikacja.** Dla każdego punktu checklisty ustal: ZROBIONE / CZĘŚCIOWO / NIEZROBIONE. Podaj dowód (plik, wynik testu, komenda). **Obowiązkowo** uruchom `.\tests\Invoke-Checks.ps1` w PowerShell 5.1 i 7.x (w nowym terminalu). Wymagane w obu wersjach: 0 uwag PSScriptAnalyzer i 0 niezaliczonych testów Pester; wyniki porównaj z bazą z kroku A.6. Bez tego nie wykonuj commita zamykającego fazę. Jedyny wyjątek: środowisko rozmowy nie jest Windows (zasada 7 w `CLAUDE.md`) — wtedy wykonaj testy statyczne, które się da, a wynik oznacz w `STAN_PROJEKTU.md` jako „do weryfikacji na Windows 11".
 2. **Aktualizacja dokumentacji:**
    - plik fazy: status, odhaczona checklista, sekcja „Wyniki"
    - `STAN_PROJEKTU.md`: tabela „Podsumowanie", „Postęp faz", „Co zostało zrobione", „Co zostało do zrobienia", dług techniczny, punkty do weryfikacji na Windows 11

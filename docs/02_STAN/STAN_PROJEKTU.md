@@ -11,15 +11,15 @@
 | Prompt następnej fazy | `docs/04_PROMPTY/PROMPT_FAZA_2.md` |
 | Plik następnej fazy | `docs/03_FAZY/FAZA_2_RDZEN_BEZPIECZENSTWO.md` |
 | Data ostatniej aktualizacji | 2026-10-23 |
-| Ostatni commit | `FAZA 1: szkielet techniczny, launcher, moduły, Pester i PSScriptAnalyzer` (hash: patrz `git log`) |
-| Zdalne repozytorium | https://github.com/wysockimarcin/mywindowspower (push: czeka na użytkownika) |
+| Ostatni commit | `286fcfb` — `FAZA 1: szkielet techniczny, launcher, moduły, Pester i PSScriptAnalyzer` |
+| Zdalne repozytorium | https://github.com/wysockimarcin/mywindowspower (push wykonany: `origin/main` zawiera FAZĘ 0 i FAZĘ 1) |
 
 ## Postęp faz
 
 | FAZA | Nazwa | Status | Commit |
 |---|---|---|---|
 | FAZA 0 | Fundament | ZAKOŃCZONA | `47c4b0a` |
-| FAZA 1 | Szkielet techniczny | ZAKOŃCZONA | `FAZA 1: ...` (hash uzupełnia FAZA 2) |
+| FAZA 1 | Szkielet techniczny | ZAKOŃCZONA | `286fcfb` |
 | FAZA 2 | Rdzeń i bezpieczeństwo zmian | DO ZROBIENIA | — |
 | FAZA 3 | Szkielet GUI | DO ZROBIENIA | — |
 | FAZA 4 | Dashboard | DO ZROBIENIA | — |
@@ -54,7 +54,6 @@ Fazy od FAZY 2 do FAZY 15 (patrz tabela). Istnieje tylko szkielet: moduły mają
 
 ## Otwarte pytania do użytkownika
 
-- Czy `git push` do `origin` ma wykonywać Claude (po zgodzie w rozmowie), czy użytkownik samodzielnie?
 - Czy zainstalować PowerShell 7.x, żeby testować zgodność z 7.x na komputerze użytkownika? (obecnie brak `pwsh`; nie blokuje prac)
 
 ## Znane środowisko docelowe

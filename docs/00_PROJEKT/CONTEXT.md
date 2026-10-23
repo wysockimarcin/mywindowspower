@@ -32,20 +32,20 @@ Jeden użytkownik: właściciel repozytorium (`wysockimarcin`), na własnych kom
 |---|---|---|
 | System | Windows 11 Pro, wersja 26H2, kompilacja 26300 (`winver`: 26300.9711) | `winver`, `Get-CimInstance Win32_OperatingSystem`, `[Environment]::OSVersion` = 10.0.26300.0 |
 | PowerShell | 5.1.26100.9711 (Desktop), `BuildVersion` 10.0.26100.9711 | `$PSVersionTable` |
-| PowerShell 7.x | **nie jest zainstalowany** | `Get-Command pwsh` — brak |
+| PowerShell 7.x | 7.6.7 (Core), instalacja MSI w `C:\Program Files\PowerShell\7\pwsh.exe` (2026-10-23, D-022; w FAZIE 1 nie był zainstalowany) | `(Get-Command pwsh).Source`, `$PSVersionTable` |
 | Zasady wykonywania | `CurrentUser: RemoteSigned`, pozostałe `Undefined` | `Get-ExecutionPolicy -List` |
-| Narzędzia deweloperskie | Pester 6.2.0, PSScriptAnalyzer 1.25.0 (zakres CurrentUser, zainstalowane w FAZIE 1 za zgodą użytkownika); wbudowany Pester 3.4.0 pozostaje w systemie | `Get-Module -ListAvailable` |
+| Narzędzia deweloperskie | Pester 6.2.0, PSScriptAnalyzer 1.25.0 (zakres CurrentUser, osobno dla 5.1 i 7.x, zainstalowane za zgodą użytkownika); wbudowany Pester 3.4.0 pozostaje w systemie | `Get-Module -ListAvailable` |
 
 Numer kompilacji PowerShella (26100) różni się od kompilacji systemu (26300). To normalne: Windows PowerShell 5.1 ma własny numer kompilacji.
 
-Wniosek dla projektu: na komputerze użytkownika działa tylko PowerShell 5.1, więc **zgodność z 5.1 jest wymaganiem podstawowym**, a 7.x dodatkiem (D-002, D-013). Kod nadal musi działać w 7.x, ale nie da się go tu przetestować, dopóki `pwsh` nie zostanie zainstalowany.
+Wniosek dla projektu: **zgodność z 5.1 jest wymaganiem podstawowym** (D-002, D-013) — 5.1 jest wbudowany w każdy Windows 11, a komputer zdalny ma tylko 5.1. Na komputerze lokalnym są obie wersje, więc kod jest testowany w 5.1 i 7.x (`tests\Invoke-Checks.ps1`, D-022).
 
 ### Komputery docelowe
 
 | Komputer | Opis |
 |---|---|
 | `localhost` | Komputer lokalny opisany wyżej. Operacje wykonywane bezpośrednio, bez zdalnego wywołania. |
-| Komputer zdalny | Jeden zdalny komputer użytkownika (nazwa tylko w `config/settings.local.json`). System, konfiguracja WinRM, domena lub grupa robocza i konto — **do ustalenia z użytkownikiem na początku FAZY 3**. |
+| Komputer zdalny | Jeden zdalny komputer użytkownika (nazwa tylko w `config/settings.local.json`). **PowerShell 7 nie jest na nim zainstalowany** (informacja od użytkownika, 2026-10-23) — kod wykonywany zdalnie musi działać w Windows PowerShell 5.1. System, konfiguracja WinRM, domena lub grupa robocza i konto — **do ustalenia z użytkownikiem na początku FAZY 3**. |
 
 Nazw prawdziwych komputerów, adresów i poświadczeń nie zapisujemy w repozytorium (szablon: `config/settings.example.json`).
 

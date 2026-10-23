@@ -69,7 +69,7 @@ Fazy od FAZY 2 do FAZY 21 (patrz tabela). Istnieje tylko szkielet: moduły mają
 
 ## Znane środowisko docelowe
 
-- Komputery docelowe (D-019): `localhost` (poniżej) oraz jeden komputer zdalny; jego nazwa i parametry są tylko w `config/settings.local.json` (poza repozytorium). System i konfiguracja komputera zdalnego — do ustalenia w FAZIE 3.
+- Komputery docelowe (D-019): `localhost` (poniżej) oraz jeden komputer zdalny; jego nazwa i parametry są tylko w `config/settings.local.json` (poza repozytorium). Na komputerze zdalnym nie ma PowerShell 7 (tylko wbudowany 5.1; informacja od użytkownika, 2026-10-23). System i konfiguracja komputera zdalnego — do ustalenia w FAZIE 3.
 - Windows 11 Pro, wersja 26H2, kompilacja 26300.9711 (`winver`) — potwierdzone w FAZIE 1.
 - PowerShell 5.1.26100.9711 — potwierdzone (D-013). PowerShell 7.6.7 — zainstalowany 2026-10-23 z instalatora MSI (oficjalne wydanie na GitHubie, D-022); `(Get-Command pwsh).Source` = `C:\Program Files\PowerShell\7\pwsh.exe` (w PATH maszyny).
 - Narzędzia: Pester 6.2.0, PSScriptAnalyzer 1.25.0 (CurrentUser), osobno dla 5.1 (`Documents\WindowsPowerShell\Modules`) i 7.x (`Documents\PowerShell\Modules`).

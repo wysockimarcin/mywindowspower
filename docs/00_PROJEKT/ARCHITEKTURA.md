@@ -188,7 +188,8 @@ Do rozstrzygnięcia: moduły w procesie hosta, w osobnych procesach albo model m
 
 - Unikaj składni dostępnej tylko w 7.x (np. `??`, `?.`, ternary, `ForEach-Object -Parallel`) w kodzie, który ma działać w 5.1, albo zapewnij wariant.
 - Zapisuj pliki `.ps1`/`.psm1`/`.psd1` jako UTF-8 z BOM (5.1 źle czyta polskie znaki bez BOM — potwierdzone w FAZIE 1: plik bez BOM nie parsuje się). Pliki JSON: UTF-8 bez BOM, czytane przez `Get-Content -Raw -Encoding UTF8`.
-- Kontrolę zgodności wykonuje PSScriptAnalyzer (`PSUseCompatibleSyntax`, `PSUseCompatibleCommands`, `PSUseCompatibleTypes`, D-018). PowerShell 7 nie jest zainstalowany na komputerze użytkownika, więc testy uruchamiane są w 5.1.
+- Kontrolę zgodności wykonuje PSScriptAnalyzer (`PSUseCompatibleSyntax`, `PSUseCompatibleCommands`, `PSUseCompatibleTypes`, D-018). Testy (`tests\Invoke-Checks.ps1`) uruchamiane są w 5.1 i 7.x, każda wersja w nowym procesie (D-022).
+- Kod wykonywany na komputerze zdalnym musi działać w Windows PowerShell 5.1: komputer zdalny nie ma PowerShell 7, a domyślny punkt końcowy WinRM (`Microsoft.PowerShell`) to 5.1. Nie zakładaj PowerShell 7 na komputerze docelowym.
 - Cmdlety CIM zamiast WMI. Ścieżki przez `Join-Path`.
 - Różnice wersji zbierz w jednym miejscu (`MWP.Core`).
 

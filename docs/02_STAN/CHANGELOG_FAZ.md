@@ -19,7 +19,7 @@
 
 ## FAZA 3 — Komputery docelowe i połączenia zdalne (2026-10-23)
 - Status: ZAKOŃCZONA (połączenie z prawdziwym komputerem zdalnym — do weryfikacji ręcznej)
-- Commit: `FAZA 3: komputery docelowe, kontekst wykonania, połączenia zdalne, instancje i paczki modułów` — hash do uzupełnienia na starcie FAZY 4
+- Commit: `7ffb534` `FAZA 3: komputery docelowe, kontekst wykonania, połączenia zdalne, instancje i paczki modułów` (wypchnięty do `origin/main`)
 - Start: uzupełniono hashe FAZY 2 (`10646d9`) i korekt (`aa92c91`, `6f9925d`); baza testów w nowych procesach — 5.1.26100.9711: 0 uwag, 420/420; 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`): 0 uwag, 420/420. Niezatwierdzone zmiany użytkownika w `STAN_PROJEKTU.md` (wyniki ręcznej weryfikacji FAZY 2) zachowane.
 - Pytania do użytkownika: komputer zdalny — Windows 11, WinRM HTTP 5985 włączony, grupa robocza, logowanie przez Get-Credential na żądanie (D-033).
 - Zrobiono:

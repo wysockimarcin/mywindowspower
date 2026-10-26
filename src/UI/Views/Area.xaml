@@ -1,0 +1,50 @@
+<!-- Widok obszaru (zaślepka): opis obszaru, otwieranie instancji modułu dla wybranego komputera, lista instancji. -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" MaxWidth="640">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="AreaTitle" Style="{StaticResource Mwp.Text.Title}"/>
+                        <Border x:Name="PhaseBadge" Style="{StaticResource Mwp.Badge}" Margin="12,0,0,4">
+                            <TextBlock x:Name="PhaseText"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock x:Name="AreaDescription" Style="{StaticResource Mwp.Text.Subtitle}"/>
+                </StackPanel>
+                <Button x:Name="OpenInstanceButton" DockPanel.Dock="Right" Style="{StaticResource Mwp.Button.Accent}"
+                        Content="Otwórz instancję…" VerticalAlignment="Center"/>
+            </DockPanel>
+
+            <Border x:Name="StatusBanner" Style="{StaticResource Mwp.Banner.Info}" Margin="0,20,0,0">
+                <TextBlock x:Name="StatusText" TextWrapping="Wrap"/>
+            </Border>
+
+            <TextBlock Text="Instancje tego modułu" Style="{StaticResource Mwp.Text.Section}"/>
+            <TextBlock x:Name="NoInstancesText" Style="{StaticResource Mwp.Text.Muted}"
+                       Text="Brak otwartych instancji. Każda instancja działa dla jednego komputera i ma własny kontekst wykonania."/>
+            <ItemsControl x:Name="InstancesList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource Mwp.Card}" Padding="14,10" Margin="0,0,0,8">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                    <Button Uid="Show" Tag="{Binding Id}" Content="Pokaż" Margin="0,0,8,0"/>
+                                    <Button Uid="Close" Tag="{Binding Id}" Content="Zamknij"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <Border Style="{StaticResource Mwp.StateBadge}" DataContext="{Binding State}">
+                                        <TextBlock Text="{Binding Label}"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Placement}" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

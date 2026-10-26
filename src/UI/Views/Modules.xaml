@@ -1,0 +1,41 @@
+<!-- Widok „Moduły" (D-031): moduły wbudowane i z paczek, instalacja z .mwpmod, odinstalowanie. -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel Margin="32,28">
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="Moduły" Style="{StaticResource Mwp.Text.Title}"/>
+            <TextBlock x:Name="Summary" Style="{StaticResource Mwp.Text.Subtitle}"/>
+
+            <Border x:Name="LegacyBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,16,0,0" Visibility="Collapsed">
+                <DockPanel>
+                    <Button x:Name="LegacyMoveButton" DockPanel.Dock="Right" Content="Przenieś do katalogu danych" Margin="12,0,0,0"/>
+                    <TextBlock x:Name="LegacyText" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <WrapPanel Margin="0,16,0,12">
+                <Button x:Name="InstallButton" Style="{StaticResource Mwp.Button.Accent}" Content="Zainstaluj z pliku .mwpmod…" Margin="0,0,8,0"/>
+                <Button x:Name="UninstallButton" Style="{StaticResource Mwp.Button.Danger}" Content="Odinstaluj" Margin="0,0,8,0" IsEnabled="False"/>
+                <Button x:Name="RefreshButton" Content="Odśwież"/>
+            </WrapPanel>
+        </StackPanel>
+
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource Mwp.Card}" Margin="0,12,0,0" Padding="14,10">
+            <TextBlock x:Name="DetailsText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap"
+                       Text="Wybierz moduł, żeby zobaczyć szczegóły."/>
+        </Border>
+
+        <DataGrid x:Name="ModulesGrid">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="*"/>
+                <DataGridTextColumn Header="Wersja" Binding="{Binding Version}" Width="70"/>
+                <DataGridTextColumn Header="Pochodzenie" Binding="{Binding Source}" Width="100"/>
+                <DataGridTextColumn Header="Stan" Binding="{Binding State}" Width="2*"/>
+                <DataGridTextColumn Header="Tryby" Binding="{Binding Modes}" Width="*"/>
+                <DataGridTextColumn Header="Uprawnienia" Binding="{Binding Permissions}" Width="*"/>
+                <DataGridTextColumn Header="Instancje" Binding="{Binding Instances}" Width="75"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

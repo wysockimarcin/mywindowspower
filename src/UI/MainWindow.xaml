@@ -1,0 +1,125 @@
+<!-- Okno główne hosta modułów (FAZA 4). Układ według docs/design/mockup-pulpit.png; odstępstwa: D-039.
+     Bez x:Class i bez zdarzeń w XAML: zdarzenia podpina MWP.UI (Wpf\Initialize-MwpMainWindow.ps1). -->
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="My Windows Power"
+        Width="1360" Height="860" MinWidth="1000" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Background="{DynamicResource Mwp.Brush.WindowBackground}"
+        Foreground="{DynamicResource Mwp.Brush.Text}"
+        FontFamily="{DynamicResource Mwp.Font.Text}" FontSize="14">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition x:Name="LogRow" Height="0"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Pasek górny: wyszukiwanie w nawigacji i przełącznik motywu -->
+        <Border Grid.Row="0" Background="{DynamicResource Mwp.Brush.SurfaceAlt}" BorderBrush="{DynamicResource Mwp.Brush.Border}"
+                BorderThickness="0,0,0,1" Padding="16,10">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE7F4;" Style="{StaticResource Mwp.Text.Glyph}" Foreground="{DynamicResource Mwp.Brush.Accent}" Margin="0,0,10,0"/>
+                    <TextBlock Text="My Windows Power" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,24,0"/>
+                    <Grid Width="380">
+                        <TextBox x:Name="SearchBox" Padding="30,5,60,5" ToolTip="Szukaj modułu, obszaru lub instancji (Ctrl+K)"/>
+                        <TextBlock Text="&#xE721;" Style="{StaticResource Mwp.Text.Glyph}" FontSize="13" Margin="10,0,0,0"
+                                   Foreground="{DynamicResource Mwp.Brush.TextMuted}" IsHitTestVisible="False"/>
+                        <TextBlock x:Name="SearchHint" Text="Szukaj modułu lub instancji" Margin="31,0,0,0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Mwp.Brush.TextMuted}" IsHitTestVisible="False"/>
+                        <Border Style="{StaticResource Mwp.Badge}" HorizontalAlignment="Right" Margin="0,0,8,0" IsHitTestVisible="False">
+                            <TextBlock Text="Ctrl+K"/>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="ThemeLabel" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Button x:Name="ThemeButton" Style="{StaticResource Mwp.Button.Subtle}" ToolTip="Przełącz motyw (jasny / ciemny)">
+                        <TextBlock x:Name="ThemeGlyph" Style="{StaticResource Mwp.Text.Glyph}" Text="&#xE793;"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Nawigacja i kontener widoku -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="270"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <DockPanel Grid.Column="0" Margin="0,8,0,8">
+                <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Mwp.Brush.Border}" BorderThickness="0,1,0,0"
+                        Margin="12,6,12,0" Padding="0,6,0,0">
+                    <ListBox x:Name="NavBottomList" Style="{StaticResource Mwp.NavList}" Margin="-12,0"/>
+                </Border>
+                <ListBox x:Name="NavList" Style="{StaticResource Mwp.NavList}"/>
+            </DockPanel>
+            <Border Grid.Column="1" Style="{StaticResource Mwp.Card}" Margin="4,12,16,12" Padding="0">
+                <ContentControl x:Name="ViewHost" Focusable="False"/>
+            </Border>
+        </Grid>
+
+        <GridSplitter x:Name="LogSplitter" Grid.Row="2" Height="4" HorizontalAlignment="Stretch" ResizeDirection="Rows"
+                      Visibility="Collapsed"/>
+
+        <!-- Panel logu (Dziennik operacji) -->
+        <Border Grid.Row="3" Background="{DynamicResource Mwp.Brush.Surface}" BorderBrush="{DynamicResource Mwp.Brush.Border}"
+                BorderThickness="0,1,0,0" Padding="16,8">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6" LastChildFill="False">
+                    <TextBlock DockPanel.Dock="Left" Text="Dziennik operacji" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="LogPathText" DockPanel.Dock="Left" Style="{StaticResource Mwp.Text.Muted}" FontSize="12"
+                               VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <Button x:Name="LogCloseButton" DockPanel.Dock="Right" Style="{StaticResource Mwp.Button.Subtle}" ToolTip="Ukryj panel logu">
+                        <TextBlock Style="{StaticResource Mwp.Text.Glyph}" FontSize="12" Text="&#xE711;"/>
+                    </Button>
+                    <Button x:Name="LogRefreshButton" DockPanel.Dock="Right" Content="Odśwież" Margin="0,0,8,0"/>
+                    <CheckBox x:Name="LogWarningsOnly" DockPanel.Dock="Right" Content="Tylko ostrzeżenia i błędy"
+                              VerticalAlignment="Center" Margin="0,0,16,0"/>
+                </DockPanel>
+                <DataGrid x:Name="LogGrid" FontSize="12">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Czas" Binding="{Binding TimeText}" Width="70"/>
+                        <DataGridTextColumn Header="Poziom" Binding="{Binding Level}" Width="70"/>
+                        <DataGridTextColumn Header="Komputer" Binding="{Binding Computer}" Width="120"/>
+                        <DataGridTextColumn Header="Operacja" Binding="{Binding Operation}" Width="170"/>
+                        <DataGridTextColumn Header="Komunikat" Binding="{Binding Message}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+
+        <!-- Pasek stanu -->
+        <Border Grid.Row="4" Background="{DynamicResource Mwp.Brush.SurfaceAlt}" BorderBrush="{DynamicResource Mwp.Brush.Border}"
+                BorderThickness="0,1,0,0" Padding="16,6">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="StatusTaskText" Style="{StaticResource Mwp.Text.Muted}" FontSize="12" VerticalAlignment="Center"
+                               MaxWidth="360" TextTrimming="CharacterEllipsis"/>
+                    <ProgressBar x:Name="StatusProgress" Width="140" Margin="10,0" Visibility="Collapsed"/>
+                    <Button x:Name="StatusCancelButton" Content="Anuluj" Padding="10,2" MinHeight="24" FontSize="12" Visibility="Collapsed"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="StatusAdmin" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock Text="  ·  " Style="{StaticResource Mwp.Text.Muted}" FontSize="12"/>
+                    <TextBlock x:Name="StatusPowerShell" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock Text="  ·  " Style="{StaticResource Mwp.Text.Muted}" FontSize="12"/>
+                    <TextBlock x:Name="StatusWindows" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock Text="  ·  " Style="{StaticResource Mwp.Text.Muted}" FontSize="12"/>
+                    <TextBlock x:Name="StatusData" FontSize="12" VerticalAlignment="Center" MaxWidth="320" TextTrimming="CharacterEllipsis"/>
+                    <StackPanel x:Name="StatusInstancePanel" Orientation="Horizontal" Visibility="Collapsed">
+                        <TextBlock Text="  ·  " Style="{StaticResource Mwp.Text.Muted}" FontSize="12"/>
+                        <TextBlock x:Name="StatusInstance" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <Border x:Name="StatusInstanceBadge" Style="{StaticResource Mwp.StateBadge}" Padding="7,0">
+                            <TextBlock Text="{Binding Label}" FontSize="11"/>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

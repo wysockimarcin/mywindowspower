@@ -28,7 +28,7 @@ W katalogu repozytorium:
 .\Start-MyWindowsPower.ps1
 ```
 
-Launcher sprawdza wersję PowerShella, system i tryb STA (w razie potrzeby uruchamia się ponownie z `-STA`), wypisuje status administratora i importuje moduły z `src/Modules`, sprawdzając kontrakt każdego modułu (wersja, zależności). Niczego nie zmienia w systemie. Uprawnienia administratora tylko na życzenie: `.\Start-MyWindowsPower.ps1 -Elevate` (monit UAC). Logi aplikacji: `%LOCALAPPDATA%\MyWindowsPower\logs\`. Okno GUI pojawi się od FAZY 4, a obsługa komputerów zdalnych powstaje w FAZIE 3 (wymagania po stronie komputera zdalnego zostaną opisane tutaj w FAZIE 21).
+Launcher sprawdza wersję PowerShella, system i tryb STA (w razie potrzeby uruchamia się ponownie z `-STA`), wypisuje status administratora, importuje moduły (wbudowane z `src/Modules` i zainstalowane z paczek z katalogu danych), sprawdzając kontrakt każdego modułu (wersja, zależności), i otwiera okno aplikacji (FAZA 4). Niczego nie zmienia w systemie. Uprawnienia administratora tylko na życzenie: `.\Start-MyWindowsPower.ps1 -Elevate` (monit UAC); bez okna (tylko import modułów): `.\Start-MyWindowsPower.ps1 -NoGui`. Dane aplikacji (logi, rejestr cofnięć, moduły z paczek): domyślnie folder `data` obok aplikacji, zmiana w oknie: **Ustawienia → Katalog danych**. Wymagania po stronie komputera zdalnego: `docs/00_PROJEKT/ARCHITEKTURA.md`, sekcja „Konfiguracja komputera zdalnego” (pełny opis w FAZIE 21).
 
 Jeśli PowerShell blokuje skrypty, ustaw dla swojego konta `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 

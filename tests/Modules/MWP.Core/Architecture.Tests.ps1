@@ -93,7 +93,8 @@ Describe 'Architektura rdzenia' {
     }
 
     It 'funkcje zmieniające stan obsługują -WhatIf i -Confirm' {
-        foreach ($command in 'Set-MwpSetting', 'New-MwpRestorePoint', 'Invoke-MwpUndo', 'Request-MwpElevation', 'Install-MwpModulePackage', 'Uninstall-MwpModulePackage') {
+        foreach ($command in 'Set-MwpSetting', 'New-MwpRestorePoint', 'Invoke-MwpUndo', 'Request-MwpElevation', 'Install-MwpModulePackage', 'Uninstall-MwpModulePackage',
+            'Move-MwpDataDirectory', 'Move-MwpInstalledModule') {
             $parameters = (Get-Command -Name $command).Parameters
             $parameters.ContainsKey('WhatIf') | Should -BeTrue -Because $command
             $parameters.ContainsKey('Confirm') | Should -BeTrue -Because $command

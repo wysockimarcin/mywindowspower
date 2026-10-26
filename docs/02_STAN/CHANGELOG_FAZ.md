@@ -17,9 +17,27 @@
 
 ---
 
+## FAZA 4 — Szkielet GUI i host modułów (2026-10-26)
+- Status: ZAKOŃCZONA (ręczna weryfikacja okna na Windows 11 — lista w pliku fazy)
+- Commit: `FAZA 4: okno hosta WPF, instancje modułów, motywy, zadania w tle, widok Moduły i katalog danych` — hash do uzupełnienia na starcie FAZY 5
+- Start: uzupełniono hash korekty FAZY 3 (`228bf40`); baza testów w czystej kopii `228bf40` — 5.1.26100.9711: 0 uwag, 664/664; 7.6.7: 0 uwag, 664/664.
+- Zrobiono:
+  - Okno hosta (`src/UI`, D-039, D-040): `UI.ps1`, moduł prezentacji `MWP.UI` (logika bez WPF w `Functions/`, okna w `Wpf/`), `MainWindow.xaml` (wyszukiwanie Ctrl+K, nawigacja z katalogu obszarów i sekcją otwartych instancji, panel logu, pasek stanu z zadaniami w tle), widoki Pulpit (zaślepka Dashboardu), obszar (zaślepka z fazą), instancja, Moduły, Ustawienia, O programie; okna: potwierdzenie z „Podglądem zmian”, poświadczenia, wybór komputera, edytor komputera, osobne okno instancji; motywy jasny/ciemny (systemowy domyślnie, przełącznik zapamiętany w `theme`) i wspólne style.
+  - Zadania w tle GUI: pula runspace'ów z `MWP.Core`/`MWP.Remote`, postęp i anulowanie, wyniki odbierane zegarem okna (`Start-`/`Stop-`/`Update-MwpUiTask`, `Register-MwpUiOperation`).
+  - Instancje: wiele instancji tego samego modułu dla różnych komputerów, własne widoki, tryby w oknie głównym i w osobnym oknie, połączenie w tle z oknem poświadczeń, diagnostyka, odczyt testowy, zamknięcie jednej bez wpływu na inne.
+  - `MWP.Core` 0.4.0 (D-038): `Get-MwpDataLocation`, `Move-MwpDataDirectory` („Przenieś dane”), `Move-MwpInstalledModule`; moduły z paczek w `<katalog danych>\modules`. `MWP.Remote` 0.4.0 (D-041): `Set-MwpTarget`, `Get-MwpTargetInfo`.
+  - Launcher otwiera okno (`-NoGui` bez okna) i importuje moduły także z katalogu danych.
+  - Paczka przykładowa `samples/MWP.Przyklad` (RemoteTarget) do weryfikacji instalacji i dwóch instancji.
+  - Dokumentacja: `DECYZJE` (D-038…D-041), `ARCHITEKTURA` (struktura `src/UI`, okno hosta, tryby, katalog danych, paczki), `SLOWNIK`, `README`, `FAZA_4`, `FAZA_19` (katalogi modułów), `STAN_PROJEKTU`.
+- Testy: 922/922 w 5.1.26100.9711 i 922/922 w 7.6.7, 0 uwag PSScriptAnalyzer (baza 664/664). Nowe: `tests/UI/UiFunctions.Tests.ps1`, `tests/UI/Xaml.Tests.ps1`, `tests/Modules/MWP.Core/DataLocation.Tests.ps1`, `tests/Samples.Tests.ps1`; rozszerzone `Targets`, `Launcher`, `Architecture`. Automatyczny test dymny okna w 5.1 i 7.6.7 (wszystkie widoki, dwie instancje, osobne okno, motyw, zadanie testowe, zamknięcie) — kod wyjścia 0.
+- Niezrobione / odroczone: ręczna weryfikacja okna (lista w `FAZA_4_GUI_SZKIELET.md`); usuwanie widgetów odinstalowanego modułu — FAZA 5; panel cofnięć w GUI — dług techniczny; ciemny pasek tytułu — dług techniczny.
+- Decyzje: D-038, D-039, D-040, D-041
+- Do weryfikacji na Windows 11: okno w 5.1 i 7.x, motywy, DPI, responsywność przy zadaniu testowym, instalacja i odinstalowanie paczki przykładowej, dwie instancje dla localhost i komputera zdalnego, utrata połączenia, „Przenieś dane”.
+- Następna faza: FAZA 5 — Dashboard
+
 ## Korekta FAZY 3 — opcje sesji CIM (2026-10-26)
 - Status: ZAKOŃCZONA (korekta, nie nowa faza)
-- Commit: `FAZA 3 (korekta): poprawka New-MwpCimSession i test opcji sesji bez mocka` — hash do uzupełnienia na starcie FAZY 4
+- Commit: `228bf40` `FAZA 3 (korekta): poprawka New-MwpCimSession i test opcji sesji bez mocka` (hash uzupełniony na starcie FAZY 4)
 - Powód: ręczna weryfikacja FAZY 3 z prawdziwym komputerem zdalnym (wyniki użytkownika w `STAN_PROJEKTU.md`) wykazała, że `New-MwpCimSession` łączył w `New-CimSessionOption` parametry `-Protocol` i `-UseSsl` z różnych zestawów, więc każde zdalne `Get-MwpCimSessionParameter` kończyło się błędem. Testy go nie wykryły, bo mockowały cały adapter.
 - Zrobiono: poprawka użytkownika w `src/Modules/MWP.Remote/Private/New-MwpCimSession.ps1` (osobne wywołania dla HTTPS i HTTP) z opisem w pomocy funkcji; nowe testy w `tests/Modules/MWP.Remote/Connection.Tests.ps1` (kontekst „adapter transportu bez mocka opcji sesji”): prawdziwe `New-CimSessionOption` i `New-PSSessionOption`, mock tylko `New-CimSession`/`New-PSSession`, dla HTTP i HTTPS; bez poprawki test CIM pada z błędem zestawu parametrów. Zapisy ręcznej weryfikacji FAZY 3 i nowe punkty długu technicznego w `STAN_PROJEKTU.md` (użytkownik).
 - Testy: `.\tests\Invoke-Checks.ps1`, każda wersja w nowym procesie — 5.1.26100.9711: 0 uwag, 664/664; 7.6.7: 0 uwag, 664/664 (było 660/660).

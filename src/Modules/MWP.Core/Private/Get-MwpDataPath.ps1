@@ -1,7 +1,7 @@
 ﻿function Get-MwpDataPath {
     <#
     .SYNOPSIS
-        Zwraca katalog danych aplikacji (logi, rejestr cofnięć) według ustawienia dataPath (D-032).
+        Zwraca katalog danych aplikacji (logi, rejestr cofnięć, moduły z paczek) według ustawienia dataPath (D-032).
 
     .DESCRIPTION
         Jedyne miejsce, które zna położenie danych lokalnych. Zasady:
@@ -24,7 +24,7 @@
     [CmdletBinding()]
     [OutputType([string], [pscustomobject])]
     param(
-        [ValidateSet('Root', 'Logs', 'Undo', 'Fallback')]
+        [ValidateSet('Root', 'Logs', 'Undo', 'Modules', 'Fallback')]
         [string] $Kind = 'Root',
 
         [AllowNull()]
@@ -57,27 +57,7 @@
     $warning = $null
     $candidate = $null
     try {
-        $appRoot = Get-MwpProjectRoot
-        if ($configured -eq '') {
-            $candidate = [IO.Path]::Combine($appRoot, 'data')
-        }
-        else {
-            $expanded = [Environment]::ExpandEnvironmentVariables($configured)
-            if ($expanded -match '%[^%\\/]+%') {
-                throw ("nieznana zmienna środowiskowa w '{0}'" -f $configured)
-            }
-            if ($expanded -match '^(?:[A-Za-z]:[\\/]|[\\/]{2})') {
-                $candidate = $expanded
-            }
-            elseif ($expanded -match '^(?:[A-Za-z]:|[\\/])') {
-                # 'C:dane' i '\dane' zależą od bieżącego dysku lub katalogu procesu.
-                throw ("ścieżka '{0}' nie jest ani względna, ani pełna" -f $configured)
-            }
-            else {
-                $candidate = [IO.Path]::Combine($appRoot, $expanded)
-            }
-        }
-        $candidate = [IO.Path]::GetFullPath($candidate)
+        $candidate = Resolve-MwpDataPath -Value $configured
         if (Test-MwpDirectoryWritable -Path $candidate) {
             $root = $candidate
         }

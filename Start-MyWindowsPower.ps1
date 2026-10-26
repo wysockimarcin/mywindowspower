@@ -10,11 +10,13 @@
     - sprawdza tryb STA wymagany przez WPF i w razie potrzeby uruchamia się ponownie z -STA,
     - wypisuje status uprawnień administratora,
     - importuje moduły z src/Modules (najpierw MWP.Core), a po nich moduły zainstalowane z paczek
-      (src/Modules/Installed, D-031), sprawdzając kontrakt każdego modułu (Get-MwpModuleDefinition:
-      wersja hosta, zależności); moduł z błędnym kontraktem nie jest ładowany,
-    - z parametrem -Elevate uruchamia się ponownie z uprawnieniami administratora (monit UAC).
+      (<katalog danych>/modules oraz dawny src/Modules/Installed, D-031, D-038), sprawdzając kontrakt
+      każdego modułu (Get-MwpModuleDefinition: wersja hosta, zależności); moduł z błędnym kontraktem
+      nie jest ładowany,
+    - z parametrem -Elevate uruchamia się ponownie z uprawnieniami administratora (monit UAC),
+    - otwiera okno GUI hosta modułów (src/UI/UI.ps1, FAZA 4), chyba że podano -NoGui.
 
-    Launcher niczego nie zmienia w systemie. Okno GUI powstanie w FAZIE 4.
+    Launcher niczego nie zmienia w systemie.
 
 .PARAMETER NoRelaunch
     Wyłącza ponowne uruchomienie w trybie STA. Ustawiany automatycznie przy ponownym
@@ -24,20 +26,28 @@
     Prosi o uprawnienia administratora: gdy ich brak, uruchamia launcher ponownie przez UAC
     (Request-MwpElevation) i kończy bieżący proces.
 
+.PARAMETER NoGui
+    Tylko przygotowanie środowiska i import modułów, bez okna (testy, diagnostyka w konsoli).
+
 .OUTPUTS
-    Kod wyjścia 0, gdy wszystkie moduły się zaimportowały; 1 w przypadku błędu.
+    Kod wyjścia 0, gdy wszystkie moduły się zaimportowały i okno zamknięto normalnie; 1 w przypadku błędu.
 
 .EXAMPLE
     .\Start-MyWindowsPower.ps1
 
 .EXAMPLE
     .\Start-MyWindowsPower.ps1 -Elevate
+
+.EXAMPLE
+    .\Start-MyWindowsPower.ps1 -NoGui
 #>
 [CmdletBinding()]
 param(
     [switch] $NoRelaunch,
 
-    [switch] $Elevate
+    [switch] $Elevate,
+
+    [switch] $NoGui
 )
 
 Set-StrictMode -Version Latest
@@ -118,6 +128,9 @@ if ($environment.ApartmentState -ne [Threading.ApartmentState]::STA) {
     if ($Elevate) {
         $relaunchArguments += '-Elevate'
     }
+    if ($NoGui) {
+        $relaunchArguments += '-NoGui'
+    }
     & $environment.HostPath -NoProfile -STA -File $PSCommandPath @relaunchArguments
     exit $LASTEXITCODE
 }
@@ -144,56 +157,49 @@ if (-not (Test-Path -LiteralPath $modulesRoot)) {
     exit 1
 }
 
-# MWP.Core jako pierwszy, bo pozostałe moduły będą z niego korzystać; moduły zainstalowane z paczek
-# (src\Modules\Installed, D-031) po wbudowanych.
-$installedRoot = Join-Path -Path $modulesRoot -ChildPath 'Installed'
-$moduleDirs = @(Get-ChildItem -LiteralPath $modulesRoot -Directory -Filter 'MWP.*' |
-        Sort-Object -Property @{ Expression = { $_.Name -ne 'MWP.Core' } }, Name)
-if (Test-Path -LiteralPath $installedRoot -PathType Container) {
-    $moduleDirs += @(Get-ChildItem -LiteralPath $installedRoot -Directory -Filter 'MWP.*' | Sort-Object -Property Name)
+# MWP.Core jako pierwszy, bo pozostałe moduły z niego korzystają i to on odkrywa moduły (kontrakt,
+# katalogi modułów wbudowanych i z paczek: Get-MwpModuleDefinition, D-031, D-038).
+$coreManifest = Join-Path -Path $modulesRoot -ChildPath 'MWP.Core\MWP.Core.psd1'
+try {
+    Import-Module -Name $coreManifest -Force -ErrorAction Stop
+    $definitions = @(Get-MwpModuleDefinition)
+    $core = @($definitions | Where-Object { $_.ModuleName -eq 'MWP.Core' }) | Select-Object -First 1
+    if ($null -ne $core -and -not $core.IsValid) {
+        throw ("niepoprawny kontrakt modułu: {0}" -f ($core.Errors -join ' '))
+    }
+    Write-LauncherMessage '  [OK]   MWP.Core' -Level Ok
+}
+catch {
+    Write-LauncherMessage ("  [BŁĄD] MWP.Core: {0}" -f $_.Exception.Message) -Level Error
+    exit 1
 }
 
+# Pozostałe moduły: wbudowane alfabetycznie, potem z paczek.
+$others = @($definitions | Where-Object { $_.ModuleName -ne 'MWP.Core' } |
+        Sort-Object -Property @{ Expression = { $_.Source -eq 'Installed' } }, ModuleName)
 $failed = 0
-$definitions = $null
-foreach ($dir in $moduleDirs) {
-    $manifest = Join-Path -Path $dir.FullName -ChildPath ($dir.Name + '.psd1')
+foreach ($definition in $others) {
     try {
-        # Kontrakt pozostałych modułów sprawdza MWP.Core, więc dostępny jest dopiero po jego imporcie.
-        if ($null -ne $definitions) {
-            $definition = @($definitions | Where-Object { $_.ManifestPath -eq $manifest }) | Select-Object -First 1
-            if ($null -ne $definition -and -not $definition.IsValid) {
-                throw ("niepoprawny kontrakt modułu: {0}" -f ($definition.Errors -join ' '))
-            }
+        if (-not $definition.IsValid) {
+            throw ("niepoprawny kontrakt modułu: {0}" -f ($definition.Errors -join ' '))
         }
-
-        Import-Module -Name $manifest -Force -ErrorAction Stop
-
-        if ($dir.Name -eq 'MWP.Core') {
-            $roots = @($modulesRoot)
-            if (Test-Path -LiteralPath $installedRoot -PathType Container) {
-                $roots += $installedRoot
-            }
-            $definitions = @(Get-MwpModuleDefinition -ModulesRoot $roots)
-            $core = @($definitions | Where-Object { $_.ManifestPath -eq $manifest }) | Select-Object -First 1
-            if ($null -ne $core -and -not $core.IsValid) {
-                throw ("niepoprawny kontrakt modułu: {0}" -f ($core.Errors -join ' '))
-            }
-        }
-        $label = if ($dir.Parent.FullName -eq $installedRoot) { '{0} (z paczki)' -f $dir.Name } else { $dir.Name }
+        Import-Module -Name $definition.ManifestPath -Force -ErrorAction Stop
+        $label = if ($definition.Source -eq 'Installed') { '{0} (z paczki)' -f $definition.ModuleName } else { $definition.ModuleName }
         Write-LauncherMessage ("  [OK]   {0}" -f $label) -Level Ok
     }
     catch {
         $failed++
-        Write-LauncherMessage ("  [BŁĄD] {0}: {1}" -f $dir.Name, $_.Exception.Message) -Level Error
+        Write-LauncherMessage ("  [BŁĄD] {0}: {1}" -f $definition.ModuleName, $_.Exception.Message) -Level Error
     }
 }
+$moduleCount = $others.Count + 1
 
 if ($failed -gt 0) {
-    Write-LauncherMessage ("Nie udało się zaimportować modułów: {0} z {1}." -f $failed, $moduleDirs.Count) -Level Error
+    Write-LauncherMessage ("Nie udało się zaimportować modułów: {0} z {1}." -f $failed, $moduleCount) -Level Error
     exit 1
 }
 
-Write-LauncherMessage ("Zaimportowano moduły: {0}." -f $moduleDirs.Count) -Level Ok
+Write-LauncherMessage ("Zaimportowano moduły: {0}." -f $moduleCount) -Level Ok
 
 if ($Elevate) {
     if ($environment.IsAdmin) {
@@ -210,5 +216,18 @@ if ($Elevate) {
     }
 }
 
-Write-LauncherMessage 'Okno aplikacji (GUI) zostanie dodane w FAZIE 4.'
-exit 0
+if ($NoGui) {
+    Write-LauncherMessage 'Tryb bez okna (-NoGui): moduły załadowane, okno nie zostanie otwarte.'
+    exit 0
+}
+
+Write-LauncherMessage 'Otwieranie okna aplikacji...'
+try {
+    $uiResult = @(& (Join-Path -Path $PSScriptRoot -ChildPath 'src\UI\UI.ps1'))
+    $exitCode = [int]($uiResult | Select-Object -Last 1)
+}
+catch {
+    Write-LauncherMessage ("Nie udało się otworzyć okna aplikacji: {0}" -f $_.Exception.Message) -Level Error
+    exit 1
+}
+exit $exitCode

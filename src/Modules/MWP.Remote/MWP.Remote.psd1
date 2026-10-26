@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Remote.psm1'
-    ModuleVersion        = '0.3.0'
+    ModuleVersion        = '0.4.0'
     GUID                 = 'c2b4ddbe-4c75-4db6-89d9-700ff0abe8b2'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -17,11 +17,13 @@
         'Get-MwpModuleInstance'
         'Get-MwpRemoteModuleInfo'
         'Get-MwpTarget'
+        'Get-MwpTargetInfo'
         'Initialize-MwpModuleInstance'
         'Invoke-MwpOnTarget'
         'New-MwpExecutionContext'
         'New-MwpModuleInstance'
         'Remove-MwpTarget'
+        'Set-MwpTarget'
         'Start-MwpOperation'
         'Stop-MwpOperation'
         'Test-MwpTarget'
@@ -38,9 +40,9 @@
             Id                         = 'Remote'
             Name                       = 'Komputery docelowe i połączenia'
             EntryPoint                 = 'Get-MwpRemoteModuleInfo'
-            MinimumHostVersion         = '0.3.0'
+            MinimumHostVersion         = '0.4.0'
             Dependencies               = @(
-                @{ Id = 'Core'; MinimumVersion = '0.3.0' }
+                @{ Id = 'Core'; MinimumVersion = '0.4.0' }
             )
             Capabilities               = @('HostServices', 'RemoteTarget')
             SupportedPresentationModes = @()

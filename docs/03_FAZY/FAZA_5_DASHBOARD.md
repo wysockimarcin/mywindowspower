@@ -20,6 +20,14 @@ FAZY 2, 3 i 4 zakończone.
 - Pierwsze widgety: informacje o systemie lokalnym i wybranego komputera zdalnego. Kolejne moduły dostarczają własne widgety w swoich fazach.
 - Testy Pester z mockami CIM.
 
+## Wejście z FAZY 4 (do uwzględnienia)
+- Okno hosta: moduł `MWP.UI` (`src/UI`, D-039). Pulpit to dziś zaślepka `Views/Dashboard.xaml` (`Initialize-`/`Update-MwpDashboardView`): karty komputerów i lista otwartych instancji; odstępstwa od mockupu do uzupełnienia w tej fazie — D-040 (2).
+- Zadania w tle: `Start-MwpUiTask` (funkcje MWP w puli GUI) i `Register-MwpUiOperation` (operacje `Start-MwpOperation` na komputerze), wyniki w wątku okna przez `Update-MwpUiTask` (zegar okna, 250 ms) — do odświeżania widgetów.
+- Stan połączenia do prezentacji: `Get-MwpConnectionStateInfo` (etykieta, ton, `NeedsCredential`), plakietka `Mwp.StateBadge` w `Themes/Styles.xaml`; okno poświadczeń `Show-MwpCredentialDialog`.
+- Odinstalowanie modułu w GUI: `Uninstall-MwpUiModule` zamyka instancje modułu — tu dopisać usuwanie widgetów (D-031).
+- Odczyt informacji o komputerze: `Get-MwpTargetInfo -Context [-AsOperation]` (`MWP.Remote`, D-041).
+- Ręczna weryfikacja okna z FAZY 4 (lista w `FAZA_4_GUI_SZKIELET.md`) — jeśli nie została wykonana, zrób ją na początku.
+
 ## Poza zakresem
 Zmiany w systemie.
 

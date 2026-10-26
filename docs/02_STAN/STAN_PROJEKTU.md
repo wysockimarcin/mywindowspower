@@ -6,14 +6,14 @@
 
 | Pole | Wartość |
 |---|---|
-| Ostatnia zakończona faza | **FAZA 3 — Komputery docelowe i połączenia zdalne** |
-| **Następna faza** | **FAZA 4 — Szkielet GUI i host modułów** |
-| Prompt następnej fazy | `docs/04_PROMPTY/PROMPT_FAZA_4.md` |
-| Plik następnej fazy | `docs/03_FAZY/FAZA_4_GUI_SZKIELET.md` |
-| Data ostatniej aktualizacji | 2026-10-23 |
-| Ostatni commit | `FAZA 3 (korekta): poprawka New-MwpCimSession i test opcji sesji bez mocka` (hash uzupełnia FAZA 4); FAZA 3: `7ffb534`, hash w changelogu: `873a120` |
-| Zdalne repozytorium | https://github.com/wysockimarcin/mywindowspower (`origin/main` = `7ffb534`; commit `873a120` i korekta FAZY 3 czekają na `git push`) |
-| Testy (FAZA 3 z korektą) | `.\tests\Invoke-Checks.ps1`: PowerShell 5.1.26100.9711 — 0 uwag, 664/664; PowerShell 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`, MSI) — 0 uwag, 664/664 (baza FAZY 3: 420/420) |
+| Ostatnia zakończona faza | **FAZA 4 — Szkielet GUI i host modułów** |
+| **Następna faza** | **FAZA 5 — Dashboard** |
+| Prompt następnej fazy | `docs/04_PROMPTY/PROMPT_FAZA_5.md` |
+| Plik następnej fazy | `docs/03_FAZY/FAZA_5_DASHBOARD.md` |
+| Data ostatniej aktualizacji | 2026-10-26 |
+| Ostatni commit | `FAZA 4: okno hosta WPF, instancje modułów, motywy, zadania w tle, widok Moduły i katalog danych` (hash uzupełnia FAZA 5); korekta FAZY 3: `228bf40` |
+| Zdalne repozytorium | https://github.com/wysockimarcin/mywindowspower (`origin/main` = `7ffb534`; commity `873a120`, `228bf40` i FAZY 4 czekają na `git push`) |
+| Testy (FAZA 4) | `.\tests\Invoke-Checks.ps1`: PowerShell 5.1.26100.9711 — 0 uwag, 922/922; PowerShell 7.6.7 (`C:\Program Files\PowerShell\7\pwsh.exe`, MSI) — 0 uwag, 922/922 (baza FAZY 4: 664/664) |
 
 ## Postęp faz
 
@@ -22,8 +22,8 @@
 | FAZA 0 | Fundament | ZAKOŃCZONA | `47c4b0a` |
 | FAZA 1 | Szkielet techniczny | ZAKOŃCZONA | `286fcfb` |
 | FAZA 2 | Rdzeń i bezpieczeństwo zmian | ZAKOŃCZONA | `10646d9` (korekty: `aa92c91`, `6f9925d`) |
-| FAZA 3 | Komputery docelowe i połączenia zdalne | ZAKOŃCZONA | `7ffb534` (korekty: `873a120`, opcje sesji CIM — hash w `CHANGELOG_FAZ.md`) |
-| FAZA 4 | Szkielet GUI i host modułów | DO ZROBIENIA | — |
+| FAZA 3 | Komputery docelowe i połączenia zdalne | ZAKOŃCZONA | `7ffb534` (korekty: `873a120`, `228bf40`) |
+| FAZA 4 | Szkielet GUI i host modułów | ZAKOŃCZONA | hash w `CHANGELOG_FAZ.md` (uzupełnia FAZA 5) |
 | FAZA 5 | Dashboard | DO ZROBIENIA | — |
 | FAZA 6 | Zasilanie | DO ZROBIENIA | — |
 | FAZA 7 | Usługi Windows | DO ZROBIENIA | — |
@@ -54,32 +54,35 @@ Dozwolone statusy: `DO ZROBIENIA`, `W TOKU`, `CZĘŚCIOWA` (część punktów od
 - Korekta FAZY 2 (2026-10-23, D-032): miejsce danych aplikacji. `Get-MwpDataPath` czyta klucz `dataPath` (nowy w `config/settings.example.json`, domyślnie pusty = `<folder aplikacji>\data`, względna od folderu aplikacji, bezwzględna ze zmiennymi środowiskowymi i UNC); katalog niezapisywalny lub ścieżka niepoprawna → `%LOCALAPPDATA%\MyWindowsPower` z ostrzeżeniem w wyniku i w logu (`DataPath.Fallback`); `settings.local.json` w trybie zapasowym też tam (`Get-MwpConfigPath -ForWrite`); nowa funkcja `Test-MwpDirectoryWritable` (wynik pamiętany do końca procesu); `Write-MwpLog` ponawia zapis przy blokadzie pliku; `Write-MwpJsonFile` i log tworzą katalogi metodą .NET (nawiasy `[ ]` w ścieżce). `.gitignore`: `/data/`. Testy: `DataPath.Tests.ps1` (+21), `Repository.Tests.ps1` (+2 oraz +4 testy kodowania dwóch nowych plików); mocki `Get-MwpDataPath` w 5 plikach obsługują `-Detailed`. Wynik: 0 uwag, 420/420 w 5.1 i 7.x.
 
 - FAZA 3 (2026-10-23): nowy moduł bazowy `MWP.Remote` 0.3.0 — rejestr komputerów docelowych (`Get-`/`Add-`/`Remove-MwpTarget`, `localhost` zawsze obecny), niezmienny kontekst wykonania (`New-MwpExecutionContext`; obiekt połączenia ze stanem `Connected`/`Connecting`/`Disconnected`/`Unauthorized`/`Error`), połączenia WinRM (`Connect-`/`Disconnect-`/`Test-MwpTarget`: sieć, uwierzytelnienie, autoryzacja), wykonanie lokalnie i zdalnie (`Invoke-MwpOnTarget`), odczyt CIM (`Get-MwpCimSessionParameter`), operacje asynchroniczne w puli runspace'ów z limitem równoległości, limitem czasu i anulowaniem (`Start-`/`Wait-`/`Stop-MwpOperation`), instancje modułów (`New-`/`Initialize-`/`Close-`/`Get-MwpModuleInstance`), adapter transportu w funkcjach prywatnych. `MWP.Core` 0.3.0: paczki `.mwpmod` (`Test-`/`Install-`/`Uninstall-MwpModulePackage`, `Get-MwpInstalledModule`), odkrywanie w `src/Modules` i `src/Modules/Installed` (`Source`, `IsBase`), `-Context` w `New-MwpRestorePoint` (punkt na komputerze zdalnym) i `Invoke-MwpUndo`. Launcher importuje moduły zainstalowane. Szablon ustawień w schemacie 2 (`targets`, `installedModules`, `modules`, limity połączeń) z migracją zachowującą `dataPath`. ADR D-033…D-037. Testy: 660 (+240), 0 uwag w 5.1 i 7.x.
+- FAZA 4 (2026-10-26): okno hosta WPF (`src/UI`: `UI.ps1`, moduł prezentacji `MWP.UI`, `MainWindow.xaml`, widoki Pulpit/obszar/instancja/Moduły/Ustawienia/O programie, okna dialogowe, motywy jasny/ciemny i style, D-039, D-040); zadania w tle GUI (pula runspace'ów z `MWP.Core`/`MWP.Remote`, postęp, anulowanie, wyniki odbierane zegarem okna); instancje modułów w oknie (wybór komputera i trybu, wiele instancji jednego modułu, połączenie w tle z oknem poświadczeń, diagnostyka, odczyt testowy, osobne okno, zamknięcie jednej bez wpływu na inne); widok „Moduły” (instalacja z `.mwpmod` z potwierdzeniem i SHA-256, odinstalowanie z wpisaniem nazwy); Ustawienia (motyw, komputery: dodanie/edycja/usunięcie/diagnostyka, katalog danych: podgląd, „Przenieś dane”, „Zapisz tylko ścieżkę”). `MWP.Core` 0.4.0: `Get-MwpDataLocation`, `Move-MwpDataDirectory`, `Move-MwpInstalledModule`, moduły z paczek w `<katalog danych>\modules` (D-038). `MWP.Remote` 0.4.0: `Set-MwpTarget`, `Get-MwpTargetInfo` (D-041). Launcher otwiera okno (`-NoGui` bez okna). Paczka przykładowa `samples/MWP.Przyklad`. Testy: 922 (+258), 0 uwag w 5.1 i 7.x; automatyczny test dymny okna w 5.1 i 7.6.7.
 
 ## Co zostało do zrobienia
 
-Fazy od FAZY 4 do FAZY 21 (patrz tabela). Jest rdzeń, kontrakt modułu, obsługa komputerów zdalnych, instancje i paczki modułów; moduły obszarów mają nadal tylko funkcje-zaślepki, nie ma GUI ani logiki obszarów. Najbliższa: FAZA 4 (szkielet GUI i host modułów, widok „Moduły", katalog danych w Ustawieniach).
+Fazy od FAZY 5 do FAZY 21 (patrz tabela). Jest rdzeń, kontrakt modułu, obsługa komputerów zdalnych, instancje i paczki modułów oraz okno hosta z widokami-zaślepkami; moduły obszarów mają nadal tylko funkcje-zaślepki. Najbliższa: FAZA 5 (Dashboard: widgety, konfiguracja, usuwanie widgetów odinstalowanego modułu).
 
-Instalacja i odinstalowanie modułów z paczek `.mwpmod` (D-031): logika gotowa w FAZIE 3; FAZA 4 — widok „Moduły" w hoście; FAZA 5 — usuwanie widgetów odinstalowanego modułu z Dashboardu.
+Ręczna weryfikacja okna FAZY 4 na Windows 11 — lista w `docs/03_FAZY/FAZA_4_GUI_SZKIELET.md` (sekcja „Do weryfikacji na Windows 11 — lista dla użytkownika”).
 
 ## Dług techniczny i odroczone punkty
 
 - ~~Wykrywanie środowiska w `MWP.Core`~~ — zrobione w FAZIE 2 (`Get-MwpEnvironment`). Launcher świadomie zachowuje własne, minimalne wykrywanie, bo działa przed importem `MWP.Core` (D-017).
 - ~~`-ComputerName` w funkcjach rdzenia (przejściowe)~~ — rozstrzygnięte w FAZIE 3 (D-035): `-Context` w `New-MwpRestorePoint` (punkt na komputerze zdalnym przez `Invoke-MwpOnTarget`) i `Invoke-MwpUndo`, wzorzec funkcji z `-Context`. `-ComputerName` zostaje dla zgodności i oznacza tylko komputer lokalny (`Test-MwpLocalComputer` dla tej ścieżki); log, wpis cofnięcia i wynik nadal przyjmują nazwę jako etykietę.
-- ~~Pula runspace'ów (D-023)~~ — zrobiona w FAZIE 3 (`Start-`/`Wait-`/`Stop-MwpOperation`, `remoteMaxParallelOperations`, D-036); użycie w GUI — FAZA 4. Zmiana limitu działa po ponownym uruchomieniu (pula tworzona raz na proces).
-- Rejestr cofnięć: brak retencji i usuwania starych wpisów (`<katalog danych>\undo\`, D-032) oraz widoku w GUI — dodać w FAZIE 4 (panel cofnięć) lub FAZIE 20.
+- ~~Pula runspace'ów (D-023)~~ — zrobiona w FAZIE 3 (`Start-`/`Wait-`/`Stop-MwpOperation`, `remoteMaxParallelOperations`, D-036); użycie w GUI — zrobione w FAZIE 4 (`Register-MwpUiOperation`, odczyt testowy instancji). Zmiana limitu działa po ponownym uruchomieniu (pula tworzona raz na proces).
+- Rejestr cofnięć: brak retencji i usuwania starych wpisów (`<katalog danych>\undo\`, D-032) oraz widoku w GUI (panel cofnięć nie wszedł do FAZY 4) — FAZA 20 albo pierwsza faza obszaru ze zmianami (FAZA 6).
 - Lista ochronna: tylko kategoria `Service` (15 usług); brak lokalnych rozszerzeń listy (np. `config/protected.local.json`) — FAZA 7 (usługi) i kolejne fazy obszarów.
 - ~~Fabryka instancji a `EntryPoint` (D-024)~~ — rozstrzygnięte w FAZIE 3 (D-035): fabryką jest host (`New-MwpModuleInstance`), `ContractVersion` 1 bez zmian; haki inicjalizacji/zamknięcia w module → `ContractVersion` 2, gdy faza obszaru ich potrzebuje. `Capabilities` i `SupportedPresentationModes` modułów obszarów uzupełniają fazy obszarów — **instancja dla komputera zdalnego wymaga `RemoteTarget`**, którego moduły obszarów jeszcze nie deklarują (FAZA 4: moduł-zaślepka do testu dwóch instancji; fazy obszarów: dopisanie `RemoteTarget`).
-- Ustawienia modułów (`ConfigurationSchema`) są walidowane w kontrakcie, ale jeszcze nie odczytywane ani zapisywane — FAZA 4 (miejsce: klucz `modules.<Id>` w `settings.local.json`, D-037; odinstalowanie już go usuwa).
+- Ustawienia modułów (`ConfigurationSchema`) są walidowane w kontrakcie, ale jeszcze nie odczytywane ani zapisywane (miejsce: klucz `modules.<Id>` w `settings.local.json`, D-037; odinstalowanie już go usuwa). W FAZIE 4 żaden moduł nie ma schematu — przeniesione do pierwszej fazy obszaru, której moduł potrzebuje ustawień (FAZA 5 lub 6).
 - Konfiguracja nie ma pamięci podręcznej (każdy `Write-MwpLog` czyta plik ustawień) — jeśli w GUI okaże się to wolne, rozważyć bezpieczną pamięć podręczną z kontrolą daty pliku.
 - Profile zgodności PSScriptAnalyzer dotyczą Windows 10 1809 / PS 5.1 i PS 7.0 — nowszych brak (D-018). Przy nowej wersji PSScriptAnalyzer sprawdzić, czy pojawiły się profile Windows 11 / PS 7.4+.
 - `tests/Modules.Tests.ps1`: lista oczekiwanych modułów trzeba uzupełnić o nowe moduły przy ich tworzeniu (`MWP.Remote` dodany w FAZIE 3; `MWP.Disks`, `MWP.Processes`, `MWP.Accounts`, `MWP.Rdp`, `MWP.Screenshot` w FAZACH 15–18).
 - ~~Sekcja `targets` i migracja `schemaVersion`~~ — zrobione w FAZIE 3 (schemat 2, D-037). ~~Paczki modułów i dwa katalogi modułów~~ — zrobione w FAZIE 3 (D-031, D-037), z testem `.gitignore` dla `src/Modules/Installed/`; widok „Moduły" — FAZA 4, usuwanie widgetów — FAZA 5.
 - Połączenia zdalne (FAZA 3): brak poświadczeń zapisanych lokalnie (DPAPI) — świadomie odrzucone w D-034, można dodać nowym ADR; brak obsługi IPv6 w nazwach komputerów (`Test-MwpTargetName`: NetBIOS/DNS/IPv4); `Test-MwpTarget` nie ma własnego limitu czasu dla `Test-WSMan` (zależy od systemu); paczki nie mają limitu rozmiaru archiwum (jeden użytkownik, własne paczki).
 - Rejestr instancji i pula runspace'ów są w pamięci procesu hosta (D-023): instancje nie są odtwarzane po restarcie aplikacji — zapis i odtworzenie konfiguracji (Dashboard) w FAZIE 5.
-- Katalog danych (D-032), FAZA 4: edycja `dataPath` w Ustawieniach (podgląd ścieżki wynikowej, ostrzeżenie o trybie zapasowym), przycisk „Przenieś dane” (przeniesienie `logs`/`undo` do nowego katalogu z podglądem, logiem i potwierdzeniem), przeniesienie modułów z paczek z `src/Modules/Installed` do katalogu danych (skanowanie w `Get-MwpModuleDefinition` i launcherze, migracja instalacji). `Get-MwpDataPath` jest wewnętrzna — do GUI potrzebna funkcja publiczna (np. stan katalogu danych). Wybór miejsca przy instalacji — wraz z instalatorem aplikacji.
+- ~~Katalog danych (D-032) w GUI~~ — zrobione w FAZIE 4 (D-038). Wybór miejsca przy instalacji — wraz z instalatorem aplikacji. „Przenieś dane” nie ma wpisu cofnięcia (rejestr cofnięć jest częścią przenoszonych danych; powrót = ponowne przeniesienie).
 - Katalog danych (D-032): wynik sprawdzenia zapisywalności jest pamiętany do końca procesu — zmiana uprawnień folderu wymaga ponownego uruchomienia aplikacji. Brak automatycznej migracji starych danych z `%LOCALAPPDATA%\MyWindowsPower` (dane z ręcznych prób sprzed korekty trzeba przenieść ręcznie, jeśli są potrzebne).
-- Testy `Launcher.Tests.ps1` uruchamiają launcher w nowym procesie (ok. 2–3 s); przy rozbudowie launchera (GUI w FAZIE 4) trzeba dodać tryb bez okna do testów.
-- Po ręcznej weryfikacji FAZY 3 (2026-10-26): (1) ~~test składni `New-CimSessionOption` bez mocka i zatwierdzenie poprawki `New-MwpCimSession`~~ — zrobione 2026-10-26 (korekta FAZY 3: `Connection.Tests.ps1`, kontekst „adapter transportu bez mocka opcji sesji”, także dla `New-PSSessionOption`; test pada bez poprawki; 5.1 i 7.6.7: 0 uwag, 664/664). (2) `Test-MwpTargetName` odrzuca nazwy z podkreśleniem (np. `SR_NAS`, `SR_NAS.home`), które są poprawnymi nazwami NetBIOS i działają w `TrustedHosts` — zdecydować (ADR): dopuścić `_` w nazwie albo udokumentować, że trzeba używać adresu IPv4. (3) `Add-MwpTarget` nie aktualizuje istniejącego celu (komunikat „już jest w rejestrze", `Success = False`): zmiana nazwy konta wymaga `Remove-MwpTarget` i ponownego dodania — rozważyć `Set-MwpTarget`.
+- ~~Tryb launchera bez okna do testów~~ — `-NoGui` (FAZA 4).
+- Po ręcznej weryfikacji FAZY 3 (2026-10-26): (1) ~~test składni `New-CimSessionOption` bez mocka i zatwierdzenie poprawki `New-MwpCimSession`~~ — zrobione 2026-10-26 (korekta FAZY 3: `Connection.Tests.ps1`, kontekst „adapter transportu bez mocka opcji sesji”, także dla `New-PSSessionOption`; test pada bez poprawki; 5.1 i 7.6.7: 0 uwag, 664/664). (2) `Test-MwpTargetName` odrzuca nazwy z podkreśleniem (np. `SR_NAS`, `SR_NAS.home`), które są poprawnymi nazwami NetBIOS i działają w `TrustedHosts` — zdecydować (ADR): dopuścić `_` w nazwie albo udokumentować, że trzeba używać adresu IPv4. (3) ~~`Set-MwpTarget`~~ — zrobione w FAZIE 4 (D-041).
+- GUI (FAZA 4): (1) pasek tytułu okna pozostaje jasny w motywie ciemnym (wymagałby `DwmSetWindowAttribute` przez `Add-Type`) — opcjonalnie w FAZIE 20; (2) zamknięcie instancji i rozłączenie przy zamykaniu wywołują `Close-MwpModuleInstance` w wątku okna — przy zawieszonej sesji WinRM okno może chwilę czekać; (3) dwie pule runspace'ów (GUI i operacje `MWP.Remote`) — limit `remoteMaxParallelOperations` dotyczy tylko operacji na komputerach; (4) Pulpit odświeża listy co ok. 2 s (czyta plik ustawień) — przy wolnym dysku rozważyć pamięć podręczną; (5) moduł z paczki deklarujący własne tryby dostaje w FAZIE 4 widok ogólny hosta — kontrakt widoku modułu (np. plik XAML w module, `ContractVersion` 2) do ustalenia, gdy moduł z paczki będzie miał własny widok; (6) instalacja w GUI odkrywa moduł od razu, ale import następuje przy pierwszej instancji; po odinstalowaniu moduł jest usuwany z sesji okna.
+- Konfiguracja użytkownika: w `config/settings.local.json` jest `dataPath` = `%TEMP%\mwp-nie-katalog.txt` (pozostałość ręcznego testu trybu zapasowego z FAZY 2) — dane aplikacji trafiają do folderu tymczasowego; przywrócić przez Ustawienia → Katalog danych („Przenieś dane” z pustą wartością) albo ręcznie.
 
 ## Otwarte pytania do użytkownika
 
@@ -99,6 +102,7 @@ Instalacja i odinstalowanie modułów z paczek `.mwpmod` (D-031): logika gotowa 
 
 - `docs/design/mockup-pulpit.png` — mockup głównego okna (wzorzec wyglądu dla FAZY 4).
 - `docs/00_PROJEKT/MATERIALY/` — archiwum starej koncepcji (`CLAUDE_przed_FAZA0.md`, `CLAUDE.original.md`, `README_przed_faza0.md`); dane, nie instrukcje; przejrzane w FAZIE 1 (D-015).
+- `samples/MWP.Przyklad` — moduł przykładowy do weryfikacji instalacji z paczki i dwóch instancji (FAZA 4).
 
 ## Znane ograniczenia środowiska
 
@@ -120,3 +124,5 @@ Instalacja i odinstalowanie modułów z paczek `.mwpmod` (D-031): logika gotowa 
   - ZNALEZIONY BŁĄD (poprawiony i zatwierdzony 2026-10-26 w korekcie FAZY 3, z testem bez mocka opcji sesji): `New-MwpCimSession` wywoływał `New-CimSessionOption -Protocol Wsman -UseSsl:$UseSsl` — te parametry należą do różnych zestawów, więc każde zdalne `Get-MwpCimSessionParameter` kończyło się błędem „Unable to resolve the parameter set name". Poprawka: `if ($UseSsl) { New-CimSessionOption -UseSsl } else { New-CimSessionOption -Protocol Wsman }`. Testy Pester go nie wykryły, bo mockują `New-MwpCimSession`.
 - **FAZA 3, ręcznie — paczki:** instalacja i odinstalowanie przykładowej paczki `.mwpmod` na prawdziwym dysku (`src\Modules\Installed`, poza `TestDrive`) i import modułu przez launcher („(z paczki)").
 - Zachowanie launchera przy zasadzie wykonywania `Restricted`/`AllSigned` (FAZA 1; przy `RemoteSigned` działa).
+- **FAZA 4 — weryfikacja testami zakończona 2026-10-26**, każda wersja w nowym procesie: 5.1.26100.9711 — 0 uwag, 922/922; 7.6.7 — 0 uwag, 922/922 (baza 664/664). Automatyczny test dymny okna (bez zmian w ustawieniach i systemie) w 5.1 i 7.6.7: wszystkie widoki, dwie instancje `Usługi — localhost` z niezależnym stanem, odczyt testowy w tle, osobne okno i powrót, motyw ciemny, podgląd `dataPath`, zadanie testowe z anulowaniem, panel logu, zamknięcie instancji — kod wyjścia 0; zrzuty okien obejrzane.
+- **FAZA 4, ręcznie (DO ZROBIENIA):** lista 9 punktów w `docs/03_FAZY/FAZA_4_GUI_SZKIELET.md` — okno w 5.1 i 7.x, motywy, DPI, responsywność, paczka przykładowa (instalacja, odinstalowanie), dwie instancje localhost + komputer zdalny, utrata połączenia, „Przenieś dane”, komputery w Ustawieniach.

@@ -1,0 +1,40 @@
+<!-- O programie: wersje, środowisko, katalog danych; zadanie testowe w tle (sprawdzenie, że GUI się nie zawiesza). -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28" MaxWidth="1000" HorizontalAlignment="Left">
+            <TextBlock Text="O programie" Style="{StaticResource Mwp.Text.Title}"/>
+            <TextBlock Style="{StaticResource Mwp.Text.Subtitle}"
+                       Text="My Windows Power — osobisty panel do zarządzania komputerem lokalnym i komputerami zdalnymi z Windows 11."/>
+
+            <TextBlock Text="Wersje i środowisko" Style="{StaticResource Mwp.Text.Section}"/>
+            <ItemsControl x:Name="AboutList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="240"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Key}" Style="{StaticResource Mwp.Text.Muted}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap"/>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Border x:Name="DataWarningBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,10,0,0" Visibility="Collapsed">
+                <TextBlock x:Name="DataWarningText" TextWrapping="Wrap"/>
+            </Border>
+
+            <TextBlock Text="Diagnostyka okna" Style="{StaticResource Mwp.Text.Section}"/>
+            <TextBlock Style="{StaticResource Mwp.Text.Muted}" Margin="0,0,0,8"
+                       Text="Zadanie testowe trwa 20 sekund w tle (bez zmian w systemie). W tym czasie okno powinno reagować: przełączaj widoki i motyw, otwieraj instancje."/>
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="DemoTaskButton" Content="Uruchom zadanie testowe" Margin="0,0,8,0"/>
+                <Button x:Name="DemoCancelButton" Content="Anuluj" IsEnabled="False"/>
+            </StackPanel>
+            <ProgressBar x:Name="DemoProgress" Margin="0,10,0,0" Maximum="100" Width="360" HorizontalAlignment="Left"/>
+            <TextBlock x:Name="DemoStatusText" Style="{StaticResource Mwp.Text.Muted}" Margin="0,6,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

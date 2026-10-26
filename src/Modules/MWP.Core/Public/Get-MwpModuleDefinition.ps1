@@ -1,8 +1,8 @@
 ﻿function Get-MwpModuleDefinition {
     <#
     .SYNOPSIS
-        Odkrywa moduły wbudowane (src\Modules) i zainstalowane z paczek (src\Modules\Installed)
-        i zwraca ich definicje (kontrakt z manifestu) z wynikiem walidacji.
+        Odkrywa moduły wbudowane (src\Modules) i zainstalowane z paczek (<katalog danych>\modules,
+        dawniej src\Modules\Installed) i zwraca ich definicje (kontrakt z manifestu) z wynikiem walidacji.
 
     .DESCRIPTION
         Czyta manifesty MWP.*\MWP.*.psd1 bez importu modułów. Kontrakt jest w PrivateData.MWP
@@ -16,9 +16,10 @@
         Filtr po Id albo nazwie modułu (symbole wieloznaczne dozwolone).
 
     .PARAMETER ModulesRoot
-        Lista katalogów modułów; domyślnie src\Modules i src\Modules\Installed (ten drugi pomijany,
-        dopóki nie istnieje). Podany jawnie katalog musi istnieć. Katalog o nazwie Installed daje
-        moduły z Source = Installed, pozostałe — BuiltIn. Pojedyncza ścieżka działa jak dotąd.
+        Lista katalogów modułów; domyślnie src\Modules, <katalog danych>\modules i dawny
+        src\Modules\Installed (dwa ostatnie pomijane, dopóki nie istnieją; Get-MwpModuleRoot).
+        Podany jawnie katalog musi istnieć. Katalog o nazwie Installed daje moduły z Source = Installed,
+        pozostałe — BuiltIn. Pojedyncza ścieżka działa jak dotąd.
 
     .PARAMETER HostVersion
         Wersja hosta do walidacji MinimumHostVersion; domyślnie wersja MWP.Core.
@@ -43,6 +44,7 @@
         $HostVersion = $MyInvocation.MyCommand.Module.Version
     }
     $roots = @()
+    $installedRoots = @()
     if ($PSBoundParameters.ContainsKey('ModulesRoot')) {
         foreach ($directory in $ModulesRoot) {
             if (-not (Test-Path -LiteralPath $directory -PathType Container)) {
@@ -57,14 +59,23 @@
             throw ("Nie znaleziono katalogu modułów {0}." -f $moduleRoot.BuiltIn)
         }
         $roots += $moduleRoot.BuiltIn
-        if (Test-Path -LiteralPath $moduleRoot.Installed -PathType Container) {
-            $roots += $moduleRoot.Installed
+        # Katalog danych (D-038) i dawny src\Modules\Installed (do przeniesienia przez Move-MwpInstalledModule).
+        $candidates = @($moduleRoot.Installed)
+        if ($null -ne $moduleRoot.PSObject.Properties['Legacy']) {
+            $candidates += $moduleRoot.Legacy
+        }
+        foreach ($candidate in $candidates) {
+            if (-not [string]::IsNullOrEmpty($candidate) -and (Test-Path -LiteralPath $candidate -PathType Container)) {
+                $roots += $candidate
+                $installedRoots += [IO.Path]::GetFullPath($candidate).TrimEnd([char]92)
+            }
         }
     }
 
     # Foldery robocze instalacji (.mwp-*) nie pasują do filtra MWP.*, więc nie są odkrywane.
     $definitions = @(foreach ($directoryRoot in $roots) {
-            $source = if ((Split-Path -Leaf ([IO.Path]::GetFullPath($directoryRoot)).TrimEnd('')) -eq 'Installed') { 'Installed' } else { 'BuiltIn' }
+            $fullRoot = [IO.Path]::GetFullPath($directoryRoot).TrimEnd([char]92)
+            $source = if ($installedRoots -contains $fullRoot -or (Split-Path -Leaf $fullRoot) -eq 'Installed') { 'Installed' } else { 'BuiltIn' }
             foreach ($directory in Get-ChildItem -LiteralPath $directoryRoot -Directory -Filter 'MWP.*' | Sort-Object -Property Name) {
                 $manifest = Join-Path -Path $directory.FullName -ChildPath ($directory.Name + '.psd1')
                 ConvertTo-MwpModuleDefinition -ManifestPath $manifest -ModuleName $directory.Name -Source $source

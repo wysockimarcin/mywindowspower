@@ -1,6 +1,7 @@
 ﻿#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.0.0' }
 <#
-    Testy rejestru komputerów docelowych: Get-MwpTarget, Add-MwpTarget, Remove-MwpTarget.
+    Testy rejestru komputerów docelowych: Get-MwpTarget, Add-MwpTarget, Remove-MwpTarget, Set-MwpTarget
+    oraz odczytu Get-MwpTargetInfo (z mockami wykonania).
     Ustawienia i dane są na TestDrive (mocki ścieżek w MWP.Core); nazwy komputerów są fikcyjne.
 #>
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '',
@@ -150,6 +151,84 @@ Describe 'Rejestr komputerów docelowych' {
             (Invoke-MwpUndo -Id $change.UndoId).Success | Should -BeTrue
 
             (Get-MwpTarget).Name | Should -Be @('localhost', $computerOne)
+        }
+    }
+
+    Context 'Set-MwpTarget (FAZA 4: edycja w Ustawieniach)' {
+        It 'zmienia tylko podane pola i zapisuje wpis cofnięcia' {
+            $null = Add-MwpTarget -Name $computerOne -DisplayName 'Biuro' -UserName 'PC-TEST1\admin'
+
+            $result = Set-MwpTarget -Name $computerOne -UserName 'PC-TEST1\admin2'
+
+            $result.Success | Should -BeTrue
+            $result.Changed | Should -BeTrue
+            $result.UndoId | Should -Not -BeNullOrEmpty
+            $target = Get-MwpTarget -Name $computerOne
+            $target.UserName | Should -Be 'PC-TEST1\admin2'
+            $target.DisplayName | Should -Be 'Biuro'
+            $target.Port | Should -Be 5985
+        }
+
+        It 'przełączenie HTTPS bez portu zmienia port domyślny na 5986' {
+            $null = Add-MwpTarget -Name $computerOne
+
+            $null = Set-MwpTarget -Name $computerOne -UseSsl $true
+
+            $target = Get-MwpTarget -Name $computerOne
+            $target.UseSsl | Should -BeTrue
+            $target.Port | Should -Be 5986
+        }
+
+        It '-WhatIf zwraca podgląd z różnicami i niczego nie zapisuje' {
+            $null = Add-MwpTarget -Name $computerOne -DisplayName 'Biuro'
+
+            $preview = Set-MwpTarget -Name $computerOne -DisplayName 'Dom' -WhatIf
+
+            $preview.IsPreview | Should -BeTrue
+            $preview.Message | Should -Match "displayName: 'Biuro' -> 'Dom'"
+            (Get-MwpTarget -Name $computerOne).DisplayName | Should -Be 'Biuro'
+        }
+
+        It 'brak różnic daje wynik bez zmian, a nieznany komputer — błąd' {
+            $null = Add-MwpTarget -Name $computerOne -DisplayName 'Biuro'
+
+            $same = Set-MwpTarget -Name $computerOne -DisplayName 'Biuro'
+            $same.Success | Should -BeTrue
+            $same.Changed | Should -BeFalse
+            (Set-MwpTarget -Name 'PC-BRAK' -DisplayName 'X').Success | Should -BeFalse
+        }
+
+        It 'zmianę można cofnąć przez Invoke-MwpUndo' {
+            $null = Add-MwpTarget -Name $computerOne -DisplayName 'Biuro'
+            $change = Set-MwpTarget -Name $computerOne -DisplayName 'Dom'
+
+            (Invoke-MwpUndo -Id $change.UndoId).Success | Should -BeTrue
+
+            (Get-MwpTarget -Name $computerOne).DisplayName | Should -Be 'Biuro'
+        }
+    }
+
+    Context 'Get-MwpTargetInfo (odczyt testowy instancji)' {
+        It 'synchronicznie wykonuje samowystarczalny blok przez Invoke-MwpOnTarget' {
+            Mock -ModuleName MWP.Remote Invoke-MwpOnTarget { New-MwpResult -Success $true -Operation $Operation -Message 'ok' -Data ([pscustomobject]@{ ComputerName = 'X' }) }
+            $context = New-MwpExecutionContext
+
+            $result = Get-MwpTargetInfo -Context $context
+
+            $result.Success | Should -BeTrue
+            Should -Invoke -ModuleName MWP.Remote Invoke-MwpOnTarget -Times 1 -ParameterFilter {
+                $Operation -eq 'Remote.TargetInfo' -and $ScriptBlock.ToString() -match 'Win32_OperatingSystem' -and $Context.ComputerName -eq 'localhost'
+            }
+        }
+
+        It 'z -AsOperation uruchamia operację w tle (Start-MwpOperation)' {
+            Mock -ModuleName MWP.Remote Start-MwpOperation { [pscustomobject]@{ PSTypeName = 'MWP.Operation'; Operation = $Operation } }
+            $context = New-MwpExecutionContext
+
+            $operation = Get-MwpTargetInfo -Context $context -AsOperation
+
+            $operation.Operation | Should -Be 'Remote.TargetInfo'
+            Should -Invoke -ModuleName MWP.Remote Start-MwpOperation -Times 1
         }
     }
 }

@@ -1,16 +1,17 @@
 ﻿@{
     RootModule           = 'MWP.Core.psm1'
-    ModuleVersion        = '0.3.0'
+    ModuleVersion        = '0.4.0'
     GUID                 = '49bd0d67-5058-467d-a21e-ef40a9d9710a'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
     Copyright            = '(c) wysockimarcin. Projekt osobisty.'
-    Description          = 'Rdzeń: logowanie, konfiguracja, środowisko i elewacja, punkt przywracania, rejestr cofnięć, obiekt wyniku, lista ochronna, kontrakt i odkrywanie modułów, instalacja i odinstalowanie modułów z paczek.'
+    Description          = 'Rdzeń: logowanie, konfiguracja, środowisko i elewacja, punkt przywracania, rejestr cofnięć, obiekt wyniku, lista ochronna, kontrakt i odkrywanie modułów, instalacja i odinstalowanie modułów z paczek, katalog danych aplikacji.'
     PowerShellVersion    = '5.1'
     CompatiblePSEditions = @('Desktop', 'Core')
     FunctionsToExport    = @(
         'Format-MwpOperationTarget'
         'Get-MwpCoreModuleInfo'
+        'Get-MwpDataLocation'
         'Get-MwpEnvironment'
         'Get-MwpInstalledModule'
         'Get-MwpModuleDefinition'
@@ -19,6 +20,8 @@
         'Get-MwpUndoEntry'
         'Install-MwpModulePackage'
         'Invoke-MwpUndo'
+        'Move-MwpDataDirectory'
+        'Move-MwpInstalledModule'
         'New-MwpRestorePoint'
         'New-MwpResult'
         'Request-MwpElevation'

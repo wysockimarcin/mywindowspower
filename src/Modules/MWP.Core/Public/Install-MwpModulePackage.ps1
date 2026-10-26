@@ -1,14 +1,14 @@
 ﻿function Install-MwpModulePackage {
     <#
     .SYNOPSIS
-        Instaluje moduł z paczki .mwpmod w src\Modules\Installed (D-031).
+        Instaluje moduł z paczki .mwpmod w <katalog danych>\modules (D-031, D-038).
 
     .DESCRIPTION
         Operacja klasy Zmiana (-WhatIf, -Confirm, log). Kolejność:
-        1. rozpakowanie do katalogu roboczego w src\Modules\Installed (ten sam wolumin co cel)
+        1. rozpakowanie do katalogu roboczego w katalogu modułów z paczek (ten sam wolumin co cel)
            i walidacja jak w Test-MwpModulePackage;
         2. potwierdzenie z nazwą, Id, wersją, RequiredPermissions i sumą SHA-256 paczki;
-        3. atomowe przeniesienie folderu modułu do src\Modules\Installed\MWP.<Nazwa>;
+        3. atomowe przeniesienie folderu modułu do <katalog danych>\modules\MWP.<Nazwa>;
         4. wpis w rejestrze (installedModules w settings.local.json).
         Błąd na dowolnym etapie usuwa katalog roboczy i wycofuje przeniesiony folder, więc nic
         nie zostaje w połowie. Paczka z Id już istniejącego modułu jest odrzucana (aktualizacji
@@ -101,7 +101,7 @@
         if ([IO.Directory]::Exists($staging)) {
             [IO.Directory]::Delete($staging, $true)
         }
-        # Pusty katalog Installed po nieudanej instalacji nie jest potrzebny.
+        # Pusty katalog modułów z paczek po nieudanej instalacji nie jest potrzebny.
         if ([IO.Directory]::Exists($installedRoot) -and @([IO.Directory]::GetFileSystemEntries($installedRoot)).Count -eq 0) {
             [IO.Directory]::Delete($installedRoot)
         }

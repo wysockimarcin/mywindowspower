@@ -6,7 +6,8 @@
     .DESCRIPTION
         Metoda .NET zamiast Move-Item: brak wzorców w ścieżkach i jeden krok, który albo się udaje,
         albo nic nie zmienia. Instalacja i odinstalowanie modułów (D-031) przenoszą katalogi tylko
-        w obrębie src\Modules\Installed, więc źródło i cel są na tym samym woluminie.
+        w obrębie katalogu modułów z paczek, więc źródło i cel są na tym samym woluminie. Między
+        woluminami (przeniesienie danych, D-038) dane kopiuje Copy-MwpDirectory.
         Testy podmieniają tę funkcję, żeby zasymulować błąd w trakcie instalacji.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '',

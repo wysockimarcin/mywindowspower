@@ -4,7 +4,7 @@
     Uruchamia analizę statyczną (PSScriptAnalyzer) i testy (Pester) jednym poleceniem.
 
 .DESCRIPTION
-    Analizuje launcher, src\ i tests\ z ustawieniami z PSScriptAnalyzerSettings.psd1,
+    Analizuje launcher, src\, samples\ i tests\ z ustawieniami z PSScriptAnalyzerSettings.psd1,
     a potem uruchamia testy Pester z katalogu tests\. Katalog główny projektu jest
     wyznaczany względem położenia skryptu, więc można go uruchomić z dowolnego miejsca.
     Działa w Windows PowerShell 5.1 i PowerShell 7.x.
@@ -62,6 +62,7 @@ if (-not $SkipAnalyzer) {
     $targets = @(
         Join-Path -Path $root -ChildPath 'Start-MyWindowsPower.ps1'
         Join-Path -Path $root -ChildPath 'src'
+        Join-Path -Path $root -ChildPath 'samples'
         Join-Path -Path $root -ChildPath 'tests'
     ) | Where-Object { Test-Path -LiteralPath $_ }
 

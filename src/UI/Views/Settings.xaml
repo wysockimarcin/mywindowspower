@@ -1,0 +1,66 @@
+<!-- Ustawienia: motyw, komputery docelowe (D-033, D-034), katalog danych (D-032, D-038). -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28" MaxWidth="1000" HorizontalAlignment="Left">
+            <TextBlock Text="Ustawienia" Style="{StaticResource Mwp.Text.Title}"/>
+            <TextBlock Style="{StaticResource Mwp.Text.Subtitle}"
+                       Text="Ustawienia aplikacji są zapisywane w config\settings.local.json (poza repozytorium), z logiem i wpisem cofnięcia."/>
+
+            <!-- Wygląd -->
+            <TextBlock Text="Wygląd" Style="{StaticResource Mwp.Text.Section}"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Motyw" VerticalAlignment="Center" Width="120"/>
+                <ComboBox x:Name="ThemeCombo" Width="240">
+                    <ComboBoxItem Content="Zgodnie z systemem" Tag="System"/>
+                    <ComboBoxItem Content="Jasny" Tag="Light"/>
+                    <ComboBoxItem Content="Ciemny" Tag="Dark"/>
+                </ComboBox>
+            </StackPanel>
+
+            <!-- Komputery docelowe -->
+            <TextBlock Text="Komputery docelowe" Style="{StaticResource Mwp.Text.Section}"/>
+            <TextBlock Style="{StaticResource Mwp.Text.Muted}" Margin="0,0,0,8"
+                       Text="localhost jest zawsze dostępny. Hasła nie są zapisywane: przy połączeniu aplikacja pyta o poświadczenia. Wpis w TrustedHosts klienta WinRM wykonujesz ręcznie (instrukcja: ARCHITEKTURA.md, „Konfiguracja komputera zdalnego”)."/>
+            <DataGrid x:Name="TargetsGrid" Height="180">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
+                    <DataGridTextColumn Header="Nazwa wyświetlana" Binding="{Binding DisplayName}" Width="*"/>
+                    <DataGridTextColumn Header="Uwierzytelnienie" Binding="{Binding Authentication}" Width="120"/>
+                    <DataGridTextColumn Header="Konto (podpowiedź)" Binding="{Binding UserName}" Width="*"/>
+                    <DataGridTextColumn Header="Port" Binding="{Binding Port}" Width="60"/>
+                    <DataGridTextColumn Header="HTTPS" Binding="{Binding UseSsl}" Width="60"/>
+                </DataGrid.Columns>
+            </DataGrid>
+            <WrapPanel Margin="0,10,0,0">
+                <Button x:Name="AddTargetButton" Style="{StaticResource Mwp.Button.Accent}" Content="Dodaj…" Margin="0,0,8,8"/>
+                <Button x:Name="EditTargetButton" Content="Edytuj…" Margin="0,0,8,8" IsEnabled="False"/>
+                <Button x:Name="RemoveTargetButton" Content="Usuń…" Margin="0,0,8,8" IsEnabled="False"/>
+                <Button x:Name="TestTargetButton" Content="Diagnostyka połączenia" Margin="0,0,8,8" IsEnabled="False"/>
+            </WrapPanel>
+            <TextBlock x:Name="TargetTestText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap"/>
+
+            <!-- Katalog danych -->
+            <TextBlock Text="Katalog danych" Style="{StaticResource Mwp.Text.Section}"/>
+            <TextBlock x:Name="CurrentDataText" TextWrapping="Wrap"/>
+            <Border x:Name="DataWarningBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,8,0,0" Visibility="Collapsed">
+                <TextBlock x:Name="DataWarningText" TextWrapping="Wrap"/>
+            </Border>
+            <TextBlock Text="Nowa wartość dataPath (pusta = folder data obok aplikacji; ścieżka względna od folderu aplikacji; bezwzględna może zawierać zmienne, np. %USERPROFILE%)"
+                       Style="{StaticResource Mwp.Text.Label}" TextWrapping="Wrap"/>
+            <DockPanel>
+                <Button x:Name="CheckDataPathButton" DockPanel.Dock="Right" Content="Sprawdź" Margin="8,0,0,0"/>
+                <TextBox x:Name="DataPathBox"/>
+            </DockPanel>
+            <TextBlock x:Name="DataPreviewText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+            <WrapPanel Margin="0,10,0,0">
+                <Button x:Name="MoveDataButton" Style="{StaticResource Mwp.Button.Accent}" Content="Przenieś dane…" Margin="0,0,8,8"
+                        ToolTip="Przenosi logs, undo i modules do nowego katalogu i zapisuje dataPath (podgląd, potwierdzenie, w tle)."/>
+                <Button x:Name="SaveDataPathButton" Content="Zapisz tylko ścieżkę…" Margin="0,0,8,8"
+                        ToolTip="Zmienia dataPath bez przenoszenia danych: dotychczasowe logi, cofnięcia i moduły zostają w starym miejscu."/>
+            </WrapPanel>
+            <TextBlock Style="{StaticResource Mwp.Text.Muted}" FontSize="12" TextWrapping="Wrap"
+                       Text="Nowe położenie danych i modułów z paczek obowiązuje w pełni po ponownym uruchomieniu aplikacji."/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

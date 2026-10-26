@@ -1,0 +1,58 @@
+<!-- Widok instancji modułu (zaślepka): kontekst wykonania, stan połączenia, odczyt testowy, stan instancji.
+     Ten sam widok działa w oknie głównym (Embedded) i w osobnym oknie (SeparateWindow). -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="InstanceTitle" Style="{StaticResource Mwp.Text.Title}"/>
+                <Border x:Name="StateBadge" Style="{StaticResource Mwp.StateBadge}" Margin="12,0,0,4">
+                    <TextBlock Text="{Binding Label}"/>
+                </Border>
+            </StackPanel>
+            <TextBlock x:Name="InstanceSubtitle" Style="{StaticResource Mwp.Text.Subtitle}"/>
+
+            <WrapPanel Margin="0,16,0,0">
+                <Button x:Name="ConnectButton" Style="{StaticResource Mwp.Button.Accent}" Content="Połącz" Margin="0,0,8,8"/>
+                <Button x:Name="DisconnectButton" Content="Rozłącz" Margin="0,0,8,8"/>
+                <Button x:Name="TestButton" Content="Diagnostyka połączenia" Margin="0,0,8,8"/>
+                <Button x:Name="ProbeButton" Content="Odczyt testowy" Margin="0,0,8,8"/>
+                <Button x:Name="DetachButton" Content="W osobnym oknie" Margin="0,0,8,8"/>
+                <Button x:Name="CloseButton" Content="Zamknij instancję" Margin="0,0,8,8"/>
+            </WrapPanel>
+
+            <Border x:Name="ErrorBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,8,0,0" Visibility="Collapsed">
+                <TextBlock x:Name="ErrorText" TextWrapping="Wrap"/>
+            </Border>
+
+            <Border Style="{StaticResource Mwp.Banner.Info}" Margin="0,12,0,0">
+                <TextBlock x:Name="StubText" TextWrapping="Wrap"/>
+            </Border>
+
+            <TextBlock Text="Odczyt testowy (operacja w tle na komputerze docelowym)" Style="{StaticResource Mwp.Text.Section}"/>
+            <TextBlock x:Name="ProbeText" Style="{StaticResource Mwp.Text.Muted}" FontFamily="Consolas" TextWrapping="Wrap"
+                       Text="Kliknij „Odczyt testowy”, żeby odczytać nazwę komputera, wersję systemu i PowerShella (tylko odczyt)."/>
+
+            <TextBlock Text="Stan tej instancji (niewspółdzielony)" Style="{StaticResource Mwp.Text.Section}"/>
+            <TextBlock Style="{StaticResource Mwp.Text.Muted}" FontSize="12" Margin="0,0,0,6"
+                       Text="Notatka zapisywana w stanie instancji (State). Inna instancja tego samego modułu ma własną notatkę."/>
+            <TextBox x:Name="NoteBox" AcceptsReturn="True" MinHeight="60" TextWrapping="Wrap" VerticalContentAlignment="Top"/>
+
+            <TextBlock Text="Kontekst wykonania" Style="{StaticResource Mwp.Text.Section}"/>
+            <ItemsControl x:Name="ContextList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Key}" Style="{StaticResource Mwp.Text.Muted}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap"/>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

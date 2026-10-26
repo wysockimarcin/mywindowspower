@@ -17,6 +17,15 @@
 
 ---
 
+## Korekta FAZY 3 — opcje sesji CIM (2026-10-26)
+- Status: ZAKOŃCZONA (korekta, nie nowa faza)
+- Commit: `FAZA 3 (korekta): poprawka New-MwpCimSession i test opcji sesji bez mocka` — hash do uzupełnienia na starcie FAZY 4
+- Powód: ręczna weryfikacja FAZY 3 z prawdziwym komputerem zdalnym (wyniki użytkownika w `STAN_PROJEKTU.md`) wykazała, że `New-MwpCimSession` łączył w `New-CimSessionOption` parametry `-Protocol` i `-UseSsl` z różnych zestawów, więc każde zdalne `Get-MwpCimSessionParameter` kończyło się błędem. Testy go nie wykryły, bo mockowały cały adapter.
+- Zrobiono: poprawka użytkownika w `src/Modules/MWP.Remote/Private/New-MwpCimSession.ps1` (osobne wywołania dla HTTPS i HTTP) z opisem w pomocy funkcji; nowe testy w `tests/Modules/MWP.Remote/Connection.Tests.ps1` (kontekst „adapter transportu bez mocka opcji sesji”): prawdziwe `New-CimSessionOption` i `New-PSSessionOption`, mock tylko `New-CimSession`/`New-PSSession`, dla HTTP i HTTPS; bez poprawki test CIM pada z błędem zestawu parametrów. Zapisy ręcznej weryfikacji FAZY 3 i nowe punkty długu technicznego w `STAN_PROJEKTU.md` (użytkownik).
+- Testy: `.\tests\Invoke-Checks.ps1`, każda wersja w nowym procesie — 5.1.26100.9711: 0 uwag, 664/664; 7.6.7: 0 uwag, 664/664 (było 660/660).
+- Odroczone (dług techniczny): podkreślenie w nazwie komputera (`Test-MwpTargetName`), `Set-MwpTarget`, pominięte punkty ręcznej weryfikacji (złe hasło, wyłączony komputer, utrata połączenia, punkt przywracania zdalnie).
+- Następna faza: FAZA 4 — Szkielet GUI i host modułów
+
 ## FAZA 3 — Komputery docelowe i połączenia zdalne (2026-10-23)
 - Status: ZAKOŃCZONA (połączenie z prawdziwym komputerem zdalnym — do weryfikacji ręcznej)
 - Commit: `7ffb534` `FAZA 3: komputery docelowe, kontekst wykonania, połączenia zdalne, instancje i paczki modułów` (wypchnięty do `origin/main`)

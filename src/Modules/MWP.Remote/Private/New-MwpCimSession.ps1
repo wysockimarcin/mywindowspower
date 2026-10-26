@@ -4,7 +4,9 @@
         Adapter transportu: otwiera sesję CIM (protokół WSMan) do odczytu danych z komputera docelowego.
 
     .DESCRIPTION
-        Ten sam port, szyfrowanie i poświadczenia co sesja WinRM. Testy podmieniają tę funkcję mockiem.
+        Ten sam port, szyfrowanie i poświadczenia co sesja WinRM. New-CimSessionOption nie łączy -Protocol
+        z -UseSsl (różne zestawy parametrów), dlatego HTTPS i HTTP mają osobne wywołania. Testy połączeń
+        podmieniają tę funkcję mockiem; opcje sesji sprawdza osobny test bez mocka (Connection.Tests.ps1).
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '',
         Justification = 'Otwiera połączenie; nie zmienia stanu systemu.')]
@@ -26,7 +28,7 @@
         [int] $OperationTimeoutSeconds
     )
 
-    $option = New-CimSessionOption -Protocol Wsman -UseSsl:$UseSsl
+    $option = if ($UseSsl) { New-CimSessionOption -UseSsl } else { New-CimSessionOption -Protocol Wsman }
     $parameters = @{
         ComputerName        = $ComputerName
         Port                = $Port

@@ -386,4 +386,45 @@ Describe 'Połączenia z komputerami docelowymi' {
             $context.Connection.State | Should -Be 'Unauthorized'
         }
     }
+
+    Context 'adapter transportu bez mocka opcji sesji' {
+        # Opcje sesji (New-CimSessionOption, New-PSSessionOption) są budowane naprawdę, lokalnie i bez połączenia;
+        # podmienione są tylko polecenia, które łączyłyby się z siecią. Test wykrywa błędną kombinację
+        # parametrów (np. -Protocol z -UseSsl w New-CimSessionOption), której nie widać przy mocku całego adaptera.
+        # Funkcje adaptera są wywoływane przez Get-Command -CommandType Function, bo mocki z BeforeEach je zastępują.
+        BeforeAll {
+            Mock -ModuleName MWP.Remote New-CimSession { 'sesja CIM (test)' }
+            Mock -ModuleName MWP.Remote New-PSSession { 'sesja WinRM (test)' }
+        }
+
+        It 'New-MwpCimSession buduje opcje WSMan <Opis>' -ForEach @(
+            @{ Opis = 'dla HTTP'; UseSsl = $false }
+            @{ Opis = 'dla HTTPS'; UseSsl = $true }
+        ) {
+            $arguments = @{ ComputerName = $computerOne; Port = 5985; UseSsl = $UseSsl; Credential = $credential; OperationTimeoutSeconds = 30 }
+
+            $session = InModuleScope MWP.Remote -Parameters @{ Arguments = $arguments } { param($Arguments) & (Get-Command -Name New-MwpCimSession -CommandType Function) @Arguments }
+
+            $session | Should -Be 'sesja CIM (test)'
+            Should -Invoke New-CimSession -ModuleName MWP.Remote -Times 1 -Exactly -ParameterFilter {
+                $SessionOption.GetType().Name -eq 'WSManSessionOptions' -and $SessionOption.UseSsl -eq $UseSsl -and
+                $ComputerName -eq 'PC-TEST1' -and $Port -eq 5985 -and $OperationTimeoutSec -eq 30 -and $Credential.UserName -eq 'admin'
+            }
+        }
+
+        It 'New-MwpPSSession buduje opcje sesji z limitami czasu <Opis>' -ForEach @(
+            @{ Opis = 'dla HTTP'; UseSsl = $false }
+            @{ Opis = 'dla HTTPS'; UseSsl = $true }
+        ) {
+            $arguments = @{ ComputerName = $computerOne; Port = 5986; UseSsl = $UseSsl; Credential = $credential; OpenTimeoutSeconds = 7; OperationTimeoutSeconds = 42 }
+
+            $session = InModuleScope MWP.Remote -Parameters @{ Arguments = $arguments } { param($Arguments) & (Get-Command -Name New-MwpPSSession -CommandType Function) @Arguments }
+
+            $session | Should -Be 'sesja WinRM (test)'
+            Should -Invoke New-PSSession -ModuleName MWP.Remote -Times 1 -Exactly -ParameterFilter {
+                $SessionOption.OpenTimeout.TotalSeconds -eq 7 -and $SessionOption.OperationTimeout.TotalSeconds -eq 42 -and
+                [bool]$UseSSL -eq $UseSsl -and $Port -eq 5986
+            }
+        }
+    }
 }

@@ -1,7 +1,7 @@
 ﻿function Update-MwpDashboardView {
     <#
     .SYNOPSIS
-        Odświeża Pulpit: komputery docelowe (z liczbą instancji) i otwarte instancje.
+        Odświeża Pulpit: kafelki widgetów (gdy zmienił się ich stan), komputery docelowe (z liczbą instancji) i otwarte instancje.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '',
         Justification = 'Zmienia tylko kontrolki okna.')]
@@ -30,5 +30,10 @@
     $rows = @(Get-MwpUiInstanceRow)
     $v['InstancesList'].ItemsSource = $rows
     $v['NoInstancesText'].Visibility = $(if ($rows.Count -eq 0) { 'Visible' } else { 'Collapsed' })
-    $v['Summary'].Text = 'Komputery: {0} · otwarte instancje: {1}' -f $targets.Count, $rows.Count
+    $widgets = @()
+    if ($null -ne $ui.Dashboard) {
+        $widgets = @($ui.Dashboard.Widgets | Where-Object { -not $_.Removed })
+    }
+    $v['Summary'].Text = 'Widgety: {0} · komputery: {1} · otwarte instancje: {2}' -f $widgets.Count, $targets.Count, $rows.Count
+    Update-MwpDashboardWidgets
 }

@@ -11,7 +11,8 @@
         przez Wait-MwpOperation (także po przekroczeniu limitu czasu). Zakończone zadanie znika
         z rejestru; błąd w OnCompleted trafia do pola Error zadania i nie przerywa obsługi innych.
         Zwraca: Completed (zadania zakończone w tym wywołaniu), Running, Percent (-1 = nieokreślony),
-        Message, CanCancel.
+        Message, CanCancel. Zadania ciche (Quiet, np. odświeżenia widgetów) są obsługiwane, ale nie
+        wchodzą do podsumowania paska stanu.
 
     .PARAMETER Registry
         Lista zadań okna.
@@ -94,7 +95,7 @@
         }
     }
 
-    $running = @($Registry.ToArray())
+    $running = @($Registry.ToArray() | Where-Object { -not ($null -ne $_.PSObject.Properties['Quiet'] -and $_.Quiet) })
     $percent = -1
     $message = ''
     if ($running.Count -eq 1) {

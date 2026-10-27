@@ -85,6 +85,7 @@
         SupportedPresentationModes = @(& $get 'SupportedPresentationModes')
         RequiredPermissions        = @(& $get 'RequiredPermissions')
         ConfigurationSchema        = & $get 'ConfigurationSchema'
+        Widgets                    = @(& $get 'Widgets' | Where-Object { $null -ne $_ })
         ExportedFunctions          = $(if ($null -ne $manifest) { @($manifest['FunctionsToExport']) } else { @() })
         ManifestPath               = $ManifestPath
         ModuleBase                 = Split-Path -Parent $ManifestPath

@@ -1,16 +1,18 @@
 ﻿@{
     RootModule           = 'MWP.Przyklad.psm1'
-    ModuleVersion        = '1.0.0'
+    ModuleVersion        = '1.1.0'
     GUID                 = '6f0b1a52-3e1c-4f0e-9a7d-2b8e5c4d9f10'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
     Copyright            = '(c) wysockimarcin. Projekt osobisty.'
-    Description          = 'Moduł przykładowy do paczki .mwpmod: test instalacji z widoku Moduły i dwóch instancji dla dwóch komputerów (FAZA 4).'
+    Description          = 'Moduł przykładowy do paczki .mwpmod: test instalacji z widoku Moduły i dwóch instancji dla dwóch komputerów (FAZA 4) oraz widgetu Dashboardu i jego usuwania przy odinstalowaniu (FAZA 5).'
     PowerShellVersion    = '5.1'
     CompatiblePSEditions = @('Desktop', 'Core')
     FunctionsToExport    = @(
+        'ConvertTo-MwpPrzykladWidgetView'
         'Get-MwpPrzykladInfo'
         'Get-MwpPrzykladModuleInfo'
+        'Get-MwpPrzykladWidgetData'
     )
     CmdletsToExport      = @()
     VariablesToExport    = @()
@@ -28,9 +30,20 @@
                 @{ Id = 'Remote'; MinimumVersion = '0.4.0' }
             )
             Capabilities               = @('Read', 'RemoteTarget')
-            SupportedPresentationModes = @('Embedded', 'SeparateWindow')
+            SupportedPresentationModes = @('Embedded', 'SeparateWindow', 'DashboardWidget')
             RequiredPermissions        = @('User')
             ConfigurationSchema        = @{}
+            # Widget Dashboardu (opcjonalne pole kontraktu, D-043); host w wersji 0.4.0 go pomija.
+            Widgets                    = @(
+                @{
+                    Id                    = 'Stan'
+                    Name                  = 'Komputer (przykład)'
+                    Description           = 'Nazwa komputera, system, wersja PowerShella i czas — widget modułu z paczki.'
+                    DataCommand           = 'Get-MwpPrzykladWidgetData'
+                    ViewCommand           = 'ConvertTo-MwpPrzykladWidgetView'
+                    DefaultRefreshSeconds = 300
+                }
+            )
         }
         PSData = @{
             ProjectUri = 'https://github.com/wysockimarcin/mywindowspower'

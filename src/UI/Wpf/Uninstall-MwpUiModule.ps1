@@ -4,9 +4,10 @@
         Odinstalowanie modułu z paczki: podgląd, potwierdzenie z wpisaniem nazwy modułu, zamknięcie instancji, usunięcie w tle.
 
     .DESCRIPTION
-        Klasa Destrukcyjna (D-027, D-031). Instancje modułu są zamykane w oknie (rejestr instancji
-        należy do runspace'u okna), potem Uninstall-MwpModulePackage usuwa folder, sekcję konfiguracji
-        i wpis w rejestrze (w tle), a okno usuwa moduł z sesji i odświeża katalog modułów.
+        Klasa Destrukcyjna (D-027, D-031). Instancje modułu i jego widgety Dashboardu są zamykane
+        w oknie (rejestr instancji należy do runspace'u okna; widget anuluje swoje zadanie), potem
+        Uninstall-MwpModulePackage usuwa folder, sekcję konfiguracji, widgety z zapisanej konfiguracji
+        Dashboardu i wpis w rejestrze (w tle), a okno usuwa moduł z sesji i odświeża katalog modułów.
         Moduły bazowe i wbudowane nie mają tej akcji (CanUninstall).
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
@@ -28,9 +29,14 @@
         return
     }
     $open = @($ui.Instances.Values | Where-Object { $_.Instance.ModuleId -eq $Row.Id })
+    $widgets = @()
+    if ($null -ne $ui.Dashboard) {
+        $widgets = @($ui.Dashboard.Widgets | Where-Object { $_.Config['moduleId'] -eq $Row.Id })
+    }
     $lines = @(ConvertTo-MwpPreviewLine -Result $preview) + @(
         'Folder do usunięcia: {0}' -f $Row.Path
         'Otwarte instancje do zamknięcia: {0}' -f $open.Count
+        'Widgety Dashboardu do usunięcia: {0}' -f $widgets.Count
         'Zostają: logi operacji i rejestr cofnięć (audyt zmian w systemie).'
     )
     $confirmed = Show-MwpConfirmDialog -Header 'Odinstalowanie modułu' -Target ("Moduł '{0}' ({1}, wersja {2})" -f $Row.Name, $Row.ModuleName, $Row.Version) `
@@ -41,6 +47,13 @@
     }
     foreach ($entry in $open) {
         Close-MwpUiInstance -Id $entry.Id
+    }
+    foreach ($widget in $widgets) {
+        Remove-MwpWidgetRuntime -Widget $widget -Confirm:$false
+        $null = $ui.Dashboard.Widgets.Remove($widget)
+    }
+    if ($widgets.Count -gt 0) {
+        Update-MwpDashboardWidgets -Force
     }
     $null = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Odinstalowanie: {0}' -f $Row.ModuleName) -ArgumentList @(, $Row.Id) -State @{ Owner = $Owner; ModuleName = $Row.ModuleName } -ScriptBlock {
         param($Progress, $Id)
@@ -54,6 +67,9 @@
         }
         $text = if ($null -eq $result) { 'Odinstalowanie nie powiodło się: {0}' -f $Task.Error } else { $result.Message }
         Update-MwpModuleCatalog
+        if ($null -ne $script:MwpUi.Dashboard) {
+            $script:MwpUi.Dashboard.Catalog = @(Get-MwpWidgetDefinition -Definition $script:MwpUi.Definitions)
+        }
         Show-MwpMessage -Text $text -Kind $(if ($null -ne $result -and $result.Success) { 'Info' } else { 'Warning' }) -Owner $Task.State.Owner
     }
 }

@@ -9,13 +9,15 @@
         1. zamknięcie instancji modułu (Close-MwpModuleInstance z MWP.Remote, gdy jest załadowany)
            i usunięcie modułu z sesji;
         2. przeniesienie folderu do katalogu roboczego (krok odwracalny);
-        3. usunięcie wpisu z rejestru (installedModules) i sekcji konfiguracji modułu (modules.<Id>);
-           błąd tego kroku przywraca folder;
+        3. usunięcie wpisu z rejestru (installedModules), sekcji konfiguracji modułu (modules.<Id>)
+           i widgetów modułu z zapisanej konfiguracji Dashboardu (dashboardWidgets, D-043) — jednym
+           zapisem atomowym; błąd tego kroku przywraca folder;
         4. usunięcie folderu z dysku.
         Zostają logi operacji i rejestr cofnięć (audyt zmian w systemie). Odinstalowania nie cofa
         rejestr cofnięć (ponowna instalacja z paczki). Moduły bazowe (Core, Remote) i wbudowane
         (src\Modules) są nieusuwalne, tak samo moduł wymagany przez inny moduł.
-        Usuwanie widgetów modułu z Dashboardu — FAZA 5.
+        Okno hosta przed wywołaniem zamyka instancje i usuwa widgety modułu z Dashboardu (anuluje
+        ich zadania), bo należą do runspace'u okna.
 
     .PARAMETER Id
         Id modułu albo nazwa jego folderu (MWP.<Nazwa>).
@@ -62,7 +64,7 @@
     $before = [ordered]@{ Id = $definition.Id; ModuleName = $definition.ModuleName; Version = [string]$definition.Version }
     $description = "moduł '{0}' (Id {1}, wersja {2})" -f $definition.Name, $definition.Id, $definition.Version
     $target = Format-MwpOperationTarget -Target $description -ComputerName $computerName
-    if (-not $PSCmdlet.ShouldProcess($target, 'Odinstalowanie modułu: zamknięcie instancji, usunięcie folderu, konfiguracji i wpisu w rejestrze')) {
+    if (-not $PSCmdlet.ShouldProcess($target, 'Odinstalowanie modułu: zamknięcie instancji, usunięcie folderu, konfiguracji, widgetów Dashboardu i wpisu w rejestrze')) {
         return New-MwpResult @common -Success $true -IsPreview -Before $before -Message ("Podgląd: zostanie odinstalowany {0}." -f $description)
     }
 
@@ -71,6 +73,7 @@
     try {
         # Instancje należą do MWP.Remote; rdzeń wywołuje je tylko, gdy moduł jest załadowany (bez zależności cyklicznej).
         $closed = 0
+        $removedWidgets = 0
         $getInstance = Get-Command -Name 'Get-MwpModuleInstance' -CommandType Function -ErrorAction SilentlyContinue
         $closeInstance = Get-Command -Name 'Close-MwpModuleInstance' -CommandType Function -ErrorAction SilentlyContinue
         if ($null -ne $getInstance -and $null -ne $closeInstance) {
@@ -93,14 +96,21 @@
                     }
                 }
             }
-            Write-MwpLocalSetting -Values @{ installedModules = $registry; modules = $moduleSettings } -Data $settingsData
+            $values = @{ installedModules = $registry; modules = $moduleSettings }
+            $widgets = Get-MwpDashboardWidgetEntry -Data $settingsData
+            $keptWidgets = @($widgets.Widgets | Where-Object { $_.moduleId -ne $definition.Id })
+            $removedWidgets = @($widgets.Widgets).Count - $keptWidgets.Count
+            if ($removedWidgets -gt 0) {
+                $values['dashboardWidgets'] = $keptWidgets
+            }
+            Write-MwpLocalSetting -Values $values -Data $settingsData
         }
         catch {
             Move-MwpDirectory -Path $trash -Destination $definition.ModuleBase
             throw
         }
 
-        $message = "Odinstalowano {0}; zamknięte instancje: {1}." -f $description, $closed
+        $message = "Odinstalowano {0}; zamknięte instancje: {1}; usunięte widgety Dashboardu: {2}." -f $description, $closed, $removedWidgets
         try {
             [IO.Directory]::Delete($trash, $true)
         }
@@ -108,7 +118,7 @@
             $message = "{0} Nie udało się usunąć folderu roboczego '{1}' ({2}); usuń go ręcznie." -f $message, $trash, $_.Exception.Message
         }
         Write-MwpLog -Level Info -Source 'MWP.Core' -Operation $operation -ComputerName $computerName -Message $message -Data $before
-        New-MwpResult @common -Success $true -Changed $true -Before $before -Message $message -Data ([ordered]@{ ClosedInstances = $closed })
+        New-MwpResult @common -Success $true -Changed $true -Before $before -Message $message -Data ([ordered]@{ ClosedInstances = $closed; RemovedWidgets = $removedWidgets })
     }
     catch {
         $message = "Nie udało się odinstalować modułu '{0}': {1}" -f $definition.Id, $_.Exception.Message

@@ -17,9 +17,27 @@
 
 ---
 
+## FAZA 5 — Dashboard (2026-10-27)
+- Status: ZAKOŃCZONA (ręczna weryfikacja z prawdziwym komputerem zdalnym i porównanie danych z narzędziami systemowymi — lista w pliku fazy)
+- Commit: `FAZA 5: Dashboard z widgetami, informacje o systemie, eksport raportu i usuwanie widgetów odinstalowanego modułu` — hash do uzupełnienia na starcie FAZY 6
+- Start: uzupełniono hashe FAZY 4 (`c31a5bf`) i korekty D-042 (`e2db53d`); baza testów — 5.1.26100.9711: 0 uwag, 959/959; 7.6.7: 0 uwag, 959/959.
+- Zrobiono:
+  - `MWP.Dashboard` 0.5.0: `Get-MwpSystemInfo` (CIM i rejestr na komputerze kontekstu, blok zgodny z 5.1 zwracający JSON; system z wydaniem i UBR, uptime, CPU, RAM, GPU, dyski z typem SSD NVMe/SSD/HDD, płyta i BIOS, bateria, sieć; odporność na braki), `ConvertTo-MwpSystemInfoView`, `ConvertTo-MwpSystemReport`, `Export-MwpSystemReport`; kontrakt z RemoteTarget, DashboardWidget i widgetem `SystemInfo`.
+  - Kontrakt widgetu (D-043): opcjonalne pole `Widgets` w `PrivateData.MWP` (walidacja w `Test-MwpModuleDefinition`), `Get-MwpWidgetDefinition`; `MWP.Core` 0.5.0: `Get-`/`Set-MwpDashboardConfiguration`, `Remove-MwpDashboardWidget`, `Repair-MwpDashboardConfiguration`, klucze szablonu `dashboardWidgets`, `dashboardAutoRefresh`, `dashboardMaxParallelRefresh`; `Uninstall-MwpModulePackage` usuwa widgety modułu (D-031).
+  - `MWP.Remote` 0.5.0: `Data.ErrorKind` w wyniku błędu operacji.
+  - Okno (`MWP.UI`): Pulpit z widgetami nad kartami komputerów i instancjami; widget = własna instancja modułu; stany (ładowanie, aktualne, brak danych, błąd, utrata połączenia, wymaga poświadczeń); odświeżanie ręczne i automatyczne z częstotliwością per widget i limitem równoczesnych odświeżeń; dodawanie, edycja (okno `WidgetEditor`), usuwanie, przesuwanie, „Połącz”, eksport; odinstalowanie modułu usuwa jego widgety; odtworzenie konfiguracji z banerem o pominiętych widgetach; zadania ciche (odświeżenia nie wstrzymują zamknięcia okna).
+  - Paczka przykładowa `samples/MWP.Przyklad` 1.1.0 z widgetem „Komputer (przykład)”.
+  - Dokumentacja: `DECYZJE` (D-043), `ARCHITEKTURA` (Dashboard i widgety, kontrakt, rdzeń, struktura, testy architektoniczne), `FAZA_5_DASHBOARD`, `STAN_PROJEKTU`, `README`, `samples/README.md`.
+- Testy: 5.1.26100.9711 — 0 uwag, 1094/1094; 7.6.7 — 0 uwag, 1094/1094 (baza 959/959). Nowe: `tests/Modules/MWP.Dashboard/SystemInfo.Tests.ps1` (mocki CIM), `tests/Modules/MWP.Core/Dashboard.Tests.ps1`, `tests/UI/Widgets.Tests.ps1` (izolacja widgetów, testy architektoniczne 5–7 i 10); rozszerzone `ModulePackage.Tests.ps1`, `Samples.Tests.ps1`. Automatyczny test dymny okna w 5.1 i 7.6.7 (motyw jasny i ciemny) — kod wyjścia 0.
+- Znalezione i poprawione w trakcie: błąd 5.1 z `@(...)` na `List[object]` z `New-Object` w tabeli (lista przez `::new()`, test regresji); pytanie o „zadania w tle” przy zamykaniu w trakcie odświeżania widgetu (zadania ciche); wiązanie `Width` kafelka (`[double]`); `DisplayMemberPath` w stylu ComboBox (`ItemTemplate`).
+- Niezrobione / odroczone: przeciąganie widgetów (położenie = kolejność), odświeżanie automatyczne poza widocznym Pulpitem — dług techniczny w `STAN_PROJEKTU.md`; prawdziwy komputer zdalny i zgodność danych z narzędziami systemowymi — weryfikacja ręczna.
+- Decyzje: D-043
+- Do weryfikacji na Windows 11: lista 8 punktów w `FAZA_5_DASHBOARD.md` (dane, komputer zdalny, utrata połączenia, odtworzenie układu, eksport, paczka przykładowa z widgetem, motyw i DPI).
+- Następna faza: FAZA 6 — Zasilanie
+
 ## Korekta po FAZIE 4 — dziennik startu aplikacji (2026-10-27)
 - Status: ZAKOŃCZONA (korekta, nie nowa faza; status FAZY 4 bez zmian)
-- Commit: `FAZA 4 (korekta): dziennik startu aplikacji (D-042)` — hash do uzupełnienia na starcie FAZY 5
+- Commit: `e2db53d` `FAZA 4 (korekta): dziennik startu aplikacji (D-042)` (hash uzupełniony na starcie FAZY 5)
 - Powód: dane startowe launchera były tylko w konsoli (w wydaniu ukrytej), błędy importu modułów nie trafiały do logu ani do użytkownika, a między „Otwieranie okna aplikacji...” a oknem była kilkusekundowa przerwa bez informacji.
 - Zrobiono: D-042; launcher: pomiar etapów startu, wpisy `Startup.Environment` (z ponownym uruchomieniem w STA i powodem — `Warning`), `Startup.Modules` (podsumowanie + szczegóły modułów w `Data`), `Startup.Module` (`Error`) dla każdego wadliwego modułu — przy zdrowym starcie 2 zapisy, trzeci (`Startup.Window`) zapisuje `MWP.UI` po `ContentRendered`; okno komunikatu przy błędzie modułu, `MWP.Core` i okna (bez `-NoGui`); awaryjny `mwp-startup-failure.log` w `%LOCALAPPDATA%\MyWindowsPower\logs` tylko przy nieudanym imporcie `MWP.Core`; okno startowe (`src/UI/Splash.ps1`, `Splash.xaml`) z krokowym paskiem, bo mediana startu > 2000 ms. `MWP.UI`: parametr `-StartupTiming` (`UI.ps1`, `Start-MwpUi`), `Write-MwpUiStartupEntry`, `Close-MwpUiSplash`; komunikat `UI.Start` bez wersji PowerShella; błąd przed pierwszym wyświetleniem okna jako `Startup.Window`. `Write-MwpLog` i `MWP.Core` bez zmian. Dokumentacja: `DECYZJE` (D-042), `ARCHITEKTURA` (launcher, logi, struktura `src/UI`), `FAZA_4_GUI_SZKIELET`, `STAN_PROJEKTU`.
 - Pomiar (3 uruchomienia, nowy proces, kopia aplikacji): mediana od startu launchera do okna — 5.1: 8043 ms, 7.6.7: 7473 ms; po wdrożeniu okna startowego 7285 / 7348 ms, okno startowe widoczne po ok. 2,4 s. Zapis dziennika startu: 154–159 ms (5.1), 127–136 ms (7.6.7) — próg 150 ms przekroczony w 5.1, pamięć podręczna ustawień zaproponowana jako osobna korekta.
@@ -31,7 +49,7 @@
 
 ## FAZA 4 — Szkielet GUI i host modułów (2026-10-26)
 - Status: ZAKOŃCZONA (ręczna weryfikacja okna na Windows 11 — lista w pliku fazy)
-- Commit: `FAZA 4: okno hosta WPF, instancje modułów, motywy, zadania w tle, widok Moduły i katalog danych` — hash do uzupełnienia na starcie FAZY 5
+- Commit: `c31a5bf` `FAZA 4: okno hosta WPF, instancje modułów, motywy, zadania w tle, widok Moduły i katalog danych` (hash uzupełniony na starcie FAZY 5)
 - Start: uzupełniono hash korekty FAZY 3 (`228bf40`); baza testów w czystej kopii `228bf40` — 5.1.26100.9711: 0 uwag, 664/664; 7.6.7: 0 uwag, 664/664.
 - Zrobiono:
   - Okno hosta (`src/UI`, D-039, D-040): `UI.ps1`, moduł prezentacji `MWP.UI` (logika bez WPF w `Functions/`, okna w `Wpf/`), `MainWindow.xaml` (wyszukiwanie Ctrl+K, nawigacja z katalogu obszarów i sekcją otwartych instancji, panel logu, pasek stanu z zadaniami w tle), widoki Pulpit (zaślepka Dashboardu), obszar (zaślepka z fazą), instancja, Moduły, Ustawienia, O programie; okna: potwierdzenie z „Podglądem zmian”, poświadczenia, wybór komputera, edytor komputera, osobne okno instancji; motywy jasny/ciemny (systemowy domyślnie, przełącznik zapamiętany w `theme`) i wspólne style.

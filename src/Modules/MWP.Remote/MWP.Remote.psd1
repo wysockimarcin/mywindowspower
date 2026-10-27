@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Remote.psm1'
-    ModuleVersion        = '0.4.0'
+    ModuleVersion        = '0.5.0'
     GUID                 = 'c2b4ddbe-4c75-4db6-89d9-700ff0abe8b2'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'

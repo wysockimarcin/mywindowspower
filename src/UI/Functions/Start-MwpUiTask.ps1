@@ -81,6 +81,7 @@
         Error       = $null
         Warnings    = @()
         Cancellable = [bool]$Cancellable
+        Quiet       = $false
         OnCompleted = $OnCompleted
         State       = $State
         PowerShell  = $powerShell

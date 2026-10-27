@@ -349,6 +349,32 @@ Describe 'Paczki modułów' {
             Get-Leftover | Should -BeNullOrEmpty
         }
 
+        It 'usuwa widgety modułu z zapisanej konfiguracji Dashboardu, a widgety innych modułów zostają (D-031)' {
+            $null = Install-MwpModulePackage -Path $validPackage
+            $widgets = @(
+                [ordered]@{ id = 'w-probe-1'; moduleId = 'Probe'; widgetId = 'Stan'; computerName = 'localhost'; refreshSeconds = 60; size = 'Normal' }
+                [ordered]@{ id = 'w-system'; moduleId = 'Dashboard'; widgetId = 'SystemInfo'; computerName = 'localhost'; refreshSeconds = 0; size = 'Wide' }
+                [ordered]@{ id = 'w-probe-2'; moduleId = 'Probe'; widgetId = 'Stan'; computerName = 'PC-ZDALNY'; refreshSeconds = 300; size = 'Normal' }
+            )
+            (Set-MwpDashboardConfiguration -Widget $widgets -Confirm:$false).Success | Should -BeTrue
+
+            $result = Uninstall-MwpModulePackage -Id 'Probe' -Confirm:$false
+
+            $result.Success | Should -BeTrue -Because $result.Message
+            $result.Data.RemovedWidgets | Should -Be 2
+            $result.Message | Should -Match 'usunięte widgety Dashboardu: 2'
+            @((Get-MwpDashboardConfiguration).Widgets | ForEach-Object { $_.id }) | Should -Be @('w-system')
+        }
+
+        It 'bez widgetów modułu nie zapisuje listy widgetów (zostaje szablon)' {
+            $null = Install-MwpModulePackage -Path $validPackage
+
+            $result = Uninstall-MwpModulePackage -Id 'Probe' -Confirm:$false
+
+            $result.Data.RemovedWidgets | Should -Be 0
+            (Get-MwpDashboardConfiguration).IsDefault | Should -BeTrue
+        }
+
         It 'po odinstalowaniu ten sam moduł można zainstalować ponownie' {
             $null = Install-MwpModulePackage -Path $validPackage
             $null = Uninstall-MwpModulePackage -Id 'Probe' -Confirm:$false

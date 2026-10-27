@@ -7,7 +7,9 @@
         Czeka najdłużej do upływu limitu czasu operacji (TimeoutSeconds od startu); po jego
         przekroczeniu przerywa operację (status TimedOut). Wynik: Success, Data (wyjście bloku),
         ErrorMessage (błędy nieprzerywające przy ErrorPolicy Continue). Błąd przerywający albo
-        błąd połączenia daje status Failed. Kolejne wywołanie dla zakończonej operacji zwraca
+        błąd połączenia daje status Failed; wtedy Data.ErrorKind klasyfikuje błąd (Unauthorized,
+        Configuration, Timeout, Network, Other; po limicie czasu — Timeout), co pozwala widgetom
+        odróżnić utratę połączenia od błędu danych (D-043). Kolejne wywołanie dla zakończonej operacji zwraca
         zapamiętany wynik.
 
     .PARAMETER WaitSeconds
@@ -55,7 +57,7 @@
                 Write-Verbose ("Zatrzymanie operacji {0}: {1}" -f $Operation.Id, $_.Exception.Message)
             }
             $message = "Operacja {0} na komputerze '{1}' przekroczyła limit czasu ({2} s) i została przerwana." -f $Operation.Operation, $Operation.ComputerName, $Operation.TimeoutSeconds
-            return Complete-MwpOperation -Operation $Operation -Status TimedOut -Result (New-MwpResult @common -Success $false -Message $message)
+            return Complete-MwpOperation -Operation $Operation -Status TimedOut -Result (New-MwpResult @common -Success $false -Message $message -Data ([ordered]@{ ErrorKind = 'Timeout' }))
         }
 
         $powerShell = $Operation.PowerShell
@@ -84,7 +86,7 @@
             else {
                 "Operacja {0} na komputerze '{1}' nie powiodła się: {2}" -f $Operation.Operation, $Operation.ComputerName, $detail
             }
-            Complete-MwpOperation -Operation $Operation -Status Failed -Result (New-MwpResult @common -Success $false -Message $message -ErrorMessage $detail)
+            Complete-MwpOperation -Operation $Operation -Status Failed -Result (New-MwpResult @common -Success $false -Message $message -ErrorMessage $detail -Data ([ordered]@{ ErrorKind = $kind }))
         }
     }
 }

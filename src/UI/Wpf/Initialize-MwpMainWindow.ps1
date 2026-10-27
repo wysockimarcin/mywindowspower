@@ -106,8 +106,10 @@
     $ui.Window.Add_Closing({
             param($control, $eventData)
             $ui = $script:MwpUi
-            if ($ui.Tasks.Count -gt 0) {
-                $answer = [System.Windows.MessageBox]::Show($control, ("Trwają zadania w tle ({0}). Zamknąć aplikację i przerwać je?" -f $ui.Tasks.Count),
+            # Zadania ciche (odświeżenia widgetów, tylko odczyt) nie wstrzymują zamknięcia (FAZA 5).
+            $pending = @($ui.Tasks.ToArray() | Where-Object { -not ($null -ne $_.PSObject.Properties['Quiet'] -and $_.Quiet) })
+            if ($pending.Count -gt 0) {
+                $answer = [System.Windows.MessageBox]::Show($control, ("Trwają zadania w tle ({0}). Zamknąć aplikację i przerwać je?" -f $pending.Count),
                     'My Windows Power', [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
                 if ($answer -ne [System.Windows.MessageBoxResult]::Yes) {
                     $eventData.Cancel = $true

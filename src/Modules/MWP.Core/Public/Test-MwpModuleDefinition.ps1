@@ -129,6 +129,65 @@
             }
         }
 
+        # Widgety Dashboardu (opcjonalne pole, D-043).
+        if ($contract.Contains('Widgets')) {
+            $widgetIds = @{}
+            $widgets = @($Definition.Widgets)
+            if ($widgets.Count -gt 0 -and @($Definition.SupportedPresentationModes) -notcontains 'DashboardWidget') {
+                $errors.Add('Moduł z polem Widgets musi deklarować tryb DashboardWidget w SupportedPresentationModes.')
+            }
+            foreach ($widget in $widgets) {
+                if ($widget -isnot [Collections.IDictionary]) {
+                    $errors.Add('Każdy element pola Widgets musi być tabelą (@{}).')
+                    continue
+                }
+                $widgetId = [string]$widget['Id']
+                if ($widgetId -notmatch '^[A-Za-z][A-Za-z0-9]*$') {
+                    $errors.Add(("Niepoprawne Id widgetu '{0}' (dozwolone litery i cyfry, zaczyna się od litery)." -f $widgetId))
+                }
+                elseif ($widgetIds.ContainsKey($widgetId)) {
+                    $errors.Add(("Id widgetu '{0}' występuje kilka razy." -f $widgetId))
+                }
+                $widgetIds[$widgetId] = $true
+                if ([string]::IsNullOrWhiteSpace([string]$widget['Name'])) {
+                    $errors.Add(("Widget '{0}' nie ma nazwy (Name)." -f $widgetId))
+                }
+                foreach ($field in @('DataCommand', 'ViewCommand', 'ExportCommand')) {
+                    $command = [string]$widget[$field]
+                    if ([string]::IsNullOrWhiteSpace($command)) {
+                        if ($field -ne 'ExportCommand') {
+                            $errors.Add(("Widget '{0}' nie ma pola {1}." -f $widgetId, $field))
+                        }
+                    }
+                    elseif ($Definition.ExportedFunctions -notcontains $command) {
+                        $errors.Add(("{0} '{1}' widgetu '{2}' nie jest eksportowaną funkcją modułu." -f $field, $command, $widgetId))
+                    }
+                }
+                if ($widget.Contains('DefaultRefreshSeconds') -and $vocabulary.WidgetRefreshSeconds -notcontains $widget['DefaultRefreshSeconds']) {
+                    $errors.Add(("Niedozwolone DefaultRefreshSeconds {0} widgetu '{1}' (dozwolone: {2})." -f $widget['DefaultRefreshSeconds'], $widgetId, ($vocabulary.WidgetRefreshSeconds -join ', ')))
+                }
+                if ($widget.Contains('Parameters')) {
+                    $parameters = $widget['Parameters']
+                    if ($parameters -isnot [Collections.IDictionary]) {
+                        $errors.Add(("Pole Parameters widgetu '{0}' musi być tabelą (@{{}})." -f $widgetId))
+                        continue
+                    }
+                    foreach ($key in $parameters.Keys) {
+                        $parameter = $parameters[$key]
+                        if ($parameter -isnot [Collections.IDictionary] -or -not $parameter.Contains('Type') -or -not $parameter.Contains('Default')) {
+                            $errors.Add(("Parametr '{0}' widgetu '{1}' musi mieć pola Type i Default." -f $key, $widgetId))
+                        }
+                        elseif ($vocabulary.ConfigurationTypes -notcontains $parameter['Type']) {
+                            $errors.Add(("Niedozwolony typ '{0}' parametru '{1}' widgetu '{2}'." -f $parameter['Type'], $key, $widgetId))
+                        }
+                        elseif ($parameter.Contains('Values') -and @($parameter['Default'] | Where-Object { @($parameter['Values']) -notcontains $_ }).Count -gt 0) {
+                            $errors.Add(("Wartość domyślna parametru '{0}' widgetu '{1}' spoza listy Values." -f $key, $widgetId))
+                        }
+                    }
+                }
+            }
+        }
+
         foreach ($dependency in $Definition.Dependencies) {
             if ([string]::IsNullOrWhiteSpace($dependency.Id)) {
                 $errors.Add('Zależność bez pola Id.')

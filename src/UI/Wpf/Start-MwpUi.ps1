@@ -71,6 +71,7 @@
         Definitions   = @(Get-MwpModuleDefinition)
         Views         = @{}
         Instances     = @{}
+        Dashboard     = $null
         CurrentKey    = $null
         Navigating    = $false
         LogVisible    = $false

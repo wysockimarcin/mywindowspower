@@ -1,4 +1,5 @@
-<!-- Pulpit: zaślepka Dashboardu (widgety — FAZA 5). Pokazuje komputery docelowe i otwarte instancje. -->
+<!-- Pulpit (FAZA 5, D-043): Dashboard z widgetami (kafelki z własną konfiguracją, komputerem i stanem),
+     a pod nim komputery docelowe i otwarte instancje (FAZA 4). Przyciski kafelka: Uid = akcja, Tag = Id widgetu. -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -8,16 +9,117 @@
                     <TextBlock Text="Pulpit" Style="{StaticResource Mwp.Text.Title}"/>
                     <TextBlock x:Name="Summary" Style="{StaticResource Mwp.Text.Subtitle}"/>
                 </StackPanel>
-                <Button x:Name="AddTargetButton" DockPanel.Dock="Right" Style="{StaticResource Mwp.Button.Accent}"
-                        Content="+ Dodaj komputer" VerticalAlignment="Center"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <CheckBox x:Name="AutoRefreshCheck" Content="Odświeżanie automatyczne" VerticalAlignment="Center" Margin="0,0,14,0"
+                              ToolTip="Widgety odświeżają się z częstotliwością ustawioną w każdym z nich, gdy Pulpit jest widoczny."/>
+                    <Button x:Name="RefreshAllButton" Content="Odśwież wszystkie" Margin="0,0,8,0"/>
+                    <Button x:Name="AddWidgetButton" Content="+ Dodaj widget" Margin="0,0,8,0"/>
+                    <Button x:Name="AddTargetButton" Style="{StaticResource Mwp.Button.Accent}" Content="+ Dodaj komputer"/>
+                </StackPanel>
             </DockPanel>
 
-            <Border Style="{StaticResource Mwp.Banner.Info}" Margin="0,20,0,0">
-                <TextBlock TextWrapping="Wrap">
-                    <Run FontWeight="SemiBold" Text="Dashboard z widgetami powstanie w FAZIE 5."/>
-                    <Run Text="Teraz pulpit pokazuje komputery docelowe i otwarte instancje modułów. Instancję otwierasz z widoku obszaru w nawigacji."/>
-                </TextBlock>
+            <Border x:Name="DashboardBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,20,0,0" Visibility="Collapsed">
+                <DockPanel>
+                    <Button x:Name="DashboardBannerClose" DockPanel.Dock="Right" Style="{StaticResource Mwp.Button.Subtle}" Content="&#xE711;"
+                            FontFamily="{StaticResource Mwp.Font.Icons}" ToolTip="Ukryj" VerticalAlignment="Top"/>
+                    <TextBlock x:Name="DashboardBannerText" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </DockPanel>
             </Border>
+
+            <TextBlock Text="Widgety" Style="{StaticResource Mwp.Text.Section}"/>
+            <TextBlock x:Name="NoWidgetsText" Style="{StaticResource Mwp.Text.Muted}" Visibility="Collapsed"
+                       Text="Brak widgetów. Kliknij „+ Dodaj widget”, wybierz rodzaj widgetu i komputer."/>
+            <ItemsControl x:Name="WidgetsList">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource Mwp.Card}" Width="{Binding Width}" Margin="0,0,14,14">
+                            <StackPanel>
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                                        <Button Uid="Connect" Tag="{Binding Id}" Content="Połącz" Visibility="{Binding ConnectVisibility}" Margin="0,0,6,0"/>
+                                        <Button Uid="Refresh" Tag="{Binding Id}" Style="{StaticResource Mwp.Button.Subtle}" Content="&#xE72C;"
+                                                FontFamily="{StaticResource Mwp.Font.Icons}" ToolTip="Odśwież teraz"/>
+                                        <Button Uid="Export" Tag="{Binding Id}" Style="{StaticResource Mwp.Button.Subtle}" Content="&#xEDE1;"
+                                                FontFamily="{StaticResource Mwp.Font.Icons}" ToolTip="Eksport raportu (JSON lub tekst)" IsEnabled="{Binding ExportEnabled}"/>
+                                        <Button Uid="Edit" Tag="{Binding Id}" Style="{StaticResource Mwp.Button.Subtle}" Content="&#xE713;"
+                                                FontFamily="{StaticResource Mwp.Font.Icons}" ToolTip="Ustawienia widgetu"/>
+                                        <Button Uid="MoveLeft" Tag="{Binding Id}" Style="{StaticResource Mwp.Button.Subtle}" Content="&#xE76B;"
+                                                FontFamily="{StaticResource Mwp.Font.Icons}" ToolTip="Przesuń wcześniej" IsEnabled="{Binding CanMoveLeft}"/>
+                                        <Button Uid="MoveRight" Tag="{Binding Id}" Style="{StaticResource Mwp.Button.Subtle}" Content="&#xE76C;"
+                                                FontFamily="{StaticResource Mwp.Font.Icons}" ToolTip="Przesuń dalej" IsEnabled="{Binding CanMoveRight}"/>
+                                        <Button Uid="Remove" Tag="{Binding Id}" Style="{StaticResource Mwp.Button.Subtle}" Content="&#xE74D;"
+                                                FontFamily="{StaticResource Mwp.Font.Icons}" ToolTip="Usuń widget z Dashboardu"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            <Border Style="{StaticResource Mwp.StateBadge}" DataContext="{Binding State}" Margin="10,0,0,0">
+                                                <TextBlock Text="{Binding Label}"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Mwp.Text.Muted}" FontSize="12" Margin="0,2,0,0"/>
+                                        <TextBlock Text="{Binding Summary}" Style="{StaticResource Mwp.Text.Muted}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                </DockPanel>
+                                <Border Style="{StaticResource Mwp.Banner.Warning}" Visibility="{Binding MessageVisibility}" Margin="0,10,0,0">
+                                    <TextBlock Text="{Binding Message}" ToolTip="{Binding MessageFull}" TextWrapping="Wrap"/>
+                                </Border>
+                                <ItemsControl ItemsSource="{Binding Sections}" Margin="0,6,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Width="370" Margin="0,8,18,0">
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                                <ItemsControl ItemsSource="{Binding Items}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Margin="0,2">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="120"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="{Binding Label}" Style="{StaticResource Mwp.Text.Muted}" FontSize="12"
+                                                                           TextTrimming="CharacterEllipsis" Margin="0,1,8,0"/>
+                                                                <StackPanel Grid.Column="1">
+                                                                    <TextBlock Text="{Binding Value}" FontSize="12" TextWrapping="Wrap"/>
+                                                                    <ProgressBar Value="{Binding Percent}" Maximum="100" Margin="0,3,0,2" Visibility="{Binding BarVisibility}">
+                                                                        <ProgressBar.Style>
+                                                                            <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding Tone}" Value="Warning">
+                                                                                        <Setter Property="Foreground" Value="{DynamicResource Mwp.Brush.WarningBorder}"/>
+                                                                                    </DataTrigger>
+                                                                                    <DataTrigger Binding="{Binding Tone}" Value="Danger">
+                                                                                        <Setter Property="Foreground" Value="{DynamicResource Mwp.Brush.Danger}"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </ProgressBar.Style>
+                                                                    </ProgressBar>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{Binding Footer}" Style="{StaticResource Mwp.Text.Muted}" FontSize="11" Margin="0,10,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
             <TextBlock Text="Komputery" Style="{StaticResource Mwp.Text.Section}"/>
             <ItemsControl x:Name="TargetsList">

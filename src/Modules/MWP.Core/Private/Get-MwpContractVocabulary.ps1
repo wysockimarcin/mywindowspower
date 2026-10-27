@@ -21,5 +21,8 @@
         PresentationModes   = @('Embedded', 'SeparateWindow', 'DashboardWidget', 'Standalone', 'CLI')
         Permissions         = @('User', 'Administrator')
         ConfigurationTypes  = @('String', 'Int', 'Bool', 'StringArray')
+        # Widgety Dashboardu (opcjonalne pole Widgets, D-043): odświeżanie w sekundach (0 = tylko ręcznie) i rozmiar kafelka.
+        WidgetRefreshSeconds = @(0, 30, 60, 300, 900)
+        WidgetSizes          = @('Normal', 'Wide')
     }
 }

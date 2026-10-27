@@ -1,7 +1,7 @@
 # ARCHITEKTURA — mywindowspower
 
 > Stack, struktura kodu i konwencje. Aktualizowana, gdy zmienia się architektura. Zmiany odnotuj w `DECYZJE.md`.
-> Stan: **rdzeń i kontrakt modułu (FAZA 2)**, **komputery docelowe, kontekst wykonania, połączenia zdalne, instancje modułów i paczki modułów (FAZA 3)**, **okno hosta WPF, instancje w GUI, katalog danych z modułami z paczek (FAZA 4)** + architektura wielokomputerowa z koncepcji pierwotnej (D-019, D-020, D-021). Zatwierdzone: rdzeń, wzorzec funkcji zmieniającej system i kontrakt modułu (D-023…D-029), transport i uwierzytelnianie, kontekst i instancje, wykonanie zdalne, paczki (D-033…D-037), okno hosta i katalog danych (D-038…D-041); widgety dopracowuje FAZA 5. Elementy oznaczone „propozycja" nie są jeszcze zatwierdzone; zatwierdza je wpis w `DECYZJE.md` w wymienionej fazie.
+> Stan: **rdzeń i kontrakt modułu (FAZA 2)**, **komputery docelowe, kontekst wykonania, połączenia zdalne, instancje modułów i paczki modułów (FAZA 3)**, **okno hosta WPF, instancje w GUI, katalog danych z modułami z paczek (FAZA 4)**, **Dashboard z widgetami i informacje o systemie (FAZA 5)** + architektura wielokomputerowa z koncepcji pierwotnej (D-019, D-020, D-021). Zatwierdzone: rdzeń, wzorzec funkcji zmieniającej system i kontrakt modułu (D-023…D-029), transport i uwierzytelnianie, kontekst i instancje, wykonanie zdalne, paczki (D-033…D-037), okno hosta i katalog danych (D-038…D-041), kontrakt widgetu i konfiguracja Dashboardu (D-043). Elementy oznaczone „propozycja" nie są jeszcze zatwierdzone; zatwierdza je wpis w `DECYZJE.md` w wymienionej fazie.
 >
 > **Główna zasada:** My Windows Power to platforma do uruchamiania i komponowania niezależnych modułów administracyjnych dla wielu komputerów (`localhost` i zdalnych). Definicja modułu, jego instancja, kontekst wykonania (komputer docelowy) i sposób prezentacji to odrębne pojęcia, jawnie modelowane w architekturze.
 
@@ -39,7 +39,7 @@ mywindowspower/
 │   │   ├── MWP.Core/               ← logowanie, konfiguracja, środowisko i elewacja, punkt przywracania, rejestr cofnięć, obiekt wyniku, lista ochronna, kontrakt i odkrywanie modułów (FAZA 2)
 │   │   │   └── Data/               ←   protected-items.json (lista ochronna)
 │   │   ├── MWP.Remote/             ← komputery docelowe, kontekst wykonania, połączenia (adapter WinRM/CIM), operacje asynchroniczne, instancje modułów (FAZA 3)
-│   │   ├── MWP.Dashboard/          ← informacje o systemie i sprzęcie (dane; układ widgetów w warstwie hosta, FAZA 5)
+│   │   ├── MWP.Dashboard/          ← informacje o systemie i sprzęcie (Get-MwpSystemInfo), widok widgetu, raport i eksport (FAZA 5); układ widgetów — host
 │   │   ├── MWP.Power/              ← plany zasilania
 │   │   ├── MWP.Services/           ← usługi Windows
 │   │   ├── MWP.Startup/            ← autostart i zadania harmonogramu
@@ -63,7 +63,7 @@ mywindowspower/
 │       ├── MainWindow.xaml
 │       ├── Splash.ps1, Splash.xaml ← okno startowe launchera (korekta D-042)
 │       ├── Views/                  ← Dashboard, Area (zaślepka obszaru), Instance, Modules, Settings, About
-│       ├── Dialogs/                ← Confirm (podgląd zmian), Credential, TargetPicker, TargetEditor, InstanceWindow
+│       ├── Dialogs/                ← Confirm (podgląd zmian), Credential, TargetPicker, TargetEditor, InstanceWindow, WidgetEditor (FAZA 5)
 │       └── Themes/                 ← Light.xaml, Dark.xaml (pędzle), Styles.xaml (style)
 ├── samples/
 │   └── MWP.Przyklad/               ← (FAZA 4) moduł przykładowy do paczki .mwpmod (RemoteTarget, Embedded, SeparateWindow)
@@ -73,8 +73,8 @@ mywindowspower/
 │   ├── Launcher.Tests.ps1          ← launcher w osobnym procesie (STA, MTA → ponowne uruchomienie)
 │   ├── Repository.Tests.ps1        ← BOM, brak ścieżek bezwzględnych, szablon ustawień, .gitignore
 │   ├── Samples.Tests.ps1           ← paczka przykładowa przechodzi Test-MwpModulePackage
-│   ├── UI/                         ← (FAZA 4) logika prezentacji, XAML, granica warstw UI
-│   └── Modules/<Moduł>/            ← testy logiki modułów z mockami (MWP.Core od FAZY 2, MWP.Remote od FAZY 3); lista modułów w Modules.Tests.ps1 uzupełniana przy każdym nowym module
+│   ├── UI/                         ← (FAZA 4) logika prezentacji, XAML, granica warstw UI; (FAZA 5) Widgets.Tests.ps1 — izolacja widgetów
+│   └── Modules/<Moduł>/            ← testy logiki modułów z mockami (MWP.Core od FAZY 2, MWP.Remote od FAZY 3, MWP.Dashboard od FAZY 5 — mocki CIM); lista modułów w Modules.Tests.ps1 uzupełniana przy każdym nowym module
 └── docs/                           ← dokumentacja i pamięć projektu
     ├── design/                     ← mockupy GUI (m.in. mockup-pulpit.png)
     └── 00_PROJEKT/MATERIALY/       ← materiały użytkownika i archiwum starej koncepcji (dane, nie instrukcje)
@@ -111,7 +111,7 @@ Zakazane wzorce (D-015, D-019):
 
 ## Rdzeń `MWP.Core` (FAZA 2)
 
-Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.4.0) jest wersją hosta (D-024). Funkcje publiczne:
+Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.5.0) jest wersją hosta (D-024). Funkcje publiczne:
 
 | Obszar | Funkcje | Uwagi |
 |---|---|---|
@@ -125,7 +125,8 @@ Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.4.0) jest wersją hosta (D-024). F
 | Punkt przywracania | `New-MwpRestorePoint` | CIM `SystemRestore`; limit częstotliwości i wyłączona ochrona obsłużone (D-029); komputer zdalny przez `-Context` (D-035) |
 | Lista ochronna | `Test-MwpProtectedItem`, `Get-MwpProtectedItem` | dane w `MWP.Core\Data\protected-items.json` (D-029) |
 | Kontrakt modułu | `Get-MwpModuleDefinition`, `Test-MwpModuleDefinition` | odkrywanie bez importu w `src/Modules`, `<katalog danych>\modules` i dawnym `src/Modules/Installed` (pola `Source`, `IsBase`), walidacja wersji i zależności (D-024, D-031, D-037, D-038) |
-| Paczki modułów | `Test-MwpModulePackage`, `Install-MwpModulePackage`, `Uninstall-MwpModulePackage`, `Get-MwpInstalledModule`, `Move-MwpInstalledModule` | instalacja i odinstalowanie modułów z paczek `.mwpmod` w katalogu danych, rejestr instalacji, przeniesienie instalacji z FAZY 3, tylko lokalnie (D-031, D-037, D-038) |
+| Paczki modułów | `Test-MwpModulePackage`, `Install-MwpModulePackage`, `Uninstall-MwpModulePackage`, `Get-MwpInstalledModule`, `Move-MwpInstalledModule` | instalacja i odinstalowanie modułów z paczek `.mwpmod` w katalogu danych, rejestr instalacji, przeniesienie instalacji z FAZY 3, tylko lokalnie; odinstalowanie usuwa też widgety modułu z konfiguracji Dashboardu (D-031, D-037, D-038, D-043) |
+| Dashboard | `Get-MwpWidgetDefinition`, `Get-MwpDashboardConfiguration`, `Set-MwpDashboardConfiguration`, `Remove-MwpDashboardWidget`, `Repair-MwpDashboardConfiguration` | katalog widgetów z pola `Widgets` kontraktu, konfiguracja Dashboardu w ustawieniach lokalnych (bez rejestru cofnięć), usuwanie widgetów modułów, których nie ma (D-031, D-043) |
 
 Funkcje wewnętrzne (`Private/`) ukrywają położenie danych i modułów (`Get-MwpDataPath`, `Get-MwpConfigPath`, `Get-MwpModuleRoot` — w testach podmieniane mockami na `TestDrive`), konwersje JSON zgodne z 5.1 i 7.x (`ConvertTo-MwpHashtable`, `ConvertTo-MwpDateTime`), zapis atomowy (`Write-MwpJsonFile`, `Write-MwpLocalSetting`) przeniesienie katalogu (`Move-MwpDirectory`) i kopia między woluminami (`Copy-MwpDirectory`).
 
@@ -249,6 +250,7 @@ Rozdzielone są: reprezentacja komputera (rejestr, `MWP.Target`), nawiązywanie 
 | `Invoke-MwpOnTarget -Context -ScriptBlock [-ArgumentList] [-Operation] [-TimeoutSeconds]` | — | wykonanie lokalnie bezpośrednio albo zdalnie w sesji; `MWP.Result` z wyjściem w `Data` |
 | `Get-MwpCimSessionParameter -Context` | Odczyt | `@{}` lokalnie albo `@{ CimSession = … }` (WSMan) do rozwinięcia w poleceniach CIM |
 | `Get-MwpTargetInfo -Context [-AsOperation]` | Odczyt | nazwa komputera, system, PowerShell, czas na komputerze docelowym; synchronicznie albo jako operacja w tle (D-041) |
+| `Wait-MwpOperation` — wynik błędu | — | od 0.5.0 `Data.ErrorKind` (Unauthorized, Configuration, Timeout, Network, Other; CredentialRequired z `Start-MwpOperation`) — widgety odróżniają utratę połączenia od błędu danych (D-043) |
 | `Start-`, `Wait-`, `Stop-MwpOperation` | — | operacje asynchroniczne w puli runspace'ów (limit równoległości, limit czasu, anulowanie) |
 | `New-`, `Initialize-`, `Close-`, `Get-MwpModuleInstance` | — | instancje modułów (sekcja „Definicja modułu a instancja modułu") |
 
@@ -269,7 +271,7 @@ Zasady wykonania (D-036):
 2. **Komputer lokalny (grupa robocza, NTLM):** wpis **tylko tej jednej nazwy** w `TrustedHosts` klienta WinRM, np. `Set-Item WSMan:\localhost\Client\TrustedHosts -Value '<NAZWA>' -Concatenate` (wymaga działającej usługi WinRM); nigdy `*`. Alternatywa bez `TrustedHosts`: HTTPS (5986) z certyfikatem na komputerze zdalnym i `Add-MwpTarget -UseSsl`.
 3. **Aplikacja:** `Add-MwpTarget -Name '<NAZWA>' -UserName '<NAZWA>\<konto>'`, potem `$c = New-MwpExecutionContext -ComputerName '<NAZWA>' -Credential (Get-Credential)` i `(Test-MwpTarget -Context $c).Data`.
 
-## Tryby prezentacji (Embedded i SeparateWindow — FAZA 4, D-039; pozostałe: FAZA 5, 19)
+## Tryby prezentacji (Embedded i SeparateWindow — FAZA 4, D-039; DashboardWidget — FAZA 5, D-043; pozostałe: FAZA 19)
 
 Moduł deklaruje, które tryby obsługuje (nie każdy musi wszystkie):
 
@@ -281,14 +283,19 @@ Moduł deklaruje, które tryby obsługuje (nie każdy musi wszystkie):
 
 Moduł z pustą listą trybów (moduły obszarów przed swoją fazą) dostaje w hoście widok-zaślepkę w trybach Embedded i SeparateWindow; moduł z listą — tylko w zadeklarowanych trybach (`Test-MwpPresentationMode`). Miejsce prezentacji nie określa logiki modułu. Widoki mogą się różnić, ale używają wspólnych usług aplikacyjnych. Tryb samodzielny nie omija zabezpieczeń, walidacji ani kontroli uprawnień.
 
-## Dashboard i widgety (propozycja, FAZA 5)
+## Dashboard i widgety (FAZA 5, D-043)
 
 Dashboard to konfigurowalna przestrzeń robocza z wieloma widokami modułów dla różnych komputerów jednocześnie (np. status usług na jednym komputerze, dyski na drugim, informacje o systemie lokalnym, status RDP). Dashboard jest kompozycją niezależnych widgetów, a nie zbiorem specjalnie napisanych ekranów.
 
-- Widget to osobny kontrakt prezentacji danych (nie miniaturowe okno): własna konfiguracja, jawne powiązanie z instancją modułu lub źródłem danych i komputerem, wspólne usługi aplikacyjne z pełnym widokiem.
-- Stany widgetu: ładowanie, błąd, brak danych, utrata połączenia. Odświeżanie ręczne i automatyczne z kontrolowaną częstotliwością; limit równoległych zadań w tle.
-- Izolacja: błąd jednego widgetu lub utrata połączenia z jednym komputerem nie zatrzymuje pozostałych; usunięcie widgetu anuluje zadania i zwalnia zasoby.
-- Konfiguracja Dashboardu (widgety, komputery, parametry, układ) jest zapisywana i odtwarzana po ponownym uruchomieniu (miejsce zapisu: ADR w FAZIE 5, propozycja — plik lokalny poza repozytorium).
+Na Pulpicie widgety są na górze, pod nimi karty komputerów i otwarte instancje (FAZA 4).
+
+- **Kontrakt widgetu** — opcjonalne pole `Widgets` kontraktu modułu (sekcja „Kontrakt modułu”). Widget to kontrakt prezentacji danych, nie miniaturowe okno: funkcja danych (`-Context -AsOperation -WidgetParameters` → `MWP.Operation`; ta sama usługa aplikacyjna co pełny widok i CLI), funkcja widoku (`-Data -WidgetParameters` → `MWP.WidgetView`: `Summary`, `Sections` z wierszami `Label`/`Value`/`Percent`/`Tone`, `Warnings`; czysta, bez WPF) i opcjonalnie funkcja eksportu (`-Data -Path [-Format Json|Text]` → `MWP.Result`). Host renderuje widok ogólnym szablonem kafelka (`Views/Dashboard.xaml`), więc moduł z paczki dostarcza widget bez kodu WPF. Katalog: `Get-MwpWidgetDefinition`.
+- **Widget w oknie** (`src/UI/Functions`, testowalne bez WPF): wpis konfiguracji + definicja + **własna instancja modułu** (`New-MwpWidgetRuntime`; własny kontekst i połączenie, także dla tego samego komputera). Stany (`Get-MwpWidgetStatus`, `Get-MwpWidgetStateInfo`): Oczekuje, Ładowanie, Aktualne, Brak danych, Błąd, Utrata połączenia, Wymaga poświadczeń (z `Data.ErrorKind` wyniku operacji). Przy błędzie widget zachowuje ostatni widok z komunikatem.
+- **Odświeżanie:** w tle (`Start-MwpWidgetRefresh` → funkcja danych → `Register-MwpUiOperation`; wynik w wątku okna `Complete-MwpWidgetRefresh`), ręczne (przycisk widgetu, „Odśwież wszystkie”) i automatyczne (częstotliwość per widget: ręcznie, 30 s, 1, 5, 15 min; tylko przy widocznym Pulpicie i włączonym przełączniku „Odświeżanie automatyczne”). Harmonogram `Get-MwpWidgetDue` w zegarze okna (`Invoke-MwpUiDashboardTick`) z limitem `dashboardMaxParallelRefresh` (domyślnie 2); operacje na komputerach dodatkowo ogranicza pula `remoteMaxParallelOperations`. Odświeżanie automatyczne nie otwiera okna poświadczeń — widget komputera zdalnego bez poświadczeń ma przycisk „Połącz” (`Connect-MwpUiWidget`).
+- **Izolacja:** wyjątek funkcji danych lub widoku, błąd albo utrata połączenia zmienia stan tylko tego widgetu; usunięcie widgetu anuluje jego zadanie i zamyka jego instancję (`Remove-MwpWidgetRuntime`); zmiana komputera w widgecie = nowa instancja (kontekst jest niezmienny).
+- **Konfiguracja** — klucze `dashboardWidgets` (lista w kolejności wyświetlania: `id`, `moduleId`, `widgetId`, `computerName`, `title`, `refreshSeconds`, `size` Normal/Wide, `parameters`), `dashboardAutoRefresh`, `dashboardMaxParallelRefresh` w `config/settings.local.json`; bez wpisu lokalnego obowiązuje szablon (widget „Informacje o systemie” dla localhost). Zapis po każdej zmianie (`Set-MwpDashboardConfiguration`: zapis atomowy, log, bez rejestru cofnięć). Rozmiar = szerokość kafelka, położenie = kolejność (przesuwanie wcześniej/dalej). Odtworzenie przy otwarciu Pulpitu: `Repair-MwpDashboardConfiguration` pomija i usuwa z zapisu widgety modułów, których nie ma (D-031), z ostrzeżeniem na Pulpicie i w logu.
+- **Odinstalowanie modułu (D-031):** okno usuwa widgety modułu z Dashboardu (anulowanie zadań, zamknięcie instancji), `Uninstall-MwpModulePackage` usuwa je z zapisu w tym samym zapisie atomowym co rejestr modułów.
+- **Pierwszy widget:** „Informacje o systemie” (`MWP.Dashboard`): `Get-MwpSystemInfo` czyta CIM i rejestr na komputerze docelowym blokiem zgodnym z 5.1, który zwraca JSON (serializacja WinRM spłaszcza obiekty głębsze niż 2 poziomy); sekcje System, Cpu, Memory, Gpu, Disks, Board, Battery, Network (parametr widgetu `Sections`); błąd sekcji → `Warnings`, brak danych → `$null`/pusta lista. Eksport raportu: `Export-MwpSystemReport` (JSON bez BOM, tekst z BOM).
 
 ## Kontrakt modułu (zatwierdzony w FAZIE 2, D-024)
 
@@ -307,6 +314,11 @@ PrivateData = @{
         SupportedPresentationModes = @()                      # Embedded, SeparateWindow, DashboardWidget, Standalone, CLI
         RequiredPermissions        = @('User')                # User, Administrator (co najmniej jedna)
         ConfigurationSchema        = @{}                      # @{ klucz = @{ Type = 'String|Int|Bool|StringArray'; Default = ... } }
+        Widgets                    = @(                       # opcjonalne (FAZA 5, D-043); wymaga trybu DashboardWidget
+            @{ Id = 'SystemInfo'; Name = 'Informacje o systemie'; DataCommand = 'Get-MwpSystemInfo'; ViewCommand = 'ConvertTo-MwpSystemInfoView'
+               ExportCommand = 'Export-MwpSystemReport'; DefaultRefreshSeconds = 60   # 0, 30, 60, 300, 900
+               Parameters = @{ Sections = @{ Type = 'StringArray'; Default = @('System'); Values = @('System', 'Cpu'); Label = 'Sekcje' } } }
+        )
     }
     PSData = @{ ... }
 }
@@ -380,6 +392,7 @@ Konsekwencje dla kodu (obowiązują od FAZY 2):
 - Katalog danych (D-032): klucz `dataPath` w konfiguracji; pusty (domyślnie) = `<folder aplikacji>\data`; ścieżka względna liczona od folderu aplikacji (`$PSScriptRoot`, nie bieżący katalog); bezwzględna (dysk lub UNC) może zawierać zmienne środowiskowe. Zna go wyłącznie `Get-MwpDataPath` (`-Kind Root|Logs|Undo|Modules|Fallback`, `-Detailed`; zasady ścieżki w `Resolve-MwpDataPath`); stan dla GUI i CLI daje publiczna `Get-MwpDataLocation`. Katalog niezapisywalny (próba utworzenia i usunięcia pliku, wynik pamiętany do końca procesu) lub ścieżka niepoprawna → tryb zapasowy `%LOCALAPPDATA%\MyWindowsPower` z ostrzeżeniem w wyniku i w logu (`DataPath.Fallback`, raz na proces). W trybie zapasowym także `settings.local.json` (gdy folder `config` jest niezapisywalny; istniejący plik w `config` ma pierwszeństwo). Bez automatycznej migracji starych danych. Zmiana miejsca: „Przenieś dane” (`Move-MwpDataDirectory`: kopia `logs`/`undo`/`modules`, zapis `dataPath`, usunięcie starych danych; bez wpisu cofnięcia, D-038) albo tylko zapis `dataPath` (dane zostają w starym miejscu). Moduły z paczek leżą w `<katalog danych>\modules` (D-038).
 - Logi (D-026, D-032): `<katalog danych>\logs\mwp-RRRR-MM-DD.log`, jeden wpis JSON na linię (UTF-8 bez BOM): `timestamp`, `level`, `computer`, `source`, `operation`, `message`, `user`, `processId`, opcjonalnie `data`. Próg `logLevel` (Debug/Info/Warning/Error), rotacja przy pierwszym wpisie dnia wg `logRetentionDays`. Operacje na komputerze zdalnym są logowane na hoście z nazwą komputera. Chwilowa blokada pliku (np. OneDrive) → do 5 ponowień (ok. 1,5 s), potem ostrzeżenie bez przerywania operacji. Start aplikacji zapisuje operacje `Startup.*` (źródło `Launcher`, opis w sekcji „Launcher”, D-042); awaryjny `mwp-startup-failure.log` w katalogu zapasowym tylko przy nieudanym imporcie `MWP.Core`.
 - Rejestr cofnięć (D-028, D-032): `<katalog danych>\undo\<GUID>.json`.
+- Dashboard (FAZA 5, D-043): klucze `dashboardWidgets`, `dashboardAutoRefresh`, `dashboardMaxParallelRefresh` — nowe klucze z wartościami domyślnymi w szablonie, bez zmiany `schemaVersion`.
 - Konfiguracja użytkownika: `config/settings.local.json` (poza repozytorium; w trybie zapasowym `%LOCALAPPDATA%\MyWindowsPower\settings.local.json`, D-032); szablon `config/settings.example.json` z polem `schemaVersion` jest jednocześnie źródłem wartości domyślnych (D-025). Schemat 2 (FAZA 3, D-037) dodaje: `targets` (komputery zdalne; `localhost` jest zawsze obecny bez wpisu), `installedModules` (rejestr modułów z paczek), `modules` (ustawienia modułów), `remoteMaxParallelOperations`, `remoteConnectTimeoutSeconds`, `remoteOperationTimeoutSeconds`; migracja 1 → 2 zachowuje pozostałe klucze, w tym `dataPath`. Nazwy prawdziwych komputerów, adresy i poświadczenia nigdy nie trafiają do repozytorium ani do szablonu.
 - Zasady (D-015, wdrożone w FAZIE 2, D-025): zapis atomowy (plik tymczasowy, potem `File.Replace`/`File.Move`); uszkodzony plik nie blokuje startu — wartości domyślne, ostrzeżenie i log, a plik zostaje zachowany jako `settings.local.json.corrupt-RRRRMMDD-GGmmss`; nowsza `schemaVersion` niż obsługiwana → wartości domyślne, plik bez zmian; starsza → migracje krok po kroku (`Invoke-MwpSettingsMigration`); `Set-MwpSetting` przyjmuje tylko klucze z szablonu i wartość zgodnego typu.
 
@@ -392,7 +405,7 @@ Konsekwencje dla kodu (obowiązują od FAZY 2):
 
 ## Testy architektoniczne (FAZY 3–5 dodają je stopniowo, FAZA 20 domyka)
 
-Stan po FAZIE 4: jak po FAZIE 3, plus granica warstw UI (`tests/UI/Xaml.Tests.ps1`: kod `src/UI` wywołuje tylko funkcje Mwp i dozwolone polecenia wbudowane), zadania w tle GUI (`tests/UI/UiFunctions.Tests.ps1`) oraz 2, 3 i 9 w oknie — weryfikacja ręczna na Windows 11 (paczka `samples/MWP.Przyklad`). Stan po FAZIE 3 (testy Pester z mockami): 3, 4, 7 (na poziomie kontekstów i instancji), 8, 9 i 11 — `tests/Modules/MWP.Remote/*.Tests.ps1`, `tests/Modules/MWP.Core/ModuleContract.Tests.ps1`, `ModulePackage.Tests.ps1`; 12 częściowo (`New-MwpRestorePoint -Context`). Dodatkowo `Architecture.Tests.ps1`: funkcje komputera docelowego przyjmują `-Context`, polecenia WinRM/CIM tylko w adapterze, brak zmian `TrustedHosts`, brak zmiennych modułu z komputerem lub poświadczeniami.
+Stan po FAZIE 5: jak po FAZIE 4, plus 5 (na poziomie kontraktu i katalogu widgetów), 6, 7 (widgety) i 10 — `tests/UI/Widgets.Tests.ps1` (własna instancja widgetu, awaria funkcji danych i utrata połączenia jednego widgetu bez wpływu na drugi, usunięcie widgetu anuluje zadanie i zamyka instancję, zapis i odtworzenie konfiguracji), `tests/Modules/MWP.Core/Dashboard.Tests.ps1`, `ModulePackage.Tests.ps1` (widgety odinstalowanego modułu); w oknie — automatyczny test dymny i weryfikacja ręczna. Stan po FAZIE 4: jak po FAZIE 3, plus granica warstw UI (`tests/UI/Xaml.Tests.ps1`: kod `src/UI` wywołuje tylko funkcje Mwp i dozwolone polecenia wbudowane), zadania w tle GUI (`tests/UI/UiFunctions.Tests.ps1`) oraz 2, 3 i 9 w oknie — weryfikacja ręczna na Windows 11 (paczka `samples/MWP.Przyklad`). Stan po FAZIE 3 (testy Pester z mockami): 3, 4, 7 (na poziomie kontekstów i instancji), 8, 9 i 11 — `tests/Modules/MWP.Remote/*.Tests.ps1`, `tests/Modules/MWP.Core/ModuleContract.Tests.ps1`, `ModulePackage.Tests.ps1`; 12 częściowo (`New-MwpRestorePoint -Context`). Dodatkowo `Architecture.Tests.ps1`: funkcje komputera docelowego przyjmują `-Context`, polecenia WinRM/CIM tylko w adapterze, brak zmian `TrustedHosts`, brak zmiennych modułu z komputerem lub poświadczeniami.
 
 1. Uruchomienie modułu samodzielnie bez hosta.
 2. Uruchomienie modułu wewnątrz hosta.

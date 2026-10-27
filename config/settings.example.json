@@ -10,6 +10,22 @@
     "remoteMaxParallelOperations": 4,
     "remoteConnectTimeoutSeconds": 30,
     "remoteOperationTimeoutSeconds": 300,
+    "dashboardAutoRefresh": true,
+    "dashboardMaxParallelRefresh": 2,
+    "dashboardWidgets": [
+        {
+            "id": "system-localhost",
+            "moduleId": "Dashboard",
+            "widgetId": "SystemInfo",
+            "computerName": "localhost",
+            "title": "",
+            "refreshSeconds": 60,
+            "size": "Wide",
+            "parameters": {
+                "Sections": [ "System", "Cpu", "Memory", "Disks" ]
+            }
+        }
+    ],
     "targets": [
         {
             "name": "NAZWA-KOMPUTERA",

@@ -67,7 +67,7 @@
         $message = Get-MwpRemoteErrorMessage -Kind 'CredentialRequired' -Context $Context
         $handle.Status = 'Failed'
         $handle.CompletedAt = Get-Date
-        $handle.Result = New-MwpResult @common -Success $false -Message $message
+        $handle.Result = New-MwpResult @common -Success $false -Message $message -Data ([ordered]@{ ErrorKind = 'CredentialRequired' })
         return $handle
     }
 

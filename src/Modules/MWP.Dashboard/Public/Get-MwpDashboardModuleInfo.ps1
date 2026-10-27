@@ -4,7 +4,9 @@
         Zwraca informacje o module MWP.Dashboard.
 
     .DESCRIPTION
-        Zaślepka z FAZY 1. Potwierdza, że moduł się ładuje. Nie zmienia systemu.
+        Funkcja wejścia kontraktu modułu. Moduł dostarcza odczyt informacji o systemie
+        (Get-MwpSystemInfo), widget „Informacje o systemie” i eksport raportu (FAZA 5).
+        Nie zmienia systemu.
 
     .EXAMPLE
         Get-MwpDashboardModuleInfo
@@ -17,6 +19,6 @@
     [pscustomobject]@{
         Name    = $module.Name
         Version = $module.Version
-        Status  = 'Zaślepka'
+        Status  = 'Gotowy'
     }
 }

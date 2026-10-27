@@ -3,11 +3,13 @@
 ## `MWP.Przyklad` — moduł przykładowy do paczki `.mwpmod`
 
 Moduł z kontraktem `PrivateData.MWP` (D-024), który deklaruje `RemoteTarget` oraz tryby `Embedded`
-i `SeparateWindow`. Służy do ręcznej weryfikacji FAZY 4:
+i `SeparateWindow` (od wersji 1.1.0 także `DashboardWidget`). Służy do ręcznej weryfikacji FAZY 4 i 5:
 
 - instalacja i odinstalowanie z widoku **Moduły** (D-031),
 - dwie instancje tego samego modułu dla dwóch komputerów (localhost i komputer zdalny),
-- tryb w oknie głównym i w osobnym oknie.
+- tryb w oknie głównym i w osobnym oknie,
+- (FAZA 5) widget Dashboardu „Komputer (przykład)” (pole `Widgets`, D-043): po instalacji **Pulpit → + Dodaj widget**;
+  po odinstalowaniu modułu jego widgety znikają z Pulpitu i z `config/settings.local.json` (D-031).
 
 Moduł nie jest wbudowany (folder `samples` nie jest skanowany przez `Get-MwpModuleDefinition`).
 Paczkę buduje się ręcznie — archiwum ZIP z jednym folderem głównym `MWP.Przyklad`:

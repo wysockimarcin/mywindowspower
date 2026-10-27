@@ -11,6 +11,10 @@
 
     .PARAMETER Operation
         Uchwyt MWP.Operation z Start-MwpOperation.
+
+    .PARAMETER Quiet
+        Zadanie ciche (np. odświeżenie widgetu Dashboardu, tylko odczyt): nie jest pokazywane na pasku
+        stanu, nie anuluje go przycisk „Anuluj” paska stanu i nie wstrzymuje zamknięcia okna (FAZA 5).
     #>
     [CmdletBinding()]
     [OutputType([pscustomobject])]
@@ -29,7 +33,9 @@
         [scriptblock] $OnCompleted,
 
         [AllowNull()]
-        [object] $State
+        [object] $State,
+
+        [switch] $Quiet
     )
 
     $task = [pscustomobject]@{
@@ -44,7 +50,8 @@
         Output      = @()
         Error       = $null
         Warnings    = @()
-        Cancellable = $true
+        Cancellable = -not $Quiet
+        Quiet       = [bool]$Quiet
         OnCompleted = $OnCompleted
         State       = $State
         PowerShell  = $null

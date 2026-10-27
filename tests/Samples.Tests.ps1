@@ -38,9 +38,22 @@ Describe 'Paczka przykładowa MWP.Przyklad' {
         $result.Sha256 | Should -Match '^[0-9A-F]{64}$'
     }
 
-    It 'deklaruje komputery zdalne i oba tryby okna hosta' {
+    It 'deklaruje komputery zdalne, oba tryby okna hosta i widget Dashboardu' {
         $manifest = Import-PowerShellDataFile -LiteralPath (Join-Path -Path $root -ChildPath 'samples\MWP.Przyklad\MWP.Przyklad.psd1')
         $manifest.PrivateData.MWP.Capabilities | Should -Contain 'RemoteTarget'
-        $manifest.PrivateData.MWP.SupportedPresentationModes | Should -Be @('Embedded', 'SeparateWindow')
+        $manifest.PrivateData.MWP.SupportedPresentationModes | Should -Be @('Embedded', 'SeparateWindow', 'DashboardWidget')
+        $manifest.PrivateData.MWP.Widgets[0].Id | Should -Be 'Stan'
+    }
+
+    It 'widget przykładowy zwraca widok z danych Get-MwpTargetInfo' {
+        Import-Module -Name (Join-Path -Path $root -ChildPath 'samples\MWP.Przyklad\MWP.Przyklad.psd1') -Force
+        $data = [pscustomobject]@{ ComputerName = 'PC-PRZYKLAD'; System = 'Windows 11 Pro'; PowerShell = '5.1'; Time = '2026-10-27 12:00:00' }
+
+        $view = ConvertTo-MwpPrzykladWidgetView -Data @($data)
+
+        $view.Summary | Should -Be 'PC-PRZYKLAD'
+        @($view.Sections[0].Items | ForEach-Object { $_.Label }) | Should -Be @('ComputerName', 'System', 'PowerShell', 'Time')
+        ConvertTo-MwpPrzykladWidgetView -Data $null | Should -BeNullOrEmpty
+        Remove-Module -Name MWP.Przyklad -Force
     }
 }

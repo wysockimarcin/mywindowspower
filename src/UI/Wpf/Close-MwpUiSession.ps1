@@ -4,8 +4,9 @@
         Sprząta po oknie głównym: zegar, zadania w tle, instancje modułów i ich osobne okna.
 
     .DESCRIPTION
-        Każda instancja jest zamykana przez Close-MwpModuleInstance (anulowanie operacji, zamknięcie
-        sesji, usunięcie poświadczeń z pamięci); błąd jednej nie przerywa zamykania pozostałych.
+        Każda instancja (także instancje widgetów Dashboardu) jest zamykana przez Close-MwpModuleInstance
+        (anulowanie operacji, zamknięcie sesji, usunięcie poświadczeń z pamięci); błąd jednej nie
+        przerywa zamykania pozostałych. Konfiguracja Dashboardu jest zapisywana na bieżąco, nie tu.
     #>
     [CmdletBinding()]
     param()
@@ -33,6 +34,12 @@
         }
     }
     $ui.Instances.Clear()
+    if ($null -ne $ui.Dashboard) {
+        foreach ($widget in @($ui.Dashboard.Widgets)) {
+            Remove-MwpWidgetRuntime -Widget $widget -Confirm:$false
+        }
+        $ui.Dashboard.Widgets.Clear()
+    }
     try {
         Write-MwpLog -Level Info -Source 'MWP.UI' -Operation 'UI.Close' -Message 'Zamknięto okno aplikacji.'
     }

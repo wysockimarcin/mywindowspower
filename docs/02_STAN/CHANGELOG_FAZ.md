@@ -17,6 +17,18 @@
 
 ---
 
+## Korekta po FAZIE 4 — dziennik startu aplikacji (2026-10-27)
+- Status: ZAKOŃCZONA (korekta, nie nowa faza; status FAZY 4 bez zmian)
+- Commit: `FAZA 4 (korekta): dziennik startu aplikacji (D-042)` — hash do uzupełnienia na starcie FAZY 5
+- Powód: dane startowe launchera były tylko w konsoli (w wydaniu ukrytej), błędy importu modułów nie trafiały do logu ani do użytkownika, a między „Otwieranie okna aplikacji...” a oknem była kilkusekundowa przerwa bez informacji.
+- Zrobiono: D-042; launcher: pomiar etapów startu, wpisy `Startup.Environment` (z ponownym uruchomieniem w STA i powodem — `Warning`), `Startup.Modules` (podsumowanie + szczegóły modułów w `Data`), `Startup.Module` (`Error`) dla każdego wadliwego modułu — przy zdrowym starcie 2 zapisy, trzeci (`Startup.Window`) zapisuje `MWP.UI` po `ContentRendered`; okno komunikatu przy błędzie modułu, `MWP.Core` i okna (bez `-NoGui`); awaryjny `mwp-startup-failure.log` w `%LOCALAPPDATA%\MyWindowsPower\logs` tylko przy nieudanym imporcie `MWP.Core`; okno startowe (`src/UI/Splash.ps1`, `Splash.xaml`) z krokowym paskiem, bo mediana startu > 2000 ms. `MWP.UI`: parametr `-StartupTiming` (`UI.ps1`, `Start-MwpUi`), `Write-MwpUiStartupEntry`, `Close-MwpUiSplash`; komunikat `UI.Start` bez wersji PowerShella; błąd przed pierwszym wyświetleniem okna jako `Startup.Window`. `Write-MwpLog` i `MWP.Core` bez zmian. Dokumentacja: `DECYZJE` (D-042), `ARCHITEKTURA` (launcher, logi, struktura `src/UI`), `FAZA_4_GUI_SZKIELET`, `STAN_PROJEKTU`.
+- Pomiar (3 uruchomienia, nowy proces, kopia aplikacji): mediana od startu launchera do okna — 5.1: 8043 ms, 7.6.7: 7473 ms; po wdrożeniu okna startowego 7285 / 7348 ms, okno startowe widoczne po ok. 2,4 s. Zapis dziennika startu: 154–159 ms (5.1), 127–136 ms (7.6.7) — próg 150 ms przekroczony w 5.1, pamięć podręczna ustawień zaproponowana jako osobna korekta.
+- Testy: `Launcher.Tests.ps1` przebudowany — każde uruchomienie na kopii aplikacji w `TestDrive` z przekierowanym `LOCALAPPDATA` (nowe: wpisy `Startup.*`, dane w `Data`, brak sekretów, wadliwe moduły z paczki → `Startup.Module` `Error` i kod 1, filtr ostrzeżeń, plik awaryjny przy uszkodzonym `MWP.Core`, ponowne uruchomienie w STA, okno startowe: kodowanie, XAML, brak przy `-NoGui`, motyw); `ModuleContract.Tests.ps1` liczy też moduły w `<katalog danych>\modules` (test padał przy zainstalowanej paczce przykładowej). `.\tests\Invoke-Checks.ps1`, każda wersja w nowym procesie: 5.1.26100.9711 — 0 uwag, 959/959; 7.6.7 — 0 uwag, 959/959 (baza 922/922).
+- Niezrobione / odroczone: tryb „działaj bez uszkodzonego modułu” — nie wprowadzony (semantyka bez zmian); pamięć podręczna ustawień i skrócenie startu — propozycje w `STAN_PROJEKTU.md`.
+- Decyzje: D-042
+- Do weryfikacji na Windows 11 (ręcznie): panel „Dziennik operacji” po starcie, błąd modułu z paczki w oknie komunikatu i w filtrze błędów, okno startowe w motywie ciemnym i przy DPI 125–150%, `-Elevate`.
+- Następna faza: FAZA 5 — Dashboard
+
 ## FAZA 4 — Szkielet GUI i host modułów (2026-10-26)
 - Status: ZAKOŃCZONA (ręczna weryfikacja okna na Windows 11 — lista w pliku fazy)
 - Commit: `FAZA 4: okno hosta WPF, instancje modułów, motywy, zadania w tle, widok Moduły i katalog danych` — hash do uzupełnienia na starcie FAZY 5

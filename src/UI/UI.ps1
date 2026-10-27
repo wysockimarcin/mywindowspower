@@ -14,6 +14,10 @@
 .PARAMETER StartView
     Widok startowy: dashboard (domyślnie), modules, settings, about albo area:<Id modułu>.
 
+.PARAMETER StartupTiming
+    Pomiar startu z launchera (Stopwatch, Stages, ProcessStart) do wpisu Startup.Window (D-042).
+    Opcjonalny: bez niego okno nie zapisuje czasu startu.
+
 .OUTPUTS
     Kod wyjścia: 0 — okno zamknięte normalnie, 1 — błąd okna.
 #>
@@ -21,7 +25,10 @@
 [OutputType([int])]
 param(
     [ValidateNotNullOrEmpty()]
-    [string] $StartView = 'dashboard'
+    [string] $StartView = 'dashboard',
+
+    [AllowNull()]
+    [hashtable] $StartupTiming
 )
 
 Set-StrictMode -Version Latest
@@ -35,4 +42,4 @@ foreach ($required in @('MWP.Core', 'MWP.Remote')) {
 
 Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'MWP.UI.psm1') -Force
 $appRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-Start-MwpUi -AppRoot $appRoot -StartView $StartView
+Start-MwpUi -AppRoot $appRoot -StartView $StartView -StartupTiming $StartupTiming

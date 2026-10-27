@@ -13,7 +13,7 @@ FAZA 20 zakończona.
 - Sekcja o komputerach zdalnych: wymagania po stronie zdalnego komputera (np. WinRM), dodawanie komputera w `Ustawieniach`, uwierzytelnianie, ograniczenia znane z `DECYZJE.md`; użycie `apprun` (FAZA 19).
 - Uruchamianie skryptu: `ExecutionPolicy` (np. `powershell -ExecutionPolicy Bypass -File .\Start-MyWindowsPower.ps1` dla jednej sesji), `Unblock-File` dla pobranych plików, uruchamianie jako administrator.
 - Instrukcja użytkownika `docs/06_UZYTKOWNIK/INSTRUKCJA.md` (po polsku, obszar po obszarze, z opisem cofania zmian).
-- Opcjonalny skrypt tworzący skrót `.lnk` na pulpicie.
+- Opcjonalny skrypt tworzący skrót `.lnk` na pulpicie. Skrót uruchamia aplikację z ukrytą konsolą (`-WindowStyle Hidden`), bo w wydaniu konsola PowerShella nie jest potrzebna; błędy startu widać wtedy w oknie komunikatu, a dane startowe w dzienniku operacji (korekta D-042 po FAZIE 4). Launcher nie ukrywa konsoli sam (bez P/Invoke).
 - Finalny `CHANGELOG` projektu i podsumowanie w `STAN_PROJEKTU.md`.
 - Finalny przegląd `DECYZJE.md`, `ARCHITEKTURA.md` (zgodność z rzeczywistością).
 - Tag git `v1.0.0` (commit wydania).
@@ -27,7 +27,7 @@ Nowe funkcje, `.exe`.
 - [ ] Instrukcja uruchamiania (ExecutionPolicy, Unblock-File, administrator)
 - [ ] Sekcja o komputerach zdalnych w README i instrukcji
 - [ ] `docs/06_UZYTKOWNIK/INSTRUKCJA.md`
-- [ ] Skrypt skrótu (opcjonalnie)
+- [ ] Skrypt skrótu (opcjonalnie): z `-WindowStyle Hidden`; sprawdzić, że błąd importu modułu jest widoczny w oknie komunikatu, a wpisy `Startup.*` w dzienniku operacji (D-042)
 - [ ] Finalny `CHANGELOG`, `STAN_PROJEKTU.md`
 - [ ] Zgodność `ARCHITEKTURA.md` z kodem
 - [ ] Tag `v1.0.0`

@@ -1,0 +1,19 @@
+﻿<!-- Okno startowe (splash, korekta D-042): pokazywane przez launcher przed importem modułów, zamykane po
+     pierwszym wyświetleniu okna głównego. Pędzle z motywu (Themes\Light.xaml / Dark.xaml) dołącza Splash.ps1.
+     Pasek jest krokowy (wartość = liczba ukończonych kroków), bo kroki blokują wątek okna. -->
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="My Windows Power" Width="420" SizeToContent="Height"
+        WindowStyle="None" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="True"
+        Background="{DynamicResource Mwp.Brush.Surface}" BorderBrush="{DynamicResource Mwp.Brush.Border}" BorderThickness="1"
+        UseLayoutRounding="True" FontFamily="Segoe UI Variable Text, Segoe UI">
+    <StackPanel Margin="28,24,28,22">
+        <TextBlock Text="My Windows Power" FontFamily="Segoe UI Variable Display, Segoe UI" FontSize="22" FontWeight="SemiBold"
+                   Foreground="{DynamicResource Mwp.Brush.Text}"/>
+        <TextBlock x:Name="SplashVersion" Margin="0,2,0,18" FontSize="12" Foreground="{DynamicResource Mwp.Brush.TextMuted}"/>
+        <ProgressBar x:Name="SplashProgress" Height="4" Minimum="0" Maximum="1" Value="0" BorderThickness="0"
+                     Foreground="{DynamicResource Mwp.Brush.Accent}" Background="{DynamicResource Mwp.Brush.Border}"/>
+        <TextBlock x:Name="SplashStatus" Margin="0,10,0,0" FontSize="12" TextTrimming="CharacterEllipsis"
+                   Foreground="{DynamicResource Mwp.Brush.TextMuted}" Text="Uruchamianie…"/>
+    </StackPanel>
+</Window>

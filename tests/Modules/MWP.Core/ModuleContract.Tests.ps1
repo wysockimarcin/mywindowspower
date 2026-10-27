@@ -69,6 +69,11 @@ Describe 'Kontrakt modułu i odkrywanie modułów' {
             if (Test-Path -LiteralPath $installed) {
                 $expected += @(Get-ChildItem -LiteralPath $installed -Directory -Filter 'MWP.*').Count
             }
+            # Moduły z paczek w <katalog danych>\modules (D-038), np. paczka przykładowa po ręcznej weryfikacji.
+            $dataModules = (Get-MwpDataLocation).Modules
+            if (-not [string]::IsNullOrEmpty($dataModules) -and (Test-Path -LiteralPath $dataModules)) {
+                $expected += @(Get-ChildItem -LiteralPath $dataModules -Directory -Filter 'MWP.*').Count
+            }
             @(Get-MwpModuleDefinition).Count | Should -Be $expected
         }
 

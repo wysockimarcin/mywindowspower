@@ -15,6 +15,10 @@
 
     .PARAMETER StartView
         Widok startowy (klucz nawigacji), domyślnie Pulpit.
+
+    .PARAMETER StartupTiming
+        Pomiar startu z launchera (Stopwatch, Stages, ProcessStart). Po pierwszym wyświetleniu okna
+        (ContentRendered) trafia do wpisu Startup.Window (Write-MwpUiStartupEntry, D-042).
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '',
         Justification = 'Uruchamia okno aplikacji; zmiany systemu wykonują funkcje logiki z własnym potwierdzeniem.')]
@@ -26,8 +30,16 @@
         [string] $AppRoot,
 
         [ValidateNotNullOrEmpty()]
-        [string] $StartView = 'dashboard'
+        [string] $StartView = 'dashboard',
+
+        [AllowNull()]
+        [hashtable] $StartupTiming
     )
+
+    $startup = @{ Timing = $StartupTiming; UiStartMs = $null; Rendered = $false }
+    if ($null -ne $StartupTiming -and $null -ne $StartupTiming['Stopwatch']) {
+        $startup.UiStartMs = $StartupTiming['Stopwatch'].ElapsedMilliseconds
+    }
 
     $uiRoot = Join-Path -Path $AppRoot -ChildPath 'src\UI'
     $themeSetting = 'System'
@@ -67,6 +79,7 @@
         Timer         = $null
         DemoTask      = $null
         Closing       = $false
+        Startup       = $startup
     }
 
     $exitCode = 0
@@ -75,16 +88,20 @@
         Initialize-MwpMainWindow
         Set-MwpUiTheme -Theme $theme
         Show-MwpView -Key $StartView
-        Write-MwpLog -Level Info -Source 'MWP.UI' -Operation 'UI.Start' -Message ("Uruchomiono okno aplikacji (PowerShell {0}, motyw {1})." -f $PSVersionTable.PSVersion, $theme)
+        $script:MwpUi.Window.Add_ContentRendered({ Invoke-MwpUiSafe -Name 'Startup.Window' -Action { Close-MwpUiSplash; Write-MwpUiStartupEntry } })
+        Write-MwpLog -Level Info -Source 'MWP.UI' -Operation 'UI.Start' -Message ("Uruchomiono okno aplikacji (motyw {0})." -f $theme)
         $null = $script:MwpUi.Window.ShowDialog()
     }
     catch {
         $exitCode = 1
         $message = "Błąd okna aplikacji: {0}" -f $_.Exception.Message
-        Write-MwpLog -Level Error -Source 'MWP.UI' -Operation 'UI.Start' -Message $message -Data @{ Position = $_.InvocationInfo.PositionMessage }
+        # Błąd przed pierwszym wyświetleniem okna to błąd startu (Startup.Window, D-042).
+        $operation = if ($startup.Rendered) { 'UI.Start' } else { 'Startup.Window' }
+        Write-MwpLog -Level Error -Source 'MWP.UI' -Operation $operation -Message $message -Data @{ Position = $_.InvocationInfo.PositionMessage }
         Write-Error -Message $message -ErrorAction Continue
     }
     finally {
+        Close-MwpUiSplash
         Close-MwpUiSession
     }
     $exitCode

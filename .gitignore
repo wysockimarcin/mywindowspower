@@ -10,6 +10,7 @@ logs/
 
 # Konfiguracja lokalna użytkownika (szablon: config/settings.example.json)
 config/settings.local.json
+config/protected.local.json
 
 # Moduły zainstalowane z paczek .mwpmod (D-031); wbudowane zostają w src/Modules/
 src/Modules/Installed/

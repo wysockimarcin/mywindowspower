@@ -1,7 +1,7 @@
 # ARCHITEKTURA — mywindowspower
 
 > Stack, struktura kodu i konwencje. Aktualizowana, gdy zmienia się architektura. Zmiany odnotuj w `DECYZJE.md`.
-> Stan: **rdzeń i kontrakt modułu (FAZA 2)**, **komputery docelowe, kontekst wykonania, połączenia zdalne, instancje modułów i paczki modułów (FAZA 3)**, **okno hosta WPF, instancje w GUI, katalog danych z modułami z paczek (FAZA 4)**, **Dashboard z widgetami i informacje o systemie (FAZA 5)**, **zasilanie i widok modułu wbudowanego (FAZA 6)** + architektura wielokomputerowa z koncepcji pierwotnej (D-019, D-020, D-021). Zatwierdzone: rdzeń, wzorzec funkcji zmieniającej system i kontrakt modułu (D-023…D-029), transport i uwierzytelnianie, kontekst i instancje, wykonanie zdalne, paczki (D-033…D-037), okno hosta i katalog danych (D-038…D-041), kontrakt widgetu i konfiguracja Dashboardu (D-043), moduł zasilania i widok modułu wbudowanego (D-044). Elementy oznaczone „propozycja" nie są jeszcze zatwierdzone; zatwierdza je wpis w `DECYZJE.md` w wymienionej fazie.
+> Stan: **rdzeń i kontrakt modułu (FAZA 2)**, **komputery docelowe, kontekst wykonania, połączenia zdalne, instancje modułów i paczki modułów (FAZA 3)**, **okno hosta WPF, instancje w GUI, katalog danych z modułami z paczek (FAZA 4)**, **Dashboard z widgetami i informacje o systemie (FAZA 5)**, **zasilanie i widok modułu wbudowanego (FAZA 6)**, **usługi Windows i lista ochronna usług (FAZA 7)** + architektura wielokomputerowa z koncepcji pierwotnej (D-019, D-020, D-021). Zatwierdzone: rdzeń, wzorzec funkcji zmieniającej system i kontrakt modułu (D-023…D-029), transport i uwierzytelnianie, kontekst i instancje, wykonanie zdalne, paczki (D-033…D-037), okno hosta i katalog danych (D-038…D-041), kontrakt widgetu i konfiguracja Dashboardu (D-043), moduł zasilania i widok modułu wbudowanego (D-044), moduł usług, lista ochronna usług i profil usług (D-045). Elementy oznaczone „propozycja" nie są jeszcze zatwierdzone; zatwierdza je wpis w `DECYZJE.md` w wymienionej fazie.
 >
 > **Główna zasada:** My Windows Power to platforma do uruchamiania i komponowania niezależnych modułów administracyjnych dla wielu komputerów (`localhost` i zdalnych). Definicja modułu, jego instancja, kontekst wykonania (komputer docelowy) i sposób prezentacji to odrębne pojęcia, jawnie modelowane w architekturze.
 
@@ -41,7 +41,7 @@ mywindowspower/
 │   │   ├── MWP.Remote/             ← komputery docelowe, kontekst wykonania, połączenia (adapter WinRM/CIM), operacje asynchroniczne, instancje modułów (FAZA 3)
 │   │   ├── MWP.Dashboard/          ← informacje o systemie i sprzęcie (Get-MwpSystemInfo), widok widgetu, raport i eksport (FAZA 5); układ widgetów — host
 │   │   ├── MWP.Power/              ← plany zasilania, ustawienia AC/DC, hibernacja, szybkie uruchamianie, raporty powercfg (FAZA 6)
-│   │   ├── MWP.Services/           ← usługi Windows
+│   │   ├── MWP.Services/           ← usługi Windows: lista, start/stop/restart z zależnymi, typ uruchomienia, profil usług (FAZA 7)
 │   │   ├── MWP.Startup/            ← autostart i zadania harmonogramu
 │   │   ├── MWP.Cleanup/            ← czyszczenie dysku
 │   │   ├── MWP.Update/             ← Windows Update
@@ -62,7 +62,7 @@ mywindowspower/
 │       ├── Wpf/                    ← ładowanie XAML, okna, widoki, zdarzenia, zadania w tle
 │       ├── MainWindow.xaml
 │       ├── Splash.ps1, Splash.xaml ← okno startowe launchera (korekta D-042)
-│       ├── Views/                  ← Dashboard, Area (zaślepka obszaru), Instance, Modules, Settings, About; Power (widok modułu wbudowanego, FAZA 6, D-044)
+│       ├── Views/                  ← Dashboard, Area (zaślepka obszaru), Instance, Modules, Settings, About; Power i Services (widoki modułów wbudowanych, FAZY 6–7, D-044, D-045)
 │       ├── Dialogs/                ← Confirm (podgląd zmian), Credential, TargetPicker, TargetEditor, InstanceWindow, WidgetEditor (FAZA 5)
 │       └── Themes/                 ← Light.xaml, Dark.xaml (pędzle), Styles.xaml (style)
 ├── samples/
@@ -111,7 +111,7 @@ Zakazane wzorce (D-015, D-019):
 
 ## Rdzeń `MWP.Core` (FAZA 2)
 
-Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.5.0) jest wersją hosta (D-024). Funkcje publiczne:
+Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.7.0) jest wersją hosta (D-024). Funkcje publiczne:
 
 | Obszar | Funkcje | Uwagi |
 |---|---|---|
@@ -123,7 +123,7 @@ Wersja `MWP.Core` (`ModuleVersion`, obecnie 0.5.0) jest wersją hosta (D-024). F
 | Wynik | `New-MwpResult`, `Format-MwpOperationTarget` | standardowy obiekt wyniku; opis celu z nazwą komputera do potwierdzeń |
 | Cofanie | `Save-MwpUndoEntry`, `Get-MwpUndoEntry`, `Invoke-MwpUndo` | rejestr cofnięć w `<katalog danych>\undo\` (D-028, D-032) |
 | Punkt przywracania | `New-MwpRestorePoint` | CIM `SystemRestore`; limit częstotliwości i wyłączona ochrona obsłużone (D-029); komputer zdalny przez `-Context` (D-035) |
-| Lista ochronna | `Test-MwpProtectedItem`, `Get-MwpProtectedItem` | dane w `MWP.Core\Data\protected-items.json` (D-029) |
+| Lista ochronna | `Test-MwpProtectedItem`, `Get-MwpProtectedItem` | dane w `MWP.Core\Data\protected-items.json` (D-029) + opcjonalny `protected.local.json` obok `settings.local.json` (poza repozytorium, tylko dodaje; pole `Source` BuiltIn/Local; D-045) |
 | Kontrakt modułu | `Get-MwpModuleDefinition`, `Test-MwpModuleDefinition` | odkrywanie bez importu w `src/Modules`, `<katalog danych>\modules` i dawnym `src/Modules/Installed` (pola `Source`, `IsBase`), walidacja wersji i zależności (D-024, D-031, D-037, D-038) |
 | Paczki modułów | `Test-MwpModulePackage`, `Install-MwpModulePackage`, `Uninstall-MwpModulePackage`, `Get-MwpInstalledModule`, `Move-MwpInstalledModule` | instalacja i odinstalowanie modułów z paczek `.mwpmod` w katalogu danych, rejestr instalacji, przeniesienie instalacji z FAZY 3, tylko lokalnie; odinstalowanie usuwa też widgety modułu z konfiguracji Dashboardu (D-031, D-037, D-038, D-043) |
 | Dashboard | `Get-MwpWidgetDefinition`, `Get-MwpDashboardConfiguration`, `Set-MwpDashboardConfiguration`, `Remove-MwpDashboardWidget`, `Repair-MwpDashboardConfiguration` | katalog widgetów z pola `Widgets` kontraktu, konfiguracja Dashboardu w ustawieniach lokalnych (bez rejestru cofnięć), usuwanie widgetów modułów, których nie ma (D-031, D-043) |
@@ -316,6 +316,20 @@ Zasady (D-044): bloki komputera docelowego (`Get-MwpPowerScript`) nie interpretu
 
 **Widok modułu wbudowanego (D-044):** XAML widoków modułów wbudowanych należy do hosta (`src/UI/Views/<Moduł>.xaml`); katalog `Get-MwpModuleViewCatalog` mapuje Id modułu na plik i funkcje `Initialize-`/`Update-` (`MWP.UI`). Widok instancji (`Instance.xaml`) wstawia go w `ModuleHost` zamiast zaślepki i odczytu testowego; nagłówek (stan połączenia, Połącz/Rozłącz, diagnostyka, osobne okno, zamknięcie) i kontekst zostają. Zmiany z widoku modułu: `Invoke-MwpUiInstanceChange` (kroki = funkcje logiki; podgląd `-WhatIf` w puli zadań GUI → okno potwierdzenia z komputerem docelowym → wykonanie w tle → `-AfterCommand`). Moduły z paczek nadal dostają widok ogólny.
 
+## Usługi — moduł MWP.Services (FAZA 7, D-045)
+
+Wszystkie funkcje przyjmują `-Context` (domyślnie `localhost`); odczyt i zmiany wykonują bloki na komputerze docelowym (`Get-MwpServiceScript`: `List`, `Control`, `StartupType`; zgodne z 5.1, wynik JSON), log i rejestr cofnięć zostają na hoście z nazwą komputera. Nazwy usług są walidowane przed użyciem (`Test-MwpServiceName`).
+
+| Funkcja | Klasa | Opis |
+|---|---|---|
+| `Get-MwpService [-Name] [-Status] [-StartupType] [-Search] [-ProtectedOnly] [-IncludeDependencies] [-AsOperation]`, `Resolve-MwpServiceList`, `Select-MwpService` | Odczyt | `Win32_Service` (+ `Win32_DependentService`), typ uruchomienia z opóźnionym startem, konto, ścieżka, opis, zależności, oznaczenie listy ochronnej; filtry jako czysta funkcja (CLI i widok) |
+| `Start-MwpService [-DependentService]`, `Stop-MwpService`, `Restart-MwpService` | Zmiana | `ServiceController` z limitem 30 s na usługę; zatrzymanie i restart z działającymi usługami zależnymi (od najdalszej), po błędzie ponowne uruchomienie zatrzymanych; cofnięcie zatrzymania = start z tymi samymi zależnymi; restart bez wpisu cofnięcia |
+| `Set-MwpServiceStartupType -StartupType Automatic\|AutomaticDelayedStart\|Manual\|Disabled` | Zmiana | `sc.exe config … start=` (argumenty jako tablica) i ponowny odczyt typu; cofnięcie = poprzedni typ |
+| `Export-MwpServiceProfile`, `Read-MwpServiceProfile`, `Compare-MwpServiceProfile`, `Import-MwpServiceProfile` | Zapis pliku / Odczyt / Zmiana | profil JSON (typ i stan usług); różnice Change/Same/Missing/Protected/Blocked; import zmienia tylko typy uruchomienia (każda zmiana z własnym wpisem cofnięcia) |
+| `ConvertTo-MwpServiceStatusView`, `Get-MwpServiceStartupTypeList`, `Test-MwpServiceName` | — | widok widgetu `ServiceStatus` (D-043); słownik typów uruchomienia (`AllowedWhenProtected`); walidacja nazwy usługi |
+
+Lista ochronna usług (D-045): usługa chroniona — dozwolone uruchomienie i typ automatyczny; zablokowane zatrzymanie, restart, typ ręczny i wyłączony; zablokowane także zatrzymanie usługi, od której zależy działająca usługa chroniona, i wyłączenie usługi, od której zależy usługa chroniona. Wszystkie zmiany wymagają administratora na komputerze docelowym. Widok `Views/Services.xaml` (katalog widoków hosta, D-044) wyłącza przyciski i zawęża listę typów dla usług chronionych (`Get-MwpServiceActionState`, `Get-MwpServiceViewOption`), ale blokadę egzekwują funkcje logiki (GUI, CLI, komputer zdalny). Testy: `tests/Modules/MWP.Services/Services.Tests.ps1` — symulator usług (mocki `Get-CimInstance`, `Get-Service` z kontrolerem i `sc.exe` w `MWP.Remote`, `MWP.Services` i zakresie pliku; fikcyjne nazwy `MwpTest*`), ścieżka zdalna przez mock adaptera transportu; `tests/UI/ServicesView.Tests.ps1`.
+
 ## Kontrakt modułu (zatwierdzony w FAZIE 2, D-024)
 
 Kontrakt jest w manifeście modułu, w sekcji `PrivateData.MWP` (PowerShell ignoruje nieznane klucze `PrivateData`, a `Import-PowerShellDataFile` czyta je bez importu modułu). `Version` i `Description` pochodzą z `ModuleVersion` i `Description` manifestu, żeby nie dublować danych.
@@ -390,7 +404,7 @@ Konsekwencje dla kodu (obowiązują od FAZY 2):
 - Komputery zdalne (D-019): potwierdzenie operacji zmieniającej system zawiera nazwę komputera docelowego; log i wpis cofnięcia zapisują komputer; punkt przywracania tworzony na komputerze docelowym; operacje mogące odciąć łączność (sieć, zapora) mają dodatkowe ostrzeżenie i, gdzie się da, automatyczne wycofanie po limicie czasu.
 - Uprawnienia: nie traktuj obecności użytkownika w aplikacji jako dowodu uprawnień administracyjnych; rozróżniaj uwierzytelnienie, autoryzację i dostępność połączenia; stosuj najmniejsze wymagane uprawnienia.
 - Klasy operacji (zatwierdzone w FAZIE 2, D-027): **Odczyt** (bez `SupportsShouldProcess`, bez potwierdzenia), **Zmiana** (odwracalna: `ConfirmImpact = 'Medium'`, podgląd, log, cofanie), **Destrukcyjna** (trudna do cofnięcia: `ConfirmImpact = 'High'`, przy domyślnym `$ConfirmPreference` zawsze pyta; potwierdzenie z nazwą celu i komputera); operacja o niejasnej klasie traktowana jak wyższa.
-- Lista ochronna (D-029): `src/Modules/MWP.Core/Data/protected-items.json` (kategoria, nazwa lub wzorzec `-like`, powód); funkcja obszaru odmawia zmiany elementu, dla którego `Test-MwpProtectedItem` zwraca `$true`.
+- Lista ochronna (D-029, D-045): `src/Modules/MWP.Core/Data/protected-items.json` (kategoria, nazwa lub wzorzec `-like`, powód) i opcjonalny `protected.local.json` obok `settings.local.json` (poza repozytorium; może tylko dodawać elementy); funkcja obszaru odmawia zmiany elementu, dla którego `Test-MwpProtectedItem` zwraca `$true`.
 
 ## Zgodność PowerShell 5.1 / 7.x
 
@@ -424,7 +438,7 @@ Konsekwencje dla kodu (obowiązują od FAZY 2):
 
 ## Testy architektoniczne (FAZY 3–5 dodają je stopniowo, FAZA 20 domyka)
 
-Stan po FAZIE 6: jak po FAZIE 5, plus 12 dla obszaru zasilania (hibernacja i szybkie uruchamianie: brak administratora na komputerze docelowym = odmowa przed zmianą, `tests/Modules/MWP.Power/Power.Tests.ps1`), 7 dla instancji modułu obszaru (utrata połączenia w trakcie zmiany planu) oraz logika widoku modułu (`tests/UI/PowerView.Tests.ps1`). Stan po FAZIE 5: jak po FAZIE 4, plus 5 (na poziomie kontraktu i katalogu widgetów), 6, 7 (widgety) i 10 — `tests/UI/Widgets.Tests.ps1` (własna instancja widgetu, awaria funkcji danych i utrata połączenia jednego widgetu bez wpływu na drugi, usunięcie widgetu anuluje zadanie i zamyka instancję, zapis i odtworzenie konfiguracji), `tests/Modules/MWP.Core/Dashboard.Tests.ps1`, `ModulePackage.Tests.ps1` (widgety odinstalowanego modułu); w oknie — automatyczny test dymny i weryfikacja ręczna. Stan po FAZIE 4: jak po FAZIE 3, plus granica warstw UI (`tests/UI/Xaml.Tests.ps1`: kod `src/UI` wywołuje tylko funkcje Mwp i dozwolone polecenia wbudowane), zadania w tle GUI (`tests/UI/UiFunctions.Tests.ps1`) oraz 2, 3 i 9 w oknie — weryfikacja ręczna na Windows 11 (paczka `samples/MWP.Przyklad`). Stan po FAZIE 3 (testy Pester z mockami): 3, 4, 7 (na poziomie kontekstów i instancji), 8, 9 i 11 — `tests/Modules/MWP.Remote/*.Tests.ps1`, `tests/Modules/MWP.Core/ModuleContract.Tests.ps1`, `ModulePackage.Tests.ps1`; 12 częściowo (`New-MwpRestorePoint -Context`). Dodatkowo `Architecture.Tests.ps1`: funkcje komputera docelowego przyjmują `-Context`, polecenia WinRM/CIM tylko w adapterze, brak zmian `TrustedHosts`, brak zmiennych modułu z komputerem lub poświadczeniami.
+Stan po FAZIE 7: jak po FAZIE 6, plus 12 dla obszaru usług (każda zmiana usługi: brak administratora na komputerze docelowym = odmowa przed podglądem), 7 dla instancji usług (utrata połączenia w trakcie zatrzymania), lista ochronna identyczna lokalnie i zdalnie (`tests/Modules/MWP.Services/Services.Tests.ps1`) oraz logika widoku Usługi (`tests/UI/ServicesView.Tests.ps1`). Stan po FAZIE 6: jak po FAZIE 5, plus 12 dla obszaru zasilania (hibernacja i szybkie uruchamianie: brak administratora na komputerze docelowym = odmowa przed zmianą, `tests/Modules/MWP.Power/Power.Tests.ps1`), 7 dla instancji modułu obszaru (utrata połączenia w trakcie zmiany planu) oraz logika widoku modułu (`tests/UI/PowerView.Tests.ps1`). Stan po FAZIE 5: jak po FAZIE 4, plus 5 (na poziomie kontraktu i katalogu widgetów), 6, 7 (widgety) i 10 — `tests/UI/Widgets.Tests.ps1` (własna instancja widgetu, awaria funkcji danych i utrata połączenia jednego widgetu bez wpływu na drugi, usunięcie widgetu anuluje zadanie i zamyka instancję, zapis i odtworzenie konfiguracji), `tests/Modules/MWP.Core/Dashboard.Tests.ps1`, `ModulePackage.Tests.ps1` (widgety odinstalowanego modułu); w oknie — automatyczny test dymny i weryfikacja ręczna. Stan po FAZIE 4: jak po FAZIE 3, plus granica warstw UI (`tests/UI/Xaml.Tests.ps1`: kod `src/UI` wywołuje tylko funkcje Mwp i dozwolone polecenia wbudowane), zadania w tle GUI (`tests/UI/UiFunctions.Tests.ps1`) oraz 2, 3 i 9 w oknie — weryfikacja ręczna na Windows 11 (paczka `samples/MWP.Przyklad`). Stan po FAZIE 3 (testy Pester z mockami): 3, 4, 7 (na poziomie kontekstów i instancji), 8, 9 i 11 — `tests/Modules/MWP.Remote/*.Tests.ps1`, `tests/Modules/MWP.Core/ModuleContract.Tests.ps1`, `ModulePackage.Tests.ps1`; 12 częściowo (`New-MwpRestorePoint -Context`). Dodatkowo `Architecture.Tests.ps1`: funkcje komputera docelowego przyjmują `-Context`, polecenia WinRM/CIM tylko w adapterze, brak zmian `TrustedHosts`, brak zmiennych modułu z komputerem lub poświadczeniami.
 
 1. Uruchomienie modułu samodzielnie bez hosta.
 2. Uruchomienie modułu wewnątrz hosta.

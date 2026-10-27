@@ -1,0 +1,112 @@
+<!-- Widok modułu Usługi Windows (FAZA 7, D-045): lista z filtrami, szczegóły i zależności, start/stop/restart,
+     typ uruchomienia, lista ochronna (blokada), profil usług (eksport, import z podglądem różnic), zmiany do cofnięcia.
+     Wstawiany do widoku instancji (Instance.xaml, ModuleHost). Kod: Initialize-/Update-MwpServicesView.
+     Każda zmiana: podgląd (-WhatIf) w oknie potwierdzenia z komputerem docelowym, wykonanie w tle, log i cofnięcie. -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <DataTemplate x:Key="OptionTemplate">
+            <TextBlock Text="{Binding Label}"/>
+        </DataTemplate>
+    </UserControl.Resources>
+    <StackPanel>
+        <DockPanel Margin="0,4,0,0" LastChildFill="True">
+            <Button x:Name="ServicesRefreshButton" DockPanel.Dock="Right" Content="Odśwież" VerticalAlignment="Center"/>
+            <TextBlock x:Name="ServicesStatusText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Odczyt usług…"/>
+        </DockPanel>
+        <Border x:Name="ServicesWarningBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,10,0,0" Visibility="Collapsed">
+            <TextBlock x:Name="ServicesWarningText" TextWrapping="Wrap"/>
+        </Border>
+
+        <TextBlock Text="Usługi" Style="{StaticResource Mwp.Text.Section}"/>
+        <WrapPanel>
+            <TextBox x:Name="ServiceSearchBox" Width="240" Margin="0,0,8,8" ToolTip="Szukaj w nazwie, nazwie wyświetlanej i opisie"/>
+            <ComboBox x:Name="ServiceStatusFilter" Width="150" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <ComboBox x:Name="ServiceTypeFilter" Width="230" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <CheckBox x:Name="ServiceProtectedFilter" Content="Tylko chronione" VerticalAlignment="Center" Margin="0,0,12,8"/>
+            <TextBlock x:Name="ServiceCountText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        </WrapPanel>
+        <DataGrid x:Name="ServicesGrid" MinHeight="160" MaxHeight="420" SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="" Width="30">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Lock}" FontFamily="{StaticResource Mwp.Font.Icons}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       ToolTip="Usługa z listy ochronnej"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Nazwa wyświetlana" Binding="{Binding DisplayName}" Width="3*"/>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="Stan" Binding="{Binding StatusText}" Width="110"/>
+                <DataGridTextColumn Header="Typ uruchomienia" Binding="{Binding StartupTypeText}" Width="200"/>
+                <DataGridTextColumn Header="Konto" Binding="{Binding Account}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Border Style="{StaticResource Mwp.Card}" Margin="0,10,0,0">
+            <StackPanel>
+                <TextBlock x:Name="ServiceDetailTitle" FontWeight="SemiBold" TextWrapping="Wrap" Text="Wybierz usługę z listy."/>
+                <Border x:Name="ServiceProtectedBanner" Style="{StaticResource Mwp.Banner.Info}" Margin="0,8,0,0" Visibility="Collapsed">
+                    <TextBlock x:Name="ServiceProtectedText" TextWrapping="Wrap"/>
+                </Border>
+                <WrapPanel Margin="0,10,0,0">
+                    <Button x:Name="StartServiceButton" Style="{StaticResource Mwp.Button.Accent}" Content="Uruchom" Margin="0,0,8,8"/>
+                    <Button x:Name="StopServiceButton" Content="Zatrzymaj…" Margin="0,0,8,8"/>
+                    <Button x:Name="RestartServiceButton" Content="Uruchom ponownie…" Margin="0,0,8,8"/>
+                    <TextBlock Text="Typ uruchomienia:" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="8,0,6,8"/>
+                    <ComboBox x:Name="StartupTypeBox" Width="230" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+                    <Button x:Name="SetStartupTypeButton" Content="Ustaw typ…" Margin="0,0,8,8"/>
+                </WrapPanel>
+                <TextBlock x:Name="ServiceDetailText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="Profil usług (typy uruchomienia)" Style="{StaticResource Mwp.Text.Section}"/>
+        <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                   Text="Eksport zapisuje typ uruchomienia i stan każdej usługi do pliku JSON. Import pokazuje różnice z tym komputerem i zmienia tylko typy uruchomienia (usługi chronione i brakujące są pomijane)."/>
+        <WrapPanel>
+            <Button x:Name="ExportProfileButton" Content="Eksportuj profil…" Margin="0,0,8,8"/>
+            <Button x:Name="LoadProfileButton" Content="Wczytaj profil i porównaj…" Margin="0,0,8,8"/>
+            <Button x:Name="ApplySelectedProfileButton" Content="Zastosuj zaznaczone…" Margin="0,0,8,8"/>
+            <Button x:Name="ApplyProfileButton" Style="{StaticResource Mwp.Button.Accent}" Content="Zastosuj wszystkie różnice…" Margin="0,0,8,8"/>
+        </WrapPanel>
+        <TextBlock x:Name="ProfileText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+        <DataGrid x:Name="ProfileGrid" MinHeight="60" MaxHeight="260" SelectionMode="Extended">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Usługa" Binding="{Binding DisplayName}" Width="3*"/>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="Teraz" Binding="{Binding CurrentText}" Width="170"/>
+                <DataGridTextColumn Header="W profilu" Binding="{Binding WantedText}" Width="170"/>
+                <DataGridTextColumn Header="Wynik" Binding="{Binding ActionText}" Width="110"/>
+                <DataGridTextColumn Header="Uwagi" Binding="{Binding Note}" Width="3*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Text="Lista ochronna usług" Style="{StaticResource Mwp.Text.Section}"/>
+        <CheckBox x:Name="ShowProtectedCheck" Content="Pokaż listę ochronną (tylko do przeglądu)" Margin="0,0,0,6"/>
+        <StackPanel x:Name="ProtectedPanel" Visibility="Collapsed">
+            <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,6"
+                       Text="Usługi chronione można uruchomić i ustawić na typ automatyczny; nie można ich zatrzymać, uruchomić ponownie ani ustawić na ręczny lub wyłączony. Usługi, od której zależy usługa chroniona, nie można wyłączyć. Listę można rozszerzyć plikiem protected.local.json obok settings.local.json."/>
+            <DataGrid x:Name="ProtectedGrid" MinHeight="60" MaxHeight="260">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Usługa (wzorzec)" Binding="{Binding Name}" Width="200"/>
+                    <DataGridTextColumn Header="Źródło" Binding="{Binding SourceText}" Width="110"/>
+                    <DataGridTextColumn Header="Powód" Binding="{Binding Reason}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+
+        <TextBlock Text="Zmiany usług do cofnięcia (ten komputer)" Style="{StaticResource Mwp.Text.Section}"/>
+        <DataGrid x:Name="ServicesUndoGrid" MinHeight="60" MaxHeight="200">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Kiedy" Binding="{Binding When}" Width="140"/>
+                <DataGridTextColumn Header="Zmiana" Binding="{Binding Description}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <WrapPanel Margin="0,10,0,0">
+            <Button x:Name="ServicesUndoButton" Content="Cofnij wybraną…" Margin="0,0,8,8"/>
+        </WrapPanel>
+    </StackPanel>
+</UserControl>

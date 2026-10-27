@@ -4,7 +4,7 @@
         Zwraca informacje o module MWP.Services.
 
     .DESCRIPTION
-        Zaślepka z FAZY 1. Potwierdza, że moduł się ładuje. Nie zmienia systemu.
+        Funkcja wejścia kontraktu modułu (EntryPoint, D-024). Nie zmienia systemu.
 
     .EXAMPLE
         Get-MwpServicesModuleInfo
@@ -17,6 +17,6 @@
     [pscustomobject]@{
         Name    = $module.Name
         Version = $module.Version
-        Status  = 'Zaślepka'
+        Status  = 'Usługi Windows: lista, start/stop/restart, typ uruchomienia, lista ochronna, profile (FAZA 7)'
     }
 }

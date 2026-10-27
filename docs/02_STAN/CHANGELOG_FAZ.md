@@ -17,9 +17,26 @@
 
 ---
 
+## FAZA 7 — Usługi Windows (2026-10-27)
+- Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwych zmian usług i komputera zdalnego — lista w pliku fazy)
+- Commit: `FAZA 7: usługi Windows — lista, start/stop/restart z zależnymi, typ uruchomienia, lista ochronna, profil i widok modułu` — hash do uzupełnienia na starcie FAZY 8
+- Start: uzupełniono hash FAZY 6 (`5087694`); baza testów — 5.1.26100.9711: 0 uwag, 1232/1232; 7.6.7: 0 uwag, 1232/1232.
+- Decyzje użytkownika (2026-10-27): lista ochronna w istniejącym pliku `MWP.Core` + lokalny `protected.local.json` (tylko dodaje); usługa chroniona — dozwolone tylko uruchomienie i typ automatyczny; usługi zależne zatrzymywane razem po potwierdzeniu; import profilu zmienia tylko typy uruchomienia.
+- Zrobiono:
+  - `MWP.Services` 0.7.0: `Get-MwpService` (`Win32_Service`, opóźniony start, `Win32_DependentService`, `-AsOperation`), `Resolve-MwpServiceList`, `Select-MwpService`, `Start-`/`Stop-`/`Restart-MwpService` (usługi zależne od najdalszej, ponowne uruchomienie po błędzie, cofnięcie zatrzymania z zależnymi), `Set-MwpServiceStartupType` (`sc.exe config … start=`, ponowny odczyt, kody błędów po polsku), profil (`Export-`, `Read-`, `Compare-`, `Import-MwpServiceProfile`), `Test-MwpServiceName`, `Get-MwpServiceStartupTypeList`, widget `ServiceStatus` (`ConvertTo-MwpServiceStatusView`); wszystkie zmiany z `-Context`, `-WhatIf`, sprawdzeniem administratora na komputerze docelowym, logiem i cofnięciem.
+  - `MWP.Core` 0.7.0: `Get-MwpProtectedItem` czyta też `protected.local.json` (pole `Source`); lista ochronna usług 15 → 33; `.gitignore`: `config/protected.local.json`.
+  - Okno: `Views/Services.xaml` (lista z filtrami, szczegóły z zależnościami, przyciski z blokadą usług chronionych, profil z siatką różnic, lista ochronna do przeglądu, cofnięcia), `Initialize-`/`Update-MwpServicesView`, `Invoke-MwpServicesViewAction`, `Start-MwpUiServicesRefresh`, logika prezentacji bez WPF (`Get-MwpServiceViewOption`, `Get-MwpServiceActionState`, `Get-MwpServiceDetail`, `Get-MwpServiceProfileStep`).
+  - Dokumentacja: `DECYZJE` (D-045), `ARCHITEKTURA` (sekcja „Usługi”, lista ochronna, rdzeń, struktura, testy architektoniczne), `FAZA_7_USLUGI`, `STAN_PROJEKTU`, `README`.
+- Testy: 5.1.26100.9711 — 0 uwag, 1353/1353; 7.6.7 — 0 uwag, 1353/1353 (baza 1232/1232). Nowe: `tests/Modules/MWP.Services/Services.Tests.ps1` (symulator usług, fikcyjne nazwy `MwpTest*`, ścieżka zdalna z mockiem transportu), `tests/UI/ServicesView.Tests.ps1`; rozszerzone `ProtectedList.Tests.ps1`, `PowerView.Tests.ps1`. Test dymny okna w 5.1 (jasny) i 7.6.7 (ciemny) — kod wyjścia 0.
+- Znalezione i poprawione w trakcie: nawiasy w nazwach usług (`Intel(R) TPM Provisioning Service`) — walidacja dopuszcza `( )`; emoji kłódki nie renderuje się w siatce WPF — ikona z czcionki aplikacji; Pester w 5.1 nie mockuje `sc.exe` (alias `sc`) — globalna funkcja-symulator; `Remove-Item 'Function:\global:…'` niczego nie usuwa — ścieżka bez kwalifikatora.
+- Niezrobione / odroczone: edycja `protected.local.json` w GUI, ustawialny limit czasu operacji na usłudze — dług techniczny w `STAN_PROJEKTU.md`; prawdziwe zmiany usług i komputer zdalny — weryfikacja ręczna.
+- Decyzje: D-045
+- Do weryfikacji na Windows 11: lista 8 punktów w `FAZA_7_USLUGI.md`.
+- Następna faza: FAZA 8 — Autostart i harmonogram
+
 ## FAZA 6 — Zasilanie (2026-10-27)
 - Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwych zmian, raportów i komputera zdalnego — lista w pliku fazy)
-- Commit: `FAZA 6: zasilanie — plany, ustawienia AC/DC, hibernacja, raporty powercfg i widok modułu` — hash do uzupełnienia na starcie FAZY 7
+- Commit: `5087694` `FAZA 6: zasilanie — plany, ustawienia AC/DC, hibernacja, raporty powercfg i widok modułu` (hash uzupełniony na starcie FAZY 7)
 - Start: uzupełniono hash FAZY 5 (`c4970e3`); baza testów — 5.1.26100.9711: 0 uwag, 1094/1094; 7.6.7: 0 uwag, 1094/1094.
 - Zrobiono:
   - `MWP.Power` 0.6.0: odczyt stanu i planów, aktywacja, duplikowanie, „Najwyższa wydajność” (GUID `e9a42b02-…` zweryfikowany w systemie i Microsoft Q&A), zmiana nazwy, usuwanie (odmowa dla aktywnego i wbudowanych, eksport do cofnięcia), import, ustawienia AC/DC (ekran, uśpienie, hibernacja po, pokrywa, przyciski), hibernacja, szybkie uruchamianie, raporty `batteryreport`/`energy` (na komputerze docelowym, zapis i otwarcie lokalnie), widget `PowerStatus`; parsowanie `powercfg` po GUID-ach; `-Context`, `-WhatIf`, log, cofnięcie.

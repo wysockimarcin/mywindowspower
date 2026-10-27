@@ -32,6 +32,17 @@
             $definition.ModuleName, ($modes -join ', '), $context.ComputerName
         })
 
+    # Własny widok modułu wbudowanego (katalog widoków hosta, D-044) zastępuje zaślepkę i odczyt testowy.
+    $moduleView = @(Get-MwpModuleViewCatalog -ModuleId $definition.Id) | Select-Object -First 1
+    if ($null -ne $moduleView -and $definition.Source -eq 'BuiltIn') {
+        $Entry.ModuleView = Import-MwpXaml -Path (Join-Path -Path $script:MwpUi.UiRoot -ChildPath $moduleView.View)
+        $Entry.ViewInfo = $moduleView
+        $v['ModuleHost'].Content = $Entry.ModuleView.Root
+        $v['ModuleHost'].Visibility = 'Visible'
+        $v['GenericPanel'].Visibility = 'Collapsed'
+        $v['ProbeButton'].Visibility = 'Collapsed'
+    }
+
     $identity = if ($context.Mode -eq 'Local') { 'konto procesu' } else { '{0}{1}' -f $context.Identity.Authentication, $(if ($context.Identity.UserName) { ' (' + $context.Identity.UserName + ')' } else { '' }) }
     $v['ContextList'].ItemsSource = @(
         [pscustomobject]@{ Key = 'Instancja (Id)'; Value = $instance.Id }
@@ -96,5 +107,8 @@
                 $entry.Instance.State['Note'] = $control.Text
             }
         })
+    if ($null -ne $Entry.ViewInfo) {
+        & $Entry.ViewInfo.Initialize -Entry $Entry
+    }
     Update-MwpInstanceView -Entry $Entry
 }

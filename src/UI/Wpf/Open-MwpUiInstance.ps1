@@ -55,6 +55,8 @@
         Busy        = 0
         Reattaching = $false
         Message     = $null
+        ModuleView  = $null
+        ViewInfo    = $null
     }
     $ui.Instances[$instance.Id] = $entry
     Initialize-MwpInstanceView -Entry $entry

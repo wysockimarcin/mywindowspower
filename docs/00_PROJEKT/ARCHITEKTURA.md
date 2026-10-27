@@ -1,7 +1,7 @@
 # ARCHITEKTURA — mywindowspower
 
 > Stack, struktura kodu i konwencje. Aktualizowana, gdy zmienia się architektura. Zmiany odnotuj w `DECYZJE.md`.
-> Stan: **rdzeń i kontrakt modułu (FAZA 2)**, **komputery docelowe, kontekst wykonania, połączenia zdalne, instancje modułów i paczki modułów (FAZA 3)**, **okno hosta WPF, instancje w GUI, katalog danych z modułami z paczek (FAZA 4)**, **Dashboard z widgetami i informacje o systemie (FAZA 5)** + architektura wielokomputerowa z koncepcji pierwotnej (D-019, D-020, D-021). Zatwierdzone: rdzeń, wzorzec funkcji zmieniającej system i kontrakt modułu (D-023…D-029), transport i uwierzytelnianie, kontekst i instancje, wykonanie zdalne, paczki (D-033…D-037), okno hosta i katalog danych (D-038…D-041), kontrakt widgetu i konfiguracja Dashboardu (D-043). Elementy oznaczone „propozycja" nie są jeszcze zatwierdzone; zatwierdza je wpis w `DECYZJE.md` w wymienionej fazie.
+> Stan: **rdzeń i kontrakt modułu (FAZA 2)**, **komputery docelowe, kontekst wykonania, połączenia zdalne, instancje modułów i paczki modułów (FAZA 3)**, **okno hosta WPF, instancje w GUI, katalog danych z modułami z paczek (FAZA 4)**, **Dashboard z widgetami i informacje o systemie (FAZA 5)**, **zasilanie i widok modułu wbudowanego (FAZA 6)** + architektura wielokomputerowa z koncepcji pierwotnej (D-019, D-020, D-021). Zatwierdzone: rdzeń, wzorzec funkcji zmieniającej system i kontrakt modułu (D-023…D-029), transport i uwierzytelnianie, kontekst i instancje, wykonanie zdalne, paczki (D-033…D-037), okno hosta i katalog danych (D-038…D-041), kontrakt widgetu i konfiguracja Dashboardu (D-043), moduł zasilania i widok modułu wbudowanego (D-044). Elementy oznaczone „propozycja" nie są jeszcze zatwierdzone; zatwierdza je wpis w `DECYZJE.md` w wymienionej fazie.
 >
 > **Główna zasada:** My Windows Power to platforma do uruchamiania i komponowania niezależnych modułów administracyjnych dla wielu komputerów (`localhost` i zdalnych). Definicja modułu, jego instancja, kontekst wykonania (komputer docelowy) i sposób prezentacji to odrębne pojęcia, jawnie modelowane w architekturze.
 
@@ -40,7 +40,7 @@ mywindowspower/
 │   │   │   └── Data/               ←   protected-items.json (lista ochronna)
 │   │   ├── MWP.Remote/             ← komputery docelowe, kontekst wykonania, połączenia (adapter WinRM/CIM), operacje asynchroniczne, instancje modułów (FAZA 3)
 │   │   ├── MWP.Dashboard/          ← informacje o systemie i sprzęcie (Get-MwpSystemInfo), widok widgetu, raport i eksport (FAZA 5); układ widgetów — host
-│   │   ├── MWP.Power/              ← plany zasilania
+│   │   ├── MWP.Power/              ← plany zasilania, ustawienia AC/DC, hibernacja, szybkie uruchamianie, raporty powercfg (FAZA 6)
 │   │   ├── MWP.Services/           ← usługi Windows
 │   │   ├── MWP.Startup/            ← autostart i zadania harmonogramu
 │   │   ├── MWP.Cleanup/            ← czyszczenie dysku
@@ -62,7 +62,7 @@ mywindowspower/
 │       ├── Wpf/                    ← ładowanie XAML, okna, widoki, zdarzenia, zadania w tle
 │       ├── MainWindow.xaml
 │       ├── Splash.ps1, Splash.xaml ← okno startowe launchera (korekta D-042)
-│       ├── Views/                  ← Dashboard, Area (zaślepka obszaru), Instance, Modules, Settings, About
+│       ├── Views/                  ← Dashboard, Area (zaślepka obszaru), Instance, Modules, Settings, About; Power (widok modułu wbudowanego, FAZA 6, D-044)
 │       ├── Dialogs/                ← Confirm (podgląd zmian), Credential, TargetPicker, TargetEditor, InstanceWindow, WidgetEditor (FAZA 5)
 │       └── Themes/                 ← Light.xaml, Dark.xaml (pędzle), Styles.xaml (style)
 ├── samples/
@@ -297,6 +297,25 @@ Na Pulpicie widgety są na górze, pod nimi karty komputerów i otwarte instancj
 - **Odinstalowanie modułu (D-031):** okno usuwa widgety modułu z Dashboardu (anulowanie zadań, zamknięcie instancji), `Uninstall-MwpModulePackage` usuwa je z zapisu w tym samym zapisie atomowym co rejestr modułów.
 - **Pierwszy widget:** „Informacje o systemie” (`MWP.Dashboard`): `Get-MwpSystemInfo` czyta CIM i rejestr na komputerze docelowym blokiem zgodnym z 5.1, który zwraca JSON (serializacja WinRM spłaszcza obiekty głębsze niż 2 poziomy); sekcje System, Cpu, Memory, Gpu, Disks, Board, Battery, Network (parametr widgetu `Sections`); błąd sekcji → `Warnings`, brak danych → `$null`/pusta lista. Eksport raportu: `Export-MwpSystemReport` (JSON bez BOM, tekst z BOM).
 
+## Zasilanie — moduł MWP.Power (FAZA 6, D-044)
+
+Pierwszy moduł obszaru, który zmienia system. Wszystkie funkcje przyjmują `-Context` (domyślnie `localhost`); `powercfg` i rejestr są wywoływane na komputerze docelowym przez `Invoke-MwpOnTarget` / `Start-MwpOperation`, log i rejestr cofnięć zostają na hoście z nazwą komputera.
+
+| Funkcja | Klasa | Opis |
+|---|---|---|
+| `Get-MwpPowerStatus [-AsOperation]`, `Resolve-MwpPowerStatus` | Odczyt | plany, plan aktywny, 6 ustawień AC/DC planu aktywnego (ekran, uśpienie, hibernacja po, pokrywa, przyciski zasilania i uśpienia), hibernacja, szybkie uruchamianie, bateria, administrator; jedno wywołanie na komputerze docelowym; `-AsOperation` daje surowy JSON parsowany przez `Resolve-MwpPowerStatus` |
+| `Get-MwpPowerPlan [-Guid]` | Odczyt | lista planów (GUID, nazwa w języku systemu, aktywny, wbudowany) |
+| `Set-MwpActivePowerPlan`, `Copy-MwpPowerPlan`, `Add-MwpUltimatePowerPlan`, `Rename-MwpPowerPlan`, `Import-MwpPowerPlan` | Zmiana | `/setactive`, `/duplicatescheme` (+`/changename`), szablon `e9a42b02-…` „Najwyższa wydajność”, `/changename`, `/import` (Base64 albo plik .pow) |
+| `Remove-MwpPowerPlan` | Destrukcyjna | odmowa dla planu aktywnego i planów wbudowanych (lista ochronna `PowerPlan`), eksport przed usunięciem = dane cofnięcia |
+| `Set-MwpPowerSetting -Setting -PowerSource AC\|DC -Value [-PlanGuid]` | Zmiana | `/setacvalueindex`/`/setdcvalueindex` po GUID-ach, `/setactive` dla planu aktywnego; czasy w sekundach (0 = nigdy), akcje 0–4 |
+| `Set-MwpHibernation`, `Set-MwpFastStartup` | Zmiana | `/hibernate on/off`, `HiberbootEnabled`; wymagają administratora na komputerze docelowym |
+| `New-MwpPowerReport -Kind Battery\|Energy [-DurationSeconds] [-AsOperation]`, `Save-MwpPowerReport`, `Open-MwpPowerReport`, `Get-MwpPowerReportDirectory` | Odczyt / zapis pliku | raport powstaje na komputerze docelowym w katalogu tymczasowym, treść wraca połączeniem, zapis w `<katalog danych>\reports` (albo wskazanym folderze), otwarcie lokalnie |
+| `ConvertTo-MwpPowerStatusView` | — | widok widgetu `PowerStatus` (D-043) |
+
+Zasady (D-044): bloki komputera docelowego (`Get-MwpPowerScript`) nie interpretują tekstu `powercfg` — zwracają linie i kod wyjścia; parsowanie na hoście po GUID-ach i strukturze (`ConvertFrom-MwpPowercfgOutput`), więc działa przy polskim i angielskim języku systemu; argumenty `powercfg` zawsze jako osobne elementy tablicy; odczyt ustawień przez `/qh` (ustawienia ukryte). Testy: `tests/Modules/MWP.Power/Power.Tests.ps1` — symulator `powercfg.exe` (Pester `Mock` w `MWP.Remote`, `MWP.Power` i zakresie pliku) z komunikatami po polsku i angielsku; ścieżka zdalna przez mock adaptera transportu.
+
+**Widok modułu wbudowanego (D-044):** XAML widoków modułów wbudowanych należy do hosta (`src/UI/Views/<Moduł>.xaml`); katalog `Get-MwpModuleViewCatalog` mapuje Id modułu na plik i funkcje `Initialize-`/`Update-` (`MWP.UI`). Widok instancji (`Instance.xaml`) wstawia go w `ModuleHost` zamiast zaślepki i odczytu testowego; nagłówek (stan połączenia, Połącz/Rozłącz, diagnostyka, osobne okno, zamknięcie) i kontekst zostają. Zmiany z widoku modułu: `Invoke-MwpUiInstanceChange` (kroki = funkcje logiki; podgląd `-WhatIf` w puli zadań GUI → okno potwierdzenia z komputerem docelowym → wykonanie w tle → `-AfterCommand`). Moduły z paczek nadal dostają widok ogólny.
+
 ## Kontrakt modułu (zatwierdzony w FAZIE 2, D-024)
 
 Kontrakt jest w manifeście modułu, w sekcji `PrivateData.MWP` (PowerShell ignoruje nieznane klucze `PrivateData`, a `Import-PowerShellDataFile` czyta je bez importu modułu). `Version` i `Description` pochodzą z `ModuleVersion` i `Description` manifestu, żeby nie dublować danych.
@@ -405,7 +424,7 @@ Konsekwencje dla kodu (obowiązują od FAZY 2):
 
 ## Testy architektoniczne (FAZY 3–5 dodają je stopniowo, FAZA 20 domyka)
 
-Stan po FAZIE 5: jak po FAZIE 4, plus 5 (na poziomie kontraktu i katalogu widgetów), 6, 7 (widgety) i 10 — `tests/UI/Widgets.Tests.ps1` (własna instancja widgetu, awaria funkcji danych i utrata połączenia jednego widgetu bez wpływu na drugi, usunięcie widgetu anuluje zadanie i zamyka instancję, zapis i odtworzenie konfiguracji), `tests/Modules/MWP.Core/Dashboard.Tests.ps1`, `ModulePackage.Tests.ps1` (widgety odinstalowanego modułu); w oknie — automatyczny test dymny i weryfikacja ręczna. Stan po FAZIE 4: jak po FAZIE 3, plus granica warstw UI (`tests/UI/Xaml.Tests.ps1`: kod `src/UI` wywołuje tylko funkcje Mwp i dozwolone polecenia wbudowane), zadania w tle GUI (`tests/UI/UiFunctions.Tests.ps1`) oraz 2, 3 i 9 w oknie — weryfikacja ręczna na Windows 11 (paczka `samples/MWP.Przyklad`). Stan po FAZIE 3 (testy Pester z mockami): 3, 4, 7 (na poziomie kontekstów i instancji), 8, 9 i 11 — `tests/Modules/MWP.Remote/*.Tests.ps1`, `tests/Modules/MWP.Core/ModuleContract.Tests.ps1`, `ModulePackage.Tests.ps1`; 12 częściowo (`New-MwpRestorePoint -Context`). Dodatkowo `Architecture.Tests.ps1`: funkcje komputera docelowego przyjmują `-Context`, polecenia WinRM/CIM tylko w adapterze, brak zmian `TrustedHosts`, brak zmiennych modułu z komputerem lub poświadczeniami.
+Stan po FAZIE 6: jak po FAZIE 5, plus 12 dla obszaru zasilania (hibernacja i szybkie uruchamianie: brak administratora na komputerze docelowym = odmowa przed zmianą, `tests/Modules/MWP.Power/Power.Tests.ps1`), 7 dla instancji modułu obszaru (utrata połączenia w trakcie zmiany planu) oraz logika widoku modułu (`tests/UI/PowerView.Tests.ps1`). Stan po FAZIE 5: jak po FAZIE 4, plus 5 (na poziomie kontraktu i katalogu widgetów), 6, 7 (widgety) i 10 — `tests/UI/Widgets.Tests.ps1` (własna instancja widgetu, awaria funkcji danych i utrata połączenia jednego widgetu bez wpływu na drugi, usunięcie widgetu anuluje zadanie i zamyka instancję, zapis i odtworzenie konfiguracji), `tests/Modules/MWP.Core/Dashboard.Tests.ps1`, `ModulePackage.Tests.ps1` (widgety odinstalowanego modułu); w oknie — automatyczny test dymny i weryfikacja ręczna. Stan po FAZIE 4: jak po FAZIE 3, plus granica warstw UI (`tests/UI/Xaml.Tests.ps1`: kod `src/UI` wywołuje tylko funkcje Mwp i dozwolone polecenia wbudowane), zadania w tle GUI (`tests/UI/UiFunctions.Tests.ps1`) oraz 2, 3 i 9 w oknie — weryfikacja ręczna na Windows 11 (paczka `samples/MWP.Przyklad`). Stan po FAZIE 3 (testy Pester z mockami): 3, 4, 7 (na poziomie kontekstów i instancji), 8, 9 i 11 — `tests/Modules/MWP.Remote/*.Tests.ps1`, `tests/Modules/MWP.Core/ModuleContract.Tests.ps1`, `ModulePackage.Tests.ps1`; 12 częściowo (`New-MwpRestorePoint -Context`). Dodatkowo `Architecture.Tests.ps1`: funkcje komputera docelowego przyjmują `-Context`, polecenia WinRM/CIM tylko w adapterze, brak zmian `TrustedHosts`, brak zmiennych modułu z komputerem lub poświadczeniami.
 
 1. Uruchomienie modułu samodzielnie bez hosta.
 2. Uruchomienie modułu wewnątrz hosta.

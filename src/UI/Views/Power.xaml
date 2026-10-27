@@ -1,0 +1,125 @@
+<!-- Widok modułu Zasilanie (FAZA 6, D-044): plany zasilania, czasy wygaszania i uśpienia (AC/DC), przyciski
+     i pokrywa, hibernacja i szybkie uruchamianie, raporty powercfg, zmiany do cofnięcia.
+     Wstawiany do widoku instancji (Instance.xaml, ModuleHost). Kod: Initialize-/Update-MwpPowerView.
+     Każda zmiana: podgląd (-WhatIf) w oknie potwierdzenia z komputerem docelowym, wykonanie w tle, log i cofnięcie. -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <DataTemplate x:Key="OptionTemplate">
+            <TextBlock Text="{Binding Label}"/>
+        </DataTemplate>
+    </UserControl.Resources>
+    <StackPanel>
+        <DockPanel Margin="0,4,0,0" LastChildFill="True">
+            <Button x:Name="PowerRefreshButton" DockPanel.Dock="Right" Content="Odśwież" VerticalAlignment="Center"/>
+            <TextBlock x:Name="PowerStatusText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Odczyt stanu zasilania…"/>
+        </DockPanel>
+        <Border x:Name="PowerWarningBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,10,0,0" Visibility="Collapsed">
+            <TextBlock x:Name="PowerWarningText" TextWrapping="Wrap"/>
+        </Border>
+
+        <TextBlock Text="Plany zasilania" Style="{StaticResource Mwp.Text.Section}"/>
+        <DataGrid x:Name="PlansGrid" MinHeight="90" MaxHeight="220">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Plan" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="Stan" Binding="{Binding State}" Width="110"/>
+                <DataGridTextColumn Header="Rodzaj" Binding="{Binding Kind}" Width="110"/>
+                <DataGridTextColumn Header="GUID" Binding="{Binding Guid}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <WrapPanel Margin="0,10,0,0">
+            <Button x:Name="ActivatePlanButton" Style="{StaticResource Mwp.Button.Accent}" Content="Aktywuj" Margin="0,0,8,8"/>
+            <Button x:Name="UltimatePlanButton" Content="Dodaj „Najwyższa wydajność”" Margin="0,0,8,8"/>
+            <Button x:Name="RemovePlanButton" Style="{StaticResource Mwp.Button.Danger}" Content="Usuń…" Margin="0,0,8,8"/>
+        </WrapPanel>
+        <DockPanel Margin="0,0,0,0" LastChildFill="True">
+            <TextBlock DockPanel.Dock="Left" Text="Nazwa:" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,8,8"/>
+            <Button x:Name="RenamePlanButton" DockPanel.Dock="Right" Content="Zmień nazwę" Margin="8,0,0,8"/>
+            <Button x:Name="CopyPlanButton" DockPanel.Dock="Right" Content="Duplikuj" Margin="8,0,0,8"/>
+            <TextBox x:Name="PlanNameBox" MaxLength="128" Margin="0,0,0,8"
+                     ToolTip="Nazwa dla „Duplikuj” (opcjonalna) i „Zmień nazwę” (wymagana); bez cudzysłowów."/>
+        </DockPanel>
+
+        <TextBlock Text="Ekran, uśpienie, przyciski i pokrywa (plan aktywny)" Style="{StaticResource Mwp.Text.Section}"/>
+        <Grid x:Name="SettingsGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="*" MaxWidth="240"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*" MaxWidth="240"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Column="1" Text="Zasilanie sieciowe" Style="{StaticResource Mwp.Text.Label}"/>
+            <TextBlock x:Name="DcHeader" Grid.Column="3" Text="Bateria" Style="{StaticResource Mwp.Text.Label}"/>
+
+            <TextBlock x:Name="MonitorTimeoutLabel" Grid.Row="1" Text="Wyłącz ekran po" VerticalAlignment="Center" Margin="0,4"/>
+            <ComboBox x:Name="MonitorTimeoutAc" Grid.Row="1" Grid.Column="1" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <ComboBox x:Name="MonitorTimeoutDc" Grid.Row="1" Grid.Column="3" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+
+            <TextBlock x:Name="SleepTimeoutLabel" Grid.Row="2" Text="Uśpij po" VerticalAlignment="Center" Margin="0,4"/>
+            <ComboBox x:Name="SleepTimeoutAc" Grid.Row="2" Grid.Column="1" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <ComboBox x:Name="SleepTimeoutDc" Grid.Row="2" Grid.Column="3" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+
+            <TextBlock x:Name="HibernateTimeoutLabel" Grid.Row="3" Text="Hibernuj po" VerticalAlignment="Center" Margin="0,4"/>
+            <ComboBox x:Name="HibernateTimeoutAc" Grid.Row="3" Grid.Column="1" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <ComboBox x:Name="HibernateTimeoutDc" Grid.Row="3" Grid.Column="3" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+
+            <TextBlock x:Name="LidActionLabel" Grid.Row="4" Text="Zamknięcie pokrywy" VerticalAlignment="Center" Margin="0,4"/>
+            <ComboBox x:Name="LidActionAc" Grid.Row="4" Grid.Column="1" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <ComboBox x:Name="LidActionDc" Grid.Row="4" Grid.Column="3" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+
+            <TextBlock x:Name="PowerButtonActionLabel" Grid.Row="5" Text="Przycisk zasilania" VerticalAlignment="Center" Margin="0,4"/>
+            <ComboBox x:Name="PowerButtonActionAc" Grid.Row="5" Grid.Column="1" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <ComboBox x:Name="PowerButtonActionDc" Grid.Row="5" Grid.Column="3" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+
+            <TextBlock x:Name="SleepButtonActionLabel" Grid.Row="6" Text="Przycisk uśpienia" VerticalAlignment="Center" Margin="0,4"/>
+            <ComboBox x:Name="SleepButtonActionAc" Grid.Row="6" Grid.Column="1" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <ComboBox x:Name="SleepButtonActionDc" Grid.Row="6" Grid.Column="3" Margin="0,4" ItemTemplate="{StaticResource OptionTemplate}"/>
+        </Grid>
+        <TextBlock x:Name="BatteryNote" Style="{StaticResource Mwp.Text.Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="Collapsed"
+                   Text="Komputer nie ma baterii: wartości „Bateria” dotyczą zasilania bateryjnego i zwykle nie mają znaczenia."/>
+
+        <TextBlock Text="Hibernacja i szybkie uruchamianie (wymagają administratora)" Style="{StaticResource Mwp.Text.Section}"/>
+        <CheckBox x:Name="HibernateCheck" Content="Hibernacja (powercfg /hibernate)" Margin="0,2"/>
+        <CheckBox x:Name="FastStartupCheck" Content="Szybkie uruchamianie (HiberbootEnabled; działa przy włączonej hibernacji)" Margin="0,2"/>
+        <WrapPanel Margin="0,12,0,0">
+            <Button x:Name="ApplySettingsButton" Style="{StaticResource Mwp.Button.Accent}" Content="Zastosuj zmiany…" Margin="0,0,8,8"/>
+            <Button x:Name="ResetSettingsButton" Content="Przywróć odczytane" Margin="0,0,8,8"/>
+        </WrapPanel>
+
+        <TextBlock Text="Raporty powercfg (tworzone na komputerze docelowym, zapisywane lokalnie)" Style="{StaticResource Mwp.Text.Section}"/>
+        <DockPanel LastChildFill="True">
+            <TextBlock DockPanel.Dock="Left" Text="Folder:" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,8,8"/>
+            <TextBox x:Name="ReportFolderBox" Margin="0,0,0,8"/>
+        </DockPanel>
+        <WrapPanel>
+            <Button x:Name="BatteryReportButton" Content="Raport baterii" Margin="0,0,8,8"/>
+            <Button x:Name="EnergyReportButton" Content="Raport energii" Margin="0,0,8,8"/>
+            <TextBlock Text="czas pomiaru (s):" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="4,0,6,8"/>
+            <TextBox x:Name="EnergyDurationBox" Width="60" Text="60" Margin="0,0,8,8"/>
+            <Button x:Name="OpenReportButton" Content="Otwórz ostatni raport" Margin="0,0,8,8"/>
+        </WrapPanel>
+        <TextBlock x:Name="ReportText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap"
+                   Text="Raport energii trwa tyle, ile czas pomiaru, i wymaga uprawnień administratora; raport baterii wymaga baterii."/>
+
+        <TextBlock Text="Zmiany zasilania do cofnięcia (ten komputer)" Style="{StaticResource Mwp.Text.Section}"/>
+        <DataGrid x:Name="UndoGrid" MinHeight="60" MaxHeight="200">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Kiedy" Binding="{Binding When}" Width="140"/>
+                <DataGridTextColumn Header="Zmiana" Binding="{Binding Description}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <WrapPanel Margin="0,10,0,0">
+            <Button x:Name="UndoButton" Content="Cofnij wybraną…" Margin="0,0,8,8"/>
+        </WrapPanel>
+    </StackPanel>
+</UserControl>

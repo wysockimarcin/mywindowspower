@@ -50,6 +50,10 @@
     $v['TestButton'].IsEnabled = -not $busy
     $v['ProbeButton'].IsEnabled = -not $busy
 
+    if ($null -ne $Entry['ViewInfo'] -and $null -ne $Entry['ModuleView']) {
+        & $Entry.ViewInfo.Update -Entry $Entry -StateOnly:$StateOnly
+    }
+
     $message = $Entry.Message
     if ($state.Detail) {
         $message = $(if ($message) { '{0} {1}' -f $message, $state.Detail } else { $state.Detail })

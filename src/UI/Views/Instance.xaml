@@ -1,4 +1,4 @@
-<!-- Widok instancji modułu (zaślepka): kontekst wykonania, stan połączenia, odczyt testowy, stan instancji.
+<!-- Widok instancji modułu: nagłówek, widok modułu (gdy host go ma) albo zaślepka, kontekst wykonania, stan połączenia, odczyt testowy, stan instancji.
      Ten sam widok działa w oknie głównym (Embedded) i w osobnym oknie (SeparateWindow). -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -25,13 +25,18 @@
                 <TextBlock x:Name="ErrorText" TextWrapping="Wrap"/>
             </Border>
 
-            <Border Style="{StaticResource Mwp.Banner.Info}" Margin="0,12,0,0">
-                <TextBlock x:Name="StubText" TextWrapping="Wrap"/>
-            </Border>
+            <!-- Widok modułu wbudowanego z katalogu widoków hosta (Get-MwpModuleViewCatalog, D-044), np. Views\Power.xaml. -->
+            <ContentControl x:Name="ModuleHost" Margin="0,4,0,0" Visibility="Collapsed"/>
 
-            <TextBlock Text="Odczyt testowy (operacja w tle na komputerze docelowym)" Style="{StaticResource Mwp.Text.Section}"/>
-            <TextBlock x:Name="ProbeText" Style="{StaticResource Mwp.Text.Muted}" FontFamily="Consolas" TextWrapping="Wrap"
-                       Text="Kliknij „Odczyt testowy”, żeby odczytać nazwę komputera, wersję systemu i PowerShella (tylko odczyt)."/>
+            <StackPanel x:Name="GenericPanel">
+                <Border Style="{StaticResource Mwp.Banner.Info}" Margin="0,12,0,0">
+                    <TextBlock x:Name="StubText" TextWrapping="Wrap"/>
+                </Border>
+
+                <TextBlock Text="Odczyt testowy (operacja w tle na komputerze docelowym)" Style="{StaticResource Mwp.Text.Section}"/>
+                <TextBlock x:Name="ProbeText" Style="{StaticResource Mwp.Text.Muted}" FontFamily="Consolas" TextWrapping="Wrap"
+                           Text="Kliknij „Odczyt testowy”, żeby odczytać nazwę komputera, wersję systemu i PowerShella (tylko odczyt)."/>
+            </StackPanel>
 
             <TextBlock Text="Stan tej instancji (niewspółdzielony)" Style="{StaticResource Mwp.Text.Section}"/>
             <TextBlock Style="{StaticResource Mwp.Text.Muted}" FontSize="12" Margin="0,0,0,6"

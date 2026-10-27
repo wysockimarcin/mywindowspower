@@ -17,9 +17,25 @@
 
 ---
 
+## FAZA 6 — Zasilanie (2026-10-27)
+- Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwych zmian, raportów i komputera zdalnego — lista w pliku fazy)
+- Commit: `FAZA 6: zasilanie — plany, ustawienia AC/DC, hibernacja, raporty powercfg i widok modułu` — hash do uzupełnienia na starcie FAZY 7
+- Start: uzupełniono hash FAZY 5 (`c4970e3`); baza testów — 5.1.26100.9711: 0 uwag, 1094/1094; 7.6.7: 0 uwag, 1094/1094.
+- Zrobiono:
+  - `MWP.Power` 0.6.0: odczyt stanu i planów, aktywacja, duplikowanie, „Najwyższa wydajność” (GUID `e9a42b02-…` zweryfikowany w systemie i Microsoft Q&A), zmiana nazwy, usuwanie (odmowa dla aktywnego i wbudowanych, eksport do cofnięcia), import, ustawienia AC/DC (ekran, uśpienie, hibernacja po, pokrywa, przyciski), hibernacja, szybkie uruchamianie, raporty `batteryreport`/`energy` (na komputerze docelowym, zapis i otwarcie lokalnie), widget `PowerStatus`; parsowanie `powercfg` po GUID-ach; `-Context`, `-WhatIf`, log, cofnięcie.
+  - `MWP.Core` (dane): lista ochronna — kategoria `PowerPlan`.
+  - Okno: katalog widoków modułów wbudowanych (`Get-MwpModuleViewCatalog`), `Views/Power.xaml` w widoku instancji (`ModuleHost`), `Invoke-MwpUiInstanceChange` (podgląd w tle → potwierdzenie → wykonanie w tle), lista zmian do cofnięcia, raporty z wyborem folderu.
+  - Dokumentacja: `DECYZJE` (D-044), `ARCHITEKTURA` (sekcja „Zasilanie”, widok modułu wbudowanego, struktura, testy architektoniczne), `FAZA_6_ZASILANIE`, `STAN_PROJEKTU`.
+- Testy: 5.1.26100.9711 — 0 uwag, 1232/1232; 7.6.7 — 0 uwag, 1232/1232 (baza 1094/1094). Nowe: `tests/Modules/MWP.Power/Power.Tests.ps1` (symulator `powercfg.exe`, polski i angielski, ścieżka zdalna z mockiem transportu), `tests/UI/PowerView.Tests.ps1`. Test dymny okna w 5.1 i 7.6.7 — kod wyjścia 0.
+- Znalezione i poprawione w trakcie: polskie cudzysłowy „ ” jako ograniczniki tekstu w PowerShellu; mock `powercfg.exe` omijany przy bloku wywołanym poza `MWP.Remote` — pierwsza wersja testu zdalnego wywołała prawdziwy `powercfg` (jedna zmiana „Uśpij po (sieć)” z natychmiastowym cofnięciem; stan systemu sprawdzony — zgodny z wyjściowym); `Set-ItemProperty -Type` → `New-ItemProperty -PropertyType`.
+- Niezrobione / odroczone: edycja opisu planu; ustawienia planów nieaktywnych w GUI; ogólny panel cofnięć — dług techniczny w `STAN_PROJEKTU.md`; prawdziwe zmiany, raporty i komputer zdalny — weryfikacja ręczna.
+- Decyzje: D-044
+- Do weryfikacji na Windows 11: lista 8 punktów w `FAZA_6_ZASILANIE.md`.
+- Następna faza: FAZA 7 — Usługi Windows
+
 ## FAZA 5 — Dashboard (2026-10-27)
 - Status: ZAKOŃCZONA (ręczna weryfikacja z prawdziwym komputerem zdalnym i porównanie danych z narzędziami systemowymi — lista w pliku fazy)
-- Commit: `FAZA 5: Dashboard z widgetami, informacje o systemie, eksport raportu i usuwanie widgetów odinstalowanego modułu` — hash do uzupełnienia na starcie FAZY 6
+- Commit: `c4970e3` `FAZA 5: Dashboard z widgetami, informacje o systemie, eksport raportu i usuwanie widgetów odinstalowanego modułu` (hash uzupełniony na starcie FAZY 6)
 - Start: uzupełniono hashe FAZY 4 (`c31a5bf`) i korekty D-042 (`e2db53d`); baza testów — 5.1.26100.9711: 0 uwag, 959/959; 7.6.7: 0 uwag, 959/959.
 - Zrobiono:
   - `MWP.Dashboard` 0.5.0: `Get-MwpSystemInfo` (CIM i rejestr na komputerze kontekstu, blok zgodny z 5.1 zwracający JSON; system z wydaniem i UBR, uptime, CPU, RAM, GPU, dyski z typem SSD NVMe/SSD/HDD, płyta i BIOS, bateria, sieć; odporność na braki), `ConvertTo-MwpSystemInfoView`, `ConvertTo-MwpSystemReport`, `Export-MwpSystemReport`; kontrakt z RemoteTarget, DashboardWidget i widgetem `SystemInfo`.

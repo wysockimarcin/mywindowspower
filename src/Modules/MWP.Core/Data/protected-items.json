@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
-    "description": "Lista ochronna MyWindowsPower: elementy krytyczne dla działania systemu lub zarządzania zdalnego, domyślnie zablokowane przed wyłączeniem lub usunięciem. Pole name może zawierać symbole wieloznaczne (-like). Listę usług dopracowuje FAZA 7.",
+    "description": "Lista ochronna MyWindowsPower: elementy krytyczne dla działania systemu lub zarządzania zdalnego, domyślnie zablokowane przed wyłączeniem lub usunięciem. Pole name może zawierać symbole wieloznaczne (-like). Listę usług dopracowuje FAZA 7; plany zasilania wbudowane (PowerPlan, GUID) — FAZA 6.",
     "items": [
         { "category": "Service", "name": "RpcSs", "reason": "Zdalne wywołania procedur (RPC); bez tej usługi system nie działa." },
         { "category": "Service", "name": "RpcEptMapper", "reason": "Mapowanie punktów końcowych RPC; wymagane przez RPC." },
@@ -16,6 +16,9 @@
         { "category": "Service", "name": "BFE", "reason": "Base Filtering Engine; wymagana przez zaporę i IPsec." },
         { "category": "Service", "name": "mpssvc", "reason": "Zapora Windows Defender." },
         { "category": "Service", "name": "WinDefend", "reason": "Microsoft Defender Antivirus; nie osłabiamy zabezpieczeń Windows." },
-        { "category": "Service", "name": "CryptSvc", "reason": "Usługi kryptograficzne; wymagane m.in. przez Windows Update i podpisy." }
+        { "category": "Service", "name": "CryptSvc", "reason": "Usługi kryptograficzne; wymagane m.in. przez Windows Update i podpisy." },
+        { "category": "PowerPlan", "name": "381b4222-f694-41f0-9685-ff5bb260df2e", "reason": "Plan wbudowany Zrównoważony (Balanced); jedyny plan na komputerach z nowoczesnym trybem wstrzymania, odtwarzany tylko przez powercfg -restoredefaultschemes." },
+        { "category": "PowerPlan", "name": "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c", "reason": "Plan wbudowany Wysoka wydajność (High performance)." },
+        { "category": "PowerPlan", "name": "a1841308-3541-4fab-bc81-f71556f20b4a", "reason": "Plan wbudowany Oszczędzanie energii (Power saver)." }
     ]
 }

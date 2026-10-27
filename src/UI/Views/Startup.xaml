@@ -1,0 +1,119 @@
+<!-- Widok modułu Autostart i harmonogram (FAZA 8, D-046): zakładki Autostart (Run/RunOnce, foldery Startup,
+     stan StartupApproved jak w Menedżerze zadań, podpis wydawcy) i Harmonogram (zadania: włącz/wyłącz, uruchom,
+     usuń z eksportem XML), zmiany do cofnięcia. Wstawiany do widoku instancji (Instance.xaml, ModuleHost).
+     Kod: Initialize-/Update-MwpStartupView. Każda zmiana: podgląd (-WhatIf) w oknie potwierdzenia z komputerem
+     docelowym, wykonanie w tle, log i cofnięcie. -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <DataTemplate x:Key="OptionTemplate">
+            <TextBlock Text="{Binding Label}"/>
+        </DataTemplate>
+    </UserControl.Resources>
+    <StackPanel>
+        <DockPanel Margin="0,4,0,0" LastChildFill="True">
+            <Button x:Name="StartupRefreshButton" DockPanel.Dock="Right" Content="Odśwież" VerticalAlignment="Center"/>
+            <TextBlock x:Name="StartupStatusText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Odczyt autostartu i harmonogramu…"/>
+        </DockPanel>
+        <Border x:Name="StartupWarningBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,10,0,0" Visibility="Collapsed">
+            <TextBlock x:Name="StartupWarningText" TextWrapping="Wrap"/>
+        </Border>
+
+        <TabControl x:Name="StartupTabs" Margin="0,12,0,0">
+            <TabItem Header="Autostart">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               Text="Włączanie i wyłączanie działa jak w Menedżerze zadań (Aplikacje startowe): zmienia się tylko znacznik StartupApproved, a wpis w rejestrze albo plik w folderze Autostart zostaje."/>
+                    <WrapPanel>
+                        <TextBox x:Name="ItemSearchBox" Width="220" Margin="0,0,8,8" ToolTip="Szukaj w nazwie, poleceniu, wydawcy i użytkowniku"/>
+                        <ComboBox x:Name="ItemScopeFilter" Width="230" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+                        <ComboBox x:Name="ItemStateFilter" Width="190" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+                        <ComboBox x:Name="ItemRiskFilter" Width="180" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+                        <TextBlock x:Name="ItemCountText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,0,8"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,2,0,0">
+                        <Button x:Name="EnableItemButton" Style="{StaticResource Mwp.Button.Accent}" Content="Włącz…" Margin="0,0,8,8"/>
+                        <Button x:Name="DisableItemButton" Content="Wyłącz…" Margin="0,0,8,8"/>
+                    </WrapPanel>
+                    <DataGrid x:Name="ItemsGrid" MinHeight="140" MaxHeight="380" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="2*"/>
+                            <DataGridTextColumn Header="Stan" Binding="{Binding StateText}" Width="140"/>
+                            <DataGridTextColumn Header="Podpis" Binding="{Binding RiskText}" Width="150"/>
+                            <DataGridTextColumn Header="Wydawca" Binding="{Binding Publisher}" Width="2*"/>
+                            <DataGridTextColumn Header="Miejsce" Binding="{Binding LocationText}" Width="2*"/>
+                            <DataGridTextColumn Header="Użytkownik" Binding="{Binding UserName}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Style="{StaticResource Mwp.Card}" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="ItemDetailTitle" FontWeight="SemiBold" TextWrapping="Wrap" Text="Wybierz pozycję autostartu z listy."/>
+                            <Border x:Name="ItemNoteBanner" Style="{StaticResource Mwp.Banner.Info}" Margin="0,8,0,0" Visibility="Collapsed">
+                                <TextBlock x:Name="ItemNoteText" TextWrapping="Wrap"/>
+                            </Border>
+                            <TextBlock x:Name="ItemDetailText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Harmonogram">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               Text="Usunięcie zadania zapisuje najpierw jego definicję (XML) w katalogu danych aplikacji (exports\tasks) — z niej działa cofnięcie. Zadań z folderu \Microsoft\ nie można usuwać, a zadań krytycznych — także wyłączać."/>
+                    <WrapPanel>
+                        <TextBox x:Name="TaskSearchBox" Width="220" Margin="0,0,8,8" ToolTip="Szukaj w ścieżce, opisie, autorze, akcjach i wydawcy"/>
+                        <ComboBox x:Name="TaskStateFilter" Width="170" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+                        <CheckBox x:Name="TaskHideMicrosoftCheck" Content="Ukryj zadania Microsoft" IsChecked="True" VerticalAlignment="Center" Margin="0,0,12,8"/>
+                        <CheckBox x:Name="TaskProtectedFilter" Content="Tylko chronione" VerticalAlignment="Center" Margin="0,0,12,8"/>
+                        <TextBlock x:Name="TaskCountText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,0,8"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,2,0,0">
+                        <Button x:Name="EnableTaskButton" Style="{StaticResource Mwp.Button.Accent}" Content="Włącz…" Margin="0,0,8,8"/>
+                        <Button x:Name="DisableTaskButton" Content="Wyłącz…" Margin="0,0,8,8"/>
+                        <Button x:Name="RunTaskButton" Content="Uruchom teraz…" Margin="0,0,8,8"/>
+                        <Button x:Name="RemoveTaskButton" Style="{StaticResource Mwp.Button.Danger}" Content="Usuń (z eksportem XML)…" Margin="0,0,8,8"/>
+                    </WrapPanel>
+                    <DataGrid x:Name="TasksGrid" MinHeight="140" MaxHeight="380" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="" Width="30">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Lock}" FontFamily="{StaticResource Mwp.Font.Icons}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   ToolTip="Zadanie z listy ochronnej"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Zadanie" Binding="{Binding Path}" Width="3*"/>
+                            <DataGridTextColumn Header="Stan" Binding="{Binding StateText}" Width="110"/>
+                            <DataGridTextColumn Header="Wyzwalacze" Binding="{Binding TriggerText}" Width="2*"/>
+                            <DataGridTextColumn Header="Ostatnie uruchomienie" Binding="{Binding LastRun}" Width="175"/>
+                            <DataGridTextColumn Header="Podpis" Binding="{Binding RiskText}" Width="130"/>
+                            <DataGridTextColumn Header="Wydawca" Binding="{Binding Publisher}" Width="2*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Style="{StaticResource Mwp.Card}" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="TaskDetailTitle" FontWeight="SemiBold" TextWrapping="Wrap" Text="Wybierz zadanie z listy."/>
+                            <Border x:Name="TaskNoteBanner" Style="{StaticResource Mwp.Banner.Info}" Margin="0,8,0,0" Visibility="Collapsed">
+                                <TextBlock x:Name="TaskNoteText" TextWrapping="Wrap"/>
+                            </Border>
+                            <TextBlock x:Name="TaskDetailText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <TextBlock Text="Zmiany autostartu i harmonogramu do cofnięcia (ten komputer)" Style="{StaticResource Mwp.Text.Section}"/>
+        <DataGrid x:Name="StartupUndoGrid" MinHeight="60" MaxHeight="200">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Kiedy" Binding="{Binding When}" Width="140"/>
+                <DataGridTextColumn Header="Zmiana" Binding="{Binding Description}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <WrapPanel Margin="0,10,0,0">
+            <Button x:Name="StartupUndoButton" Content="Cofnij wybraną…" Margin="0,0,8,8"/>
+        </WrapPanel>
+    </StackPanel>
+</UserControl>

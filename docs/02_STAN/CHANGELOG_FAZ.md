@@ -17,9 +17,25 @@
 
 ---
 
+## FAZA 8 — Autostart i harmonogram (2026-10-27)
+- Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwych zmian, zgodności z Menedżerem zadań i komputera zdalnego — lista w pliku fazy)
+- Commit: `FAZA 8: autostart i harmonogram — StartupApproved jak Menedżer zadań, zadania z eksportem XML, podpis wydawcy, lista ochronna zadań i widok modułu` — hash do uzupełnienia na starcie FAZY 9
+- Start: uzupełniono hashe FAZY 7 (`9871a0f`, korekta `8e0f73a`); baza testów — 5.1.26100.9711: 0 uwag, 1353/1353; 7.6.7: 0 uwag, 1353/1353.
+- Decyzje użytkownika (2026-10-27): pozycje profilu użytkownika na komputerze zdalnym — profile zalogowanych użytkowników (bez ładowania `NTUSER.DAT`); lista ochronna zadań — usuwanie `\Microsoft\*` zablokowane, zadania krytyczne bez wyłączania; autostart bez listy ochronnej.
+- Zrobiono:
+  - `MWP.Startup` 0.8.0: `Get-MwpStartupItem` (Run/RunOnce z `WOW6432Node`, foldery Startup z celem skrótów, `StartupApproved` z datą wyłączenia, podpis i wydawca), `Resolve-`/`Select-MwpStartupItem`, `Set-MwpStartupItemState` (format Menedżera zadań, wpis zostaje, RunOnce tylko odczyt), `Get-MwpScheduledTask`, `Resolve-`/`Select-MwpScheduledTask`, `Set-MwpScheduledTaskState`, `Start-MwpScheduledTask`, `Remove-MwpScheduledTask` (eksport XML przed usunięciem), `Restore-MwpScheduledTask` (cofnięcie usunięcia), `Get-MwpSignatureRisk`, `Test-MwpScheduledTaskName`; wszystko z `-Context`, `-WhatIf`, uprawnieniami na komputerze docelowym, logiem i cofnięciem.
+  - `MWP.Core` 0.8.0: lista ochronna — kategorie `Task` (10 wzorców zadań krytycznych) i `TaskRemoval` (`\Microsoft\*`).
+  - Okno: `Views/Startup.xaml` (zakładki Autostart i Harmonogram), `Initialize-`/`Update-MwpStartupView`, `Invoke-MwpStartupViewAction`, `Start-MwpUiStartupRefresh`, logika prezentacji bez WPF (`Get-MwpStartupViewOption`, `Get-MwpStartupActionState`, `Get-MwpStartupDetail`), styl `TabControl`/`TabItem` w `Styles.xaml`.
+  - Dokumentacja: `DECYZJE` (D-046), `ARCHITEKTURA` (sekcja „Autostart i harmonogram”, lista ochronna, rdzeń, struktura, testy architektoniczne), `FAZA_8_AUTOSTART_HARMONOGRAM`, `STAN_PROJEKTU`, `README`.
+- Testy: 5.1.26100.9711 — 0 uwag, 1462/1462; 7.6.7 — 0 uwag, 1462/1462 (baza 1353/1353). Nowe: `tests/Modules/MWP.Startup/Startup.Tests.ps1` (symulator rejestru, folderów, skrótów, podpisów, zalogowanych użytkowników i harmonogramu; fikcyjne nazwy `MwpTest*`; ścieżka zdalna z mockiem transportu), `tests/UI/StartupView.Tests.ps1`; `PowerView.Tests.ps1` — moduł bez widoku: `Cleanup` zamiast `Startup`. Test dymny okna w 5.1 (jasny) i 7.6.7 (ciemny) — kod wyjścia 0.
+- Znalezione i poprawione w trakcie: `.bat` (`UnknownError` bez certyfikatu) to plik niepodpisany, nie „podpis nieprawidłowy”; zadania z akcją COM — „nie dotyczy”; Pester 6: brak przejścia do oryginału przy niedopasowanym filtrze mocka, `-RemoveParameterType InputObject` dla poleceń CDXML, w trybie ścisłym mock widzi tylko przekazane parametry, `<Nazwa>` w nazwie testu to zmienna; skrypt testu dymnego uruchamiany z PowerShell 7 dziedziczy `PSModulePath` 7.x (5.1 nie znajduje `Import-PowerShellDataFile`).
+- Niezrobione / odroczone: prawdziwe zmiany i komputer zdalny — weryfikacja ręczna; retencja eksportów XML, widget autostartu — dług techniczny w `STAN_PROJEKTU.md`.
+- Decyzje: D-046
+- Do weryfikacji na Windows 11: lista 8 punktów w `FAZA_8_AUTOSTART_HARMONOGRAM.md` (kryterium: wyłączenie i przywrócenie pozycji widoczne w Menedżerze zadań).
+- Następna faza: FAZA 9 — Czyszczenie dysku
 ## FAZA 7 — Usługi Windows (2026-10-27)
 - Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwych zmian usług i komputera zdalnego — lista w pliku fazy)
-- Commit: `FAZA 7: usługi Windows — lista, start/stop/restart z zależnymi, typ uruchomienia, lista ochronna, profil i widok modułu` — hash do uzupełnienia na starcie FAZY 8
+- Commit: `9871a0f` `FAZA 7: usługi Windows — lista, start/stop/restart z zależnymi, typ uruchomienia, lista ochronna, profil i widok modułu`; korekta `8e0f73a` `FAZA 7 (korekta): przyciski akcji usług nad tabelą usług` (hashe uzupełnione na starcie FAZY 8)
 - Start: uzupełniono hash FAZY 6 (`5087694`); baza testów — 5.1.26100.9711: 0 uwag, 1232/1232; 7.6.7: 0 uwag, 1232/1232.
 - Decyzje użytkownika (2026-10-27): lista ochronna w istniejącym pliku `MWP.Core` + lokalny `protected.local.json` (tylko dodaje); usługa chroniona — dozwolone tylko uruchomienie i typ automatyczny; usługi zależne zatrzymywane razem po potwierdzeniu; import profilu zmienia tylko typy uruchomienia.
 - Zrobiono:

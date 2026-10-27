@@ -4,7 +4,7 @@
         Zwraca informacje o module MWP.Startup.
 
     .DESCRIPTION
-        Zaślepka z FAZY 1. Potwierdza, że moduł się ładuje. Nie zmienia systemu.
+        Funkcja wejścia kontraktu modułu (EntryPoint, D-024). Nie zmienia systemu.
 
     .EXAMPLE
         Get-MwpStartupModuleInfo
@@ -17,6 +17,6 @@
     [pscustomobject]@{
         Name    = $module.Name
         Version = $module.Version
-        Status  = 'Zaślepka'
+        Status  = 'Autostart (Run/RunOnce, foldery Startup, StartupApproved) i harmonogram zadań: włącz/wyłącz, uruchom, usuń z eksportem XML, podpis wydawcy (FAZA 8)'
     }
 }

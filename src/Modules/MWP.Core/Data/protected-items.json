@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
-    "description": "Lista ochronna MyWindowsPower: elementy krytyczne dla działania systemu lub zarządzania zdalnego, domyślnie zablokowane przed wyłączeniem lub usunięciem. Pole name może zawierać symbole wieloznaczne (-like). Usługi (Service) — FAZA 7, D-045: usługi chronione można uruchomić i ustawić na typ automatyczny, nie można ich zatrzymać, uruchomić ponownie ani ustawić na ręczny lub wyłączony; usługi, od której zależy usługa chroniona, nie można wyłączyć. Plany zasilania wbudowane (PowerPlan, GUID) — FAZA 6. Rozszerzenie lokalne (tylko dodawanie): protected.local.json obok settings.local.json.",
+    "description": "Lista ochronna MyWindowsPower: elementy krytyczne dla działania systemu lub zarządzania zdalnego, domyślnie zablokowane przed wyłączeniem lub usunięciem. Pole name może zawierać symbole wieloznaczne (-like). Usługi (Service) — FAZA 7, D-045: usługi chronione można uruchomić i ustawić na typ automatyczny, nie można ich zatrzymać, uruchomić ponownie ani ustawić na ręczny lub wyłączony; usługi, od której zależy usługa chroniona, nie można wyłączyć. Plany zasilania wbudowane (PowerPlan, GUID) — FAZA 6. Zadania harmonogramu — FAZA 8, D-046: Task (pełna ścieżka zadania, folder + nazwa) — zadania krytycznego nie wolno wyłączyć ani usunąć, wolno je włączyć i uruchomić; TaskRemoval — zadania nie wolno usunąć. Rozszerzenie lokalne (tylko dodawanie): protected.local.json obok settings.local.json.",
     "items": [
         { "category": "Service", "name": "RpcSs", "reason": "Zdalne wywołania procedur (RPC); bez tej usługi system nie działa." },
         { "category": "Service", "name": "RpcEptMapper", "reason": "Mapowanie punktów końcowych RPC; wymagane przez RPC." },
@@ -37,6 +37,17 @@
         { "category": "Service", "name": "WdNisSvc", "reason": "Inspekcja sieci Microsoft Defender Antivirus; nie osłabiamy zabezpieczeń Windows." },
         { "category": "PowerPlan", "name": "381b4222-f694-41f0-9685-ff5bb260df2e", "reason": "Plan wbudowany Zrównoważony (Balanced); jedyny plan na komputerach z nowoczesnym trybem wstrzymania, odtwarzany tylko przez powercfg -restoredefaultschemes." },
         { "category": "PowerPlan", "name": "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c", "reason": "Plan wbudowany Wysoka wydajność (High performance)." },
-        { "category": "PowerPlan", "name": "a1841308-3541-4fab-bc81-f71556f20b4a", "reason": "Plan wbudowany Oszczędzanie energii (Power saver)." }
+        { "category": "PowerPlan", "name": "a1841308-3541-4fab-bc81-f71556f20b4a", "reason": "Plan wbudowany Oszczędzanie energii (Power saver)." },
+        { "category": "TaskRemoval", "name": "\\Microsoft\\*", "reason": "Zadania systemowe Windows i Microsoft: nie usuwa się ich (system ich nie odtworzy); można je wyłączyć, jeśli nie są krytyczne." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\WindowsUpdate\\*", "reason": "Planowanie Windows Update; bez niego aktualizacje zabezpieczeń nie są pobierane." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\UpdateOrchestrator\\*", "reason": "Orkiestrator aktualizacji Windows (skanowanie, instalacja, ponowne uruchomienie)." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\WaaSMedic\\*", "reason": "Naprawa składników Windows Update." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\Windows Defender\\*", "reason": "Skanowanie, weryfikacja i konserwacja Microsoft Defender." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\SystemRestore\\*", "reason": "Automatyczne punkty przywracania systemu (używane też przez MyWindowsPower)." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\TaskScheduler\\*", "reason": "Konserwacja samego Harmonogramu zadań." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\RecoveryEnvironment\\*", "reason": "Weryfikacja środowiska odzyskiwania Windows (WinRE)." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\BitLocker\\*", "reason": "Zadania szyfrowania dysków BitLocker." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\Time Synchronization\\*", "reason": "Synchronizacja czasu; zły czas psuje certyfikaty, logowanie i aktualizacje." },
+        { "category": "Task", "name": "\\Microsoft\\Windows\\CertificateServicesClient\\*", "reason": "Odnawianie i porządkowanie certyfikatów użytkownika i komputera." }
     ]
 }

@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Core.psm1'
-    ModuleVersion        = '0.7.0'
+    ModuleVersion        = '0.8.0'
     GUID                 = '49bd0d67-5058-467d-a21e-ef40a9d9710a'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'

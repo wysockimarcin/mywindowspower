@@ -27,6 +27,15 @@
             <CheckBox x:Name="ServiceProtectedFilter" Content="Tylko chronione" VerticalAlignment="Center" Margin="0,0,12,8"/>
             <TextBlock x:Name="ServiceCountText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,0,8"/>
         </WrapPanel>
+        <!-- Akcje dla usługi zaznaczonej w tabeli (nad tabelą; opis usługi zostaje w karcie pod nią). -->
+        <WrapPanel Margin="0,2,0,0">
+            <Button x:Name="StartServiceButton" Style="{StaticResource Mwp.Button.Accent}" Content="Uruchom" Margin="0,0,8,8"/>
+            <Button x:Name="StopServiceButton" Content="Zatrzymaj…" Margin="0,0,8,8"/>
+            <Button x:Name="RestartServiceButton" Content="Uruchom ponownie…" Margin="0,0,8,8"/>
+            <TextBlock Text="Typ uruchomienia:" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="8,0,6,8"/>
+            <ComboBox x:Name="StartupTypeBox" Width="230" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <Button x:Name="SetStartupTypeButton" Content="Ustaw typ…" Margin="0,0,8,8"/>
+        </WrapPanel>
         <DataGrid x:Name="ServicesGrid" MinHeight="160" MaxHeight="420" SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="" Width="30">
@@ -51,15 +60,7 @@
                 <Border x:Name="ServiceProtectedBanner" Style="{StaticResource Mwp.Banner.Info}" Margin="0,8,0,0" Visibility="Collapsed">
                     <TextBlock x:Name="ServiceProtectedText" TextWrapping="Wrap"/>
                 </Border>
-                <WrapPanel Margin="0,10,0,0">
-                    <Button x:Name="StartServiceButton" Style="{StaticResource Mwp.Button.Accent}" Content="Uruchom" Margin="0,0,8,8"/>
-                    <Button x:Name="StopServiceButton" Content="Zatrzymaj…" Margin="0,0,8,8"/>
-                    <Button x:Name="RestartServiceButton" Content="Uruchom ponownie…" Margin="0,0,8,8"/>
-                    <TextBlock Text="Typ uruchomienia:" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="8,0,6,8"/>
-                    <ComboBox x:Name="StartupTypeBox" Width="230" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
-                    <Button x:Name="SetStartupTypeButton" Content="Ustaw typ…" Margin="0,0,8,8"/>
-                </WrapPanel>
-                <TextBlock x:Name="ServiceDetailText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                <TextBlock x:Name="ServiceDetailText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
             </StackPanel>
         </Border>
 

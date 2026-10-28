@@ -1,0 +1,65 @@
+<!-- Widok modułu Czyszczenie dysku (FAZA 9, D-047): skan kategorii (tylko odczyt) z rozmiarami, usuwanie
+     zaznaczonych kategorii po potwierdzeniu z nazwą komputera, postęp i anulowanie, raport po czyszczeniu
+     i analiza magazynu składników (DISM, tylko analiza). Wstawiany do widoku instancji (Instance.xaml,
+     ModuleHost). Kod: Initialize-/Update-MwpCleanupView. -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <DockPanel Margin="0,4,0,0" LastChildFill="True">
+            <Button x:Name="CleanupScanButton" DockPanel.Dock="Right" Content="Skanuj" VerticalAlignment="Center"/>
+            <TextBlock x:Name="CleanupStatusText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Skanowanie kategorii…"/>
+        </DockPanel>
+        <Border x:Name="CleanupWarningBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,10,0,0" Visibility="Collapsed">
+            <TextBlock x:Name="CleanupWarningText" TextWrapping="Wrap"/>
+        </Border>
+        <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,10,0,0"
+                   Text="Skan tylko odczytuje rozmiary. Usuwanie dotyczy wyłącznie plików z lokalizacji zdefiniowanych w kategoriach: pliki w użyciu i dowiązania (junction/symlink) są pomijane, a dokumenty i pulpit użytkowników nigdy nie są usuwane. Usuniętych plików nie można przywrócić z aplikacji."/>
+
+        <WrapPanel Margin="0,10,0,0">
+            <CheckBox x:Name="CleanupProfilesCheck" Content="Uwzględnij profile wszystkich użytkowników" VerticalAlignment="Center" Margin="0,0,16,8"
+                      ToolTip="Lokalnie: zamiast tylko bieżącego konta. Komputer zdalny: bez zaznaczenia czyszczone są tylko lokalizacje systemowe."/>
+            <Button x:Name="CleanupSelectAllButton" Content="Zaznacz dostępne" Margin="0,0,8,8"/>
+            <Button x:Name="CleanupRunButton" Style="{StaticResource Mwp.Button.Danger}" Content="Wyczyść zaznaczone…" Margin="0,0,8,8"/>
+            <TextBlock x:Name="CleanupSelectionText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        </WrapPanel>
+
+        <Border x:Name="CleanupProgressPanel" Style="{StaticResource Mwp.Card}" Margin="0,4,0,8" Visibility="Collapsed">
+            <DockPanel LastChildFill="True">
+                <Button x:Name="CleanupCancelButton" DockPanel.Dock="Right" Content="Anuluj" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                <StackPanel>
+                    <TextBlock x:Name="CleanupProgressText" TextWrapping="Wrap"/>
+                    <ProgressBar x:Name="CleanupProgressBar" Height="6" Maximum="100" Margin="0,6,0,0"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <DataGrid x:Name="CleanupGrid" MinHeight="140" MaxHeight="360" SelectionMode="Extended">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Kategoria" Binding="{Binding Name}" Width="3*"/>
+                <DataGridTextColumn Header="Pliki" Binding="{Binding FileCount}" Width="80"/>
+                <DataGridTextColumn Header="Rozmiar" Binding="{Binding SizeText}" Width="100"/>
+                <DataGridTextColumn Header="Pominięte" Binding="{Binding SkippedText}" Width="140"/>
+                <DataGridTextColumn Header="Uwagi" Binding="{Binding NoteText}" Width="3*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Border Style="{StaticResource Mwp.Card}" Margin="0,10,0,0">
+            <StackPanel>
+                <TextBlock x:Name="CleanupDetailTitle" FontWeight="SemiBold" TextWrapping="Wrap" Text="Wybierz kategorię z listy (Ctrl lub Shift — kilka kategorii)."/>
+                <TextBlock x:Name="CleanupDetailText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="Raport ostatniego czyszczenia" Style="{StaticResource Mwp.Text.Section}"/>
+        <TextBox x:Name="CleanupReportText" IsReadOnly="True" TextWrapping="Wrap" MinHeight="60" MaxHeight="260" VerticalScrollBarVisibility="Auto"
+                 Text="Brak — raport pojawi się po czyszczeniu."/>
+
+        <TextBlock Text="Magazyn składników Windows (WinSxS)" Style="{StaticResource Mwp.Text.Section}"/>
+        <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap"
+                   Text="Analiza: DISM /Online /Cleanup-Image /AnalyzeComponentStore (tylko odczyt, wymaga administratora, trwa kilka minut). Aplikacja nie czyści magazynu składników — gdy analiza zaleca czyszczenie, można je wykonać ręcznie jako administrator: DISM /Online /Cleanup-Image /StartComponentCleanup (po nim nie da się odinstalować zainstalowanych aktualizacji)."/>
+        <WrapPanel Margin="0,8,0,0">
+            <Button x:Name="ComponentStoreButton" Content="Analizuj magazyn składników" Margin="0,0,8,8"/>
+        </WrapPanel>
+        <TextBlock x:Name="ComponentStoreText" TextWrapping="Wrap" Text="Analiza nie była jeszcze wykonana."/>
+    </StackPanel>
+</UserControl>

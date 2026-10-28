@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "description": "Kategorie czyszczenia dysku (MWP.Cleanup, FAZA 9, D-047). Ścieżki tylko z tokenami: {SystemRoot} (Temp, SoftwareDistribution, ServiceProfiles, Logs), {ProgramData} (Microsoft\\Windows\\WER\\...), {UserProfile} (AppData\\...), {RecycleBin} (<dysk>\\$Recycle.Bin\\<SID>). minAgeDays: pliki młodsze (nowsza z dat utworzenia i modyfikacji) są pomijane.",
+  "categories": [
+    {
+      "id": "UserTemp",
+      "name": "Pliki tymczasowe użytkownika (%TEMP%)",
+      "description": "Folder Temp w profilu użytkownika (AppData\\Local\\Temp). Pliki starsze niż 7 dni; pliki w użyciu są pomijane.",
+      "roots": [
+        { "path": "{UserProfile}\\AppData\\Local\\Temp", "recurse": true, "patterns": [ "*" ], "minAgeDays": 7, "removeEmptyDirectories": true }
+      ]
+    },
+    {
+      "id": "WindowsTemp",
+      "name": "Pliki tymczasowe Windows (Windows\\Temp)",
+      "description": "Folder Temp systemu Windows. Pliki starsze niż 7 dni; wymaga administratora.",
+      "roots": [
+        { "path": "{SystemRoot}\\Temp", "recurse": true, "patterns": [ "*" ], "minAgeDays": 7, "removeEmptyDirectories": true }
+      ]
+    },
+    {
+      "id": "RecycleBin",
+      "name": "Kosz",
+      "description": "Zawartość Kosza użytkownika na dyskach lokalnych ($Recycle.Bin\\<SID>). Pliki usunięte z Kosza nie wracają.",
+      "roots": [
+        { "path": "{RecycleBin}", "recurse": true, "patterns": [ "*" ], "minAgeDays": 0, "removeEmptyDirectories": true, "exclude": [ "desktop.ini" ] }
+      ]
+    },
+    {
+      "id": "ThumbnailCache",
+      "name": "Pamięć podręczna miniatur",
+      "description": "Pliki thumbcache_*.db Eksploratora; system odtworzy je przy przeglądaniu folderów. Pliki używane przez Eksplorator są pomijane.",
+      "roots": [
+        { "path": "{UserProfile}\\AppData\\Local\\Microsoft\\Windows\\Explorer", "recurse": false, "patterns": [ "thumbcache_*.db" ], "minAgeDays": 0, "removeEmptyDirectories": false }
+      ]
+    },
+    {
+      "id": "ErrorReports",
+      "name": "Raporty błędów Windows (WER)",
+      "description": "Archiwum i kolejka raportów Raportowania błędów systemu Windows (systemowe i użytkownika).",
+      "roots": [
+        { "path": "{ProgramData}\\Microsoft\\Windows\\WER\\ReportArchive", "recurse": true, "patterns": [ "*" ], "minAgeDays": 0, "removeEmptyDirectories": true },
+        { "path": "{ProgramData}\\Microsoft\\Windows\\WER\\ReportQueue", "recurse": true, "patterns": [ "*" ], "minAgeDays": 0, "removeEmptyDirectories": true },
+        { "path": "{UserProfile}\\AppData\\Local\\Microsoft\\Windows\\WER\\ReportArchive", "recurse": true, "patterns": [ "*" ], "minAgeDays": 0, "removeEmptyDirectories": true },
+        { "path": "{UserProfile}\\AppData\\Local\\Microsoft\\Windows\\WER\\ReportQueue", "recurse": true, "patterns": [ "*" ], "minAgeDays": 0, "removeEmptyDirectories": true }
+      ]
+    },
+    {
+      "id": "WindowsUpdateDownload",
+      "name": "Pobrane pliki Windows Update",
+      "description": "Pamięć podręczna pobierania Windows Update (SoftwareDistribution\\Download). Pliki starsze niż 7 dni; pliki w użyciu (trwająca instalacja) są pomijane, a usunięte aktualizacje oczekujące zostaną pobrane ponownie. Wymaga administratora.",
+      "roots": [
+        { "path": "{SystemRoot}\\SoftwareDistribution\\Download", "recurse": true, "patterns": [ "*" ], "minAgeDays": 7, "removeEmptyDirectories": true }
+      ]
+    },
+    {
+      "id": "DeliveryOptimization",
+      "name": "Pamięć podręczna Optymalizacji dostarczania",
+      "description": "Pliki Optymalizacji dostarczania (DeliveryOptimization\\Cache w profilu usługi NetworkService). Pliki używane przez usługę są pomijane. Wymaga administratora.",
+      "roots": [
+        { "path": "{SystemRoot}\\ServiceProfiles\\NetworkService\\AppData\\Local\\Microsoft\\Windows\\DeliveryOptimization\\Cache", "recurse": true, "patterns": [ "*" ], "minAgeDays": 0, "removeEmptyDirectories": true }
+      ]
+    },
+    {
+      "id": "Logs",
+      "name": "Logi obsługi systemu (CBS, DISM)",
+      "description": "Stare logi i archiwa logów obsługi składników (Windows\\Logs\\CBS i Windows\\Logs\\DISM) starsze niż 7 dni, bez podfolderów. Wymaga administratora.",
+      "roots": [
+        { "path": "{SystemRoot}\\Logs\\CBS", "recurse": false, "patterns": [ "*.log", "*.cab" ], "minAgeDays": 7, "removeEmptyDirectories": false },
+        { "path": "{SystemRoot}\\Logs\\DISM", "recurse": false, "patterns": [ "*.log" ], "minAgeDays": 7, "removeEmptyDirectories": false }
+      ]
+    }
+  ]
+}

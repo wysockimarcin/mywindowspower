@@ -17,9 +17,26 @@
 
 ---
 
+## FAZA 9 — Czyszczenie dysku (2026-10-28)
+- Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwego czyszczenia, uprawnień administratora, DISM i komputera zdalnego — lista w pliku fazy)
+- Commit: `FAZA 9: czyszczenie dysku — kategorie w pliku danych, skan, usuwanie z potwierdzeniem i raportem, ochrona przed dowiązaniami i ścieżkami spoza kategorii, analiza DISM i widok modułu` — hash do uzupełnienia na starcie FAZY 10
+- Start: uzupełniono hash FAZY 8 (`320362d`); baza testów — 5.1.26100.9711: 0 uwag, 1462/1462; 7.6.7: 0 uwag, 1462/1462.
+- Zrobiono:
+  - `MWP.Cleanup` 0.9.0: kategorie jako dane (`Data/cleanup-categories.json`, 8 kategorii z zakresu fazy, `Get-MwpCleanupCategory` z białą listą ścieżek), skan tylko do odczytu (`Measure-MwpCleanupCategory`), usuwanie (`Clear-MwpCleanupCategory`: Destrukcyjna, `ConfirmImpact High`, `-WhatIf`, skan przed potwierdzeniem, log początku i wyniku, bez wpisu cofnięcia), raport (`ConvertTo-MwpCleanupReport`), `Format-MwpCleanupSize`, analiza DISM (`Get-MwpComponentStoreAnalysis`, `Resolve-MwpComponentStoreAnalysis`; tylko analiza, `/English`); trzy linie obrony (walidacja definicji, `Test-MwpCleanupRoot`, blok `Process`: dowiązania, kanoniczność, lokalizacje chronione, pliki w użyciu, puste katalogi bez rekurencji); profile: zdalnie tylko po jawnym wyborze; postęp i anulowanie przez tabelę `-Progress`; wszystko z `-Context`.
+  - `MWP.Core` 0.9.0 (wersja hosta, bez zmian funkcji).
+  - Okno: `Views/Cleanup.xaml`, `Initialize-`/`Update-MwpCleanupView`, `Invoke-MwpCleanupViewAction`, `Start-MwpUiCleanupScan`, `Start-MwpUiCleanup`, `Start-MwpUiComponentStoreAnalysis`, logika prezentacji bez WPF (`Get-MwpCleanupRow`, `Get-MwpCleanupActionState`, `Get-MwpCleanupDetail`, `Get-MwpUiCleanupScript`), wpis w katalogu widoków.
+  - Dokumentacja: `DECYZJE` (D-047), `ARCHITEKTURA` (sekcja „Czyszczenie dysku”, struktura, rdzeń, testy architektoniczne), `FAZA_9_CZYSZCZENIE`, `STAN_PROJEKTU`, `README`.
+- Testy: 5.1.26100.9711 — 0 uwag, 1572/1572; 7.6.7 — 0 uwag, 1572/1572 (baza 1462/1462). Nowe: `tests/Modules/MWP.Cleanup/Cleanup.Tests.ps1` (46; wyłącznie katalogi w `TestDrive`, w tym kryterium „żadna operacja nie wychodzi poza zdefiniowane ścieżki”, junction, plik w użyciu, ścieżka zdalna z mockiem transportu, DISM bez uruchamiania), `tests/UI/CleanupView.Tests.ps1` (6); `PowerView.Tests.ps1` — moduł bez widoku: `Update` zamiast `Cleanup`. Test dymny okna w 5.1 (jasny) i 7.6.7 (ciemny) — kod wyjścia 0, okno potwierdzenia anulowane, brak zmian.
+- Poprawione w trakcie: wydajność skanu w 5.1 (41 s → 7 s dla 9,4 tys. plików), brak pliku definicji = skan z błędem, pola opcjonalne JSON w trybie ścisłym, uwagi PSScriptAnalyzer (`$profile`, parametr w zagnieżdżonym bloku, nazwy funkcji pomocniczych testów).
+- Niezrobione / odroczone: czyszczenie magazynu składników (`/StartComponentCleanup`) — świadomie poza aplikacją (D-047, dług techniczny); zatrzymywanie Windows Update przed czyszczeniem pamięci pobierania — ewentualnie FAZA 10; eksport raportu i widget — poza zakresem.
+- Decyzje: D-047.
+- Do weryfikacji na Windows 11: lista 8 punktów w `docs/03_FAZY/FAZA_9_CZYSZCZENIE.md` (kryterium na prawdziwym dysku, Kosz, kategorie systemowe jako administrator, anulowanie, DISM, komputer zdalny).
+- Uwaga: pliki nieśledzone sprzed fazy (`docs/04_PROMPTY/PROMPT_KOREKTA_D031.md`, `docs/scripts/`) pozostawione bez zmian i poza commitem.
+- Następna faza: FAZA 10 — Windows Update
+
 ## FAZA 8 — Autostart i harmonogram (2026-10-27)
 - Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwych zmian, zgodności z Menedżerem zadań i komputera zdalnego — lista w pliku fazy)
-- Commit: `FAZA 8: autostart i harmonogram — StartupApproved jak Menedżer zadań, zadania z eksportem XML, podpis wydawcy, lista ochronna zadań i widok modułu` — hash do uzupełnienia na starcie FAZY 9
+- Commit: `320362d` `FAZA 8: autostart i harmonogram — StartupApproved jak Menedżer zadań, zadania z eksportem XML, podpis wydawcy, lista ochronna zadań i widok modułu`
 - Start: uzupełniono hashe FAZY 7 (`9871a0f`, korekta `8e0f73a`); baza testów — 5.1.26100.9711: 0 uwag, 1353/1353; 7.6.7: 0 uwag, 1353/1353.
 - Decyzje użytkownika (2026-10-27): pozycje profilu użytkownika na komputerze zdalnym — profile zalogowanych użytkowników (bez ładowania `NTUSER.DAT`); lista ochronna zadań — usuwanie `\Microsoft\*` zablokowane, zadania krytyczne bez wyłączania; autostart bez listy ochronnej.
 - Zrobiono:

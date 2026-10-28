@@ -4,7 +4,7 @@
         Zwraca informacje o module MWP.Cleanup.
 
     .DESCRIPTION
-        Zaślepka z FAZY 1. Potwierdza, że moduł się ładuje. Nie zmienia systemu.
+        Funkcja wejścia kontraktu modułu (EntryPoint, D-024). Nie zmienia systemu.
 
     .EXAMPLE
         Get-MwpCleanupModuleInfo
@@ -17,6 +17,6 @@
     [pscustomobject]@{
         Name    = $module.Name
         Version = $module.Version
-        Status  = 'Zaślepka'
+        Status  = 'Czyszczenie dysku: kategorie z pliku danych, skan (odczyt), usuwanie po potwierdzeniu z raportem, analiza magazynu składników DISM (FAZA 9)'
     }
 }

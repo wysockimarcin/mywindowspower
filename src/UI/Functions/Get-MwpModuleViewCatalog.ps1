@@ -23,6 +23,7 @@
         [pscustomobject]@{ PSTypeName = 'MWP.UiModuleView'; ModuleId = 'Power'; View = 'Views\Power.xaml'; Initialize = 'Initialize-MwpPowerView'; Update = 'Update-MwpPowerView' }
         [pscustomobject]@{ PSTypeName = 'MWP.UiModuleView'; ModuleId = 'Services'; View = 'Views\Services.xaml'; Initialize = 'Initialize-MwpServicesView'; Update = 'Update-MwpServicesView' }
         [pscustomobject]@{ PSTypeName = 'MWP.UiModuleView'; ModuleId = 'Startup'; View = 'Views\Startup.xaml'; Initialize = 'Initialize-MwpStartupView'; Update = 'Update-MwpStartupView' }
+        [pscustomobject]@{ PSTypeName = 'MWP.UiModuleView'; ModuleId = 'Cleanup'; View = 'Views\Cleanup.xaml'; Initialize = 'Initialize-MwpCleanupView'; Update = 'Update-MwpCleanupView' }
     )
     foreach ($view in $views) {
         if (-not $PSBoundParameters.ContainsKey('ModuleId') -or $view.ModuleId -eq $ModuleId) {

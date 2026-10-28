@@ -17,9 +17,27 @@
 
 ---
 
+## FAZA 11 — Sieć (2026-10-28)
+- Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwych zmian jako administrator, automatycznego wycofania i komputera zdalnego — lista w pliku fazy)
+- Commit: `FAZA 11: sieć — adaptery i konfiguracja IP, DNS z presetami, cofaniem i automatycznym wycofaniem przez zadanie na komputerze docelowym, DHCP, resety, testy łączności i widok modułu` — hash do uzupełnienia na starcie FAZY 12
+- Start: uzupełniono hash FAZY 10 (`5b6daa4`); baza testów — 5.1.26100.9711: 0 uwag, 1698/1698; 7.6.7: 0 uwag, 1698/1698.
+- Decyzje użytkownika (2026-10-28): automatyczne wycofanie przez jednorazowe zadanie harmonogramu na komputerze docelowym; limit 120 s; lokalnie i zdalnie; resety Winsock/IP dozwolone zdalnie z wpisaniem nazwy komputera.
+- Zrobiono:
+  - `MWP.Network` 0.11.0: `Get-MwpNetworkStatus`/`Resolve-MwpNetworkStatus`, `Get-MwpDnsPreset`, `Set-MwpDnsServer`, `Disable-`/`Enable-MwpNetAdapter`, `Approve-MwpNetworkChange`, `Clear-MwpDnsCache`, `Update-MwpDhcpLease`, `Reset-MwpNetworkStack`, `Test-MwpNetworkConnection`/`Resolve-MwpNetworkTest`; bloki komputera docelowego zgodne z 5.1, blok wycofania wbudowany w zadanie (stan w Base64, bez plików), odmowa zmiany adaptera z niezatwierdzoną zmianą, adapter połączenia rozpoznawany z połączeń WinRM.
+  - `MWP.Core` 0.11.0 (wersja hosta, bez zmian funkcji).
+  - Okno: `Views/Network.xaml`, `Initialize-`/`Update-MwpNetworkView`, `Invoke-MwpNetworkViewAction`, `Start-MwpUiNetworkRefresh`, logika prezentacji bez WPF (`Get-MwpNetworkRow`, `Get-MwpNetworkActionState`, `Get-MwpNetworkDetail`, `Get-MwpNetworkViewOption`), wpis w `Get-MwpModuleViewCatalog`.
+  - Dokumentacja: `DECYZJE` (D-049), `ARCHITEKTURA` (sekcja „Sieć”, struktura, rdzeń, ograniczenia zdalne, testy architektoniczne), `PLAN_FAZ`, `FAZA_11_SIEC`, `STAN_PROJEKTU`, `README`.
+- Testy: 5.1.26100.9711 — 0 uwag, 1803/1803; 7.6.7 — 0 uwag, 1803/1803 (baza 1698/1698). Nowe: `tests/Modules/MWP.Network/Network.Tests.ps1` (29; symulator sieci, rejestru i harmonogramu, wykonanie bloku wycofania z zadania, atrapa `netsh`, ping 127.0.0.1, lokalny `TcpListener`, ścieżka zdalna z mockiem transportu i zerwaniem połączenia), `tests/UI/NetworkView.Tests.ps1` (6). Zmieniony: `tests/UI/PowerView.Tests.ps1` (przykład modułu bez widoku: Apps zamiast Network). Test dymny okna w 5.1 i 7.6.7.
+- Poprawione w trakcie: zagnieżdżona tablica statycznych DNS w bloku zmiany, skróty IPv4 akceptowane przez `IPAddress.TryParse`, przepełnienie `[int]` kodu `RenewDHCPLease`, 4 uwagi PSScriptAnalyzer.
+- Niezrobione / odroczone: prawdziwe zmiany i zadanie wycofania na Windows 11 (weryfikacja ręczna); statyczne IP i zmiana profilu sieci (dług techniczny); widget Dashboardu — poza zakresem.
+- Decyzje: D-049.
+- Do weryfikacji na Windows 11: lista 8 punktów w `docs/03_FAZY/FAZA_11_SIEC.md`.
+- Uwaga: pliki nieśledzone sprzed fazy (`docs/04_PROMPTY/PROMPT_KOREKTA_D031.md`, `docs/scripts/`) pozostawione bez zmian i poza commitem.
+- Następna faza: FAZA 12 — Aplikacje i winget
+
 ## FAZA 10 — Windows Update (2026-10-28)
 - Status: ZAKOŃCZONA (ręczna weryfikacja zmian jako administrator, instalacji i komputera zdalnego — lista w pliku fazy)
-- Commit: `FAZA 10: Windows Update — stan i usługi, wyszukiwanie i historia przez COM, pauza jak Ustawienia z cofaniem, reset składników z kopiami folderów, instalacja lokalna i widok modułu` — hash do uzupełnienia na starcie FAZY 11
+- Commit: `FAZA 10: Windows Update — stan i usługi, wyszukiwanie i historia przez COM, pauza jak Ustawienia z cofaniem, reset składników z kopiami folderów, instalacja lokalna i widok modułu` — hash `5b6daa4` (uzupełniony na starcie FAZY 11)
 - Start: uzupełniono hash FAZY 9 (`9ceddba`); baza testów — 5.1.26100.9711: 0 uwag, 1572/1572; 7.6.7: 0 uwag, 1572/1572.
 - Decyzje użytkownika (2026-10-28): instalacja lokalnie przez COM z potwierdzeniem (bez automatycznego restartu); instalacja zdalna odroczona z wpisem; pauza jak Ustawienia Windows 11, 1–5 tygodni.
 - Zrobiono:

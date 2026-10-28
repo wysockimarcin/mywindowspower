@@ -4,7 +4,7 @@
         Zwraca informacje o module MWP.Network.
 
     .DESCRIPTION
-        Zaślepka z FAZY 1. Potwierdza, że moduł się ładuje. Nie zmienia systemu.
+        Punkt wejścia kontraktu modułu (D-024). Nie zmienia systemu.
 
     .EXAMPLE
         Get-MwpNetworkModuleInfo
@@ -17,6 +17,6 @@
     [pscustomobject]@{
         Name    = $module.Name
         Version = $module.Version
-        Status  = 'Zaślepka'
+        Status  = 'Sieć: adaptery i konfiguracja IP, DNS z presetami, cofaniem i automatycznym wycofaniem, flush DNS, DHCP, resety Winsock/IP, testy łączności (FAZA 11)'
     }
 }

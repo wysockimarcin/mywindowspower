@@ -75,7 +75,7 @@ Cel: bezpieczne zwalnianie miejsca. Zakres: kategorie plików tymczasowych, wyli
 Cel: kontrola nad aktualizacjami. Zakres: oczekujące aktualizacje i historia przez COM, stan usług, pauza, reset komponentów. Kryterium: bez zewnętrznych modułów. Zdalnie z ograniczeniami COM do zbadania. Wynik (D-048): instalacja lokalnie przez COM z potwierdzeniem; instalacja zdalna odroczona (WUA odmawia w sesji WinRM).
 
 ### FAZA 11 — Sieć
-Cel: diagnostyka i konfiguracja sieci. Zakres: adaptery, konfiguracja IP, DNS z presetami i cofaniem, flush DNS, resety, testy łączności. Kryterium: zmiana DNS jest odwracalna. Zdalnie z ochroną przed utratą łączności.
+Cel: diagnostyka i konfiguracja sieci. Zakres: adaptery, konfiguracja IP, DNS z presetami i cofaniem, flush DNS, resety, testy łączności. Kryterium: zmiana DNS jest odwracalna. Zdalnie z ochroną przed utratą łączności. Wynik (D-049): zmiana DNS i wyłączenie adaptera z zadaniem automatycznego wycofania na komputerze docelowym (zatwierdzenie w 120 s), lokalnie i zdalnie.
 
 ### FAZA 12 — Aplikacje i winget
 Cel: porządek w zainstalowanych programach. Zakres: lista z rejestru i pakietów Appx, `winget` (lista, aktualizacje, odinstalowanie), lista ochronna aplikacji systemowych. Kryterium: odinstalowanie tylko z potwierdzeniem. Zdalnie z ograniczeniami `winget` do zbadania.

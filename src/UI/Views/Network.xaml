@@ -1,0 +1,121 @@
+<!-- Widok modułu Sieć (FAZA 11, D-049): zmiany czekające na zatwierdzenie (odliczanie do automatycznego wycofania),
+     adaptery z konfiguracją IP, DNS i profilem, szczegóły adaptera, włącz/wyłącz, odnowienie DHCP, zmiana DNS (presety
+     i własne adresy, czas na zatwierdzenie), flush DNS, testy łączności, resety Winsock i stosu IP oraz zmiany do cofnięcia.
+     Wstawiany do widoku instancji (Instance.xaml, ModuleHost). Kod: Initialize-/Update-MwpNetworkView. -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <DataTemplate x:Key="OptionTemplate">
+            <TextBlock Text="{Binding Label}"/>
+        </DataTemplate>
+    </UserControl.Resources>
+    <StackPanel>
+        <DockPanel Margin="0,4,0,0" LastChildFill="True">
+            <Button x:Name="NetworkRefreshButton" DockPanel.Dock="Right" Content="Odśwież" VerticalAlignment="Center"/>
+            <TextBlock x:Name="NetworkStatusText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Odczyt stanu sieci…"/>
+        </DockPanel>
+        <Border x:Name="NetworkWarningBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,10,0,0" Visibility="Collapsed">
+            <TextBlock x:Name="NetworkWarningText" TextWrapping="Wrap"/>
+        </Border>
+
+        <Border x:Name="NetworkPendingPanel" Style="{StaticResource Mwp.Banner.Danger}" Margin="0,10,0,0" Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="NetworkPendingText" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                <DataGrid x:Name="NetworkPendingGrid" Margin="0,8,0,0" MinHeight="40" MaxHeight="140" IsReadOnly="True" SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Zmiana" Binding="{Binding Description}" Width="*"/>
+                        <DataGridTextColumn Header="Adapter" Binding="{Binding AdapterName}" Width="140"/>
+                        <DataGridTextColumn Header="Wycofanie o" Binding="{Binding DeadlineText}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <WrapPanel Margin="0,8,0,0">
+                    <Button x:Name="NetworkApproveButton" Style="{StaticResource Mwp.Button.Accent}" Content="Zatwierdź (połączenie działa)…" Margin="0,0,8,0"/>
+                    <TextBlock Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
+                               Text="Bez zatwierdzenia komputer sam przywróci poprzedni stan — także gdy zmiana odetnie połączenie."/>
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="Adaptery sieciowe" Style="{StaticResource Mwp.Text.Section}"/>
+        <DataGrid x:Name="NetworkAdaptersGrid" MinHeight="100" MaxHeight="320" IsReadOnly="True" SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Adapter" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="Stan" Binding="{Binding StatusText}" Width="100"/>
+                <DataGridTextColumn Header="IPv4" Binding="{Binding IPv4Text}" Width="2*"/>
+                <DataGridTextColumn Header="Brama" Binding="{Binding GatewayText}" Width="2*"/>
+                <DataGridTextColumn Header="DNS" Binding="{Binding DnsText}" Width="2*"/>
+                <DataGridTextColumn Header="DHCP" Binding="{Binding DhcpText}" Width="60"/>
+                <DataGridTextColumn Header="Profil" Binding="{Binding CategoryText}" Width="90"/>
+                <DataGridTextColumn Header="Uwagi" Binding="{Binding Note}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Border Style="{StaticResource Mwp.Card}" Margin="0,10,0,0">
+            <StackPanel>
+                <TextBlock x:Name="NetworkDetailTitle" FontWeight="SemiBold" TextWrapping="Wrap" Text="Wybierz adapter z listy."/>
+                <TextBlock x:Name="NetworkDetailText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+        <WrapPanel Margin="0,10,0,0">
+            <Button x:Name="NetworkEnableButton" Content="Włącz adapter…" Margin="0,0,8,8"/>
+            <Button x:Name="NetworkDisableButton" Content="Wyłącz adapter…" Margin="0,0,8,8"/>
+            <Button x:Name="NetworkRenewButton" Content="Odnów dzierżawę DHCP…" Margin="0,0,8,8"/>
+            <TextBlock x:Name="NetworkActionText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,0,8" TextWrapping="Wrap"/>
+        </WrapPanel>
+
+        <TextBlock Text="Serwery DNS wybranego adaptera" Style="{StaticResource Mwp.Text.Section}"/>
+        <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                   Text="Wymaga administratora. Po zmianie trzeba ją zatwierdzić w podanym czasie — inaczej komputer sam przywróci poprzednie DNS. Każda zmiana ma wpis cofnięcia."/>
+        <WrapPanel>
+            <ComboBox x:Name="NetworkDnsPresetBox" Width="300" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+            <TextBox x:Name="NetworkDnsCustomBox" Width="260" Margin="0,0,8,8" VerticalContentAlignment="Center"
+                     ToolTip="Własne adresy IPv4 lub IPv6, oddzielone przecinkiem lub spacją (do 8)."/>
+            <ComboBox x:Name="NetworkRollbackBox" Width="190" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"
+                      ToolTip="Czas na zatwierdzenie zmiany; po nim komputer sam wycofa zmianę."/>
+            <Button x:Name="NetworkDnsButton" Style="{StaticResource Mwp.Button.Accent}" Content="Zmień DNS…" Margin="0,0,8,8"/>
+            <Button x:Name="NetworkFlushButton" Content="Opróżnij pamięć DNS…" Margin="0,0,8,8"/>
+        </WrapPanel>
+
+        <TextBlock Text="Testy łączności (z komputera docelowego)" Style="{StaticResource Mwp.Text.Section}"/>
+        <WrapPanel>
+            <TextBlock Text="Host zewnętrzny:" VerticalAlignment="Center" Margin="0,0,6,8"/>
+            <TextBox x:Name="NetworkTestHostBox" Width="140" Margin="0,0,12,8" VerticalContentAlignment="Center" Text="1.1.1.1"/>
+            <TextBlock Text="Nazwa DNS:" VerticalAlignment="Center" Margin="0,0,6,8"/>
+            <TextBox x:Name="NetworkTestDnsBox" Width="180" Margin="0,0,12,8" VerticalContentAlignment="Center" Text="www.microsoft.com"/>
+            <TextBlock Text="Port TCP (host i port):" VerticalAlignment="Center" Margin="0,0,6,8"/>
+            <TextBox x:Name="NetworkTestPortHostBox" Width="160" Margin="0,0,6,8" VerticalContentAlignment="Center"/>
+            <TextBox x:Name="NetworkTestPortBox" Width="70" Margin="0,0,12,8" VerticalContentAlignment="Center"/>
+            <Button x:Name="NetworkTestButton" Content="Uruchom testy" Margin="0,0,8,8"/>
+        </WrapPanel>
+        <TextBlock x:Name="NetworkTestText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,6"
+                   Text="Ping do bramy i hosta zewnętrznego, rozwiązanie nazwy DNS i opcjonalnie port TCP. Brak odpowiedzi na ping nie zawsze oznacza brak łączności (zapora)."/>
+        <DataGrid x:Name="NetworkTestGrid" MinHeight="60" MaxHeight="200" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Test" Binding="{Binding Label}" Width="2*"/>
+                <DataGridTextColumn Header="Cel" Binding="{Binding Target}" Width="2*"/>
+                <DataGridTextColumn Header="Wynik" Binding="{Binding ResultText}" Width="70"/>
+                <DataGridTextColumn Header="Szczegóły" Binding="{Binding Detail}" Width="4*"/>
+                <DataGridTextColumn Header="Czas" Binding="{Binding DurationText}" Width="80"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Text="Reset ustawień sieci" Style="{StaticResource Mwp.Text.Section}"/>
+        <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                   Text="Naprawa uszkodzonego stosu sieciowego. Wymaga administratora i ponownego uruchomienia komputera (aplikacja go nie wykonuje). Nie można cofnąć; reset stosu IP usuwa statyczne adresy IP i DNS."/>
+        <WrapPanel>
+            <Button x:Name="NetworkWinsockButton" Style="{StaticResource Mwp.Button.Danger}" Content="Reset Winsock…" Margin="0,0,8,8"/>
+            <Button x:Name="NetworkIpResetButton" Style="{StaticResource Mwp.Button.Danger}" Content="Reset stosu TCP/IP…" Margin="0,0,8,8"/>
+        </WrapPanel>
+
+        <TextBlock Text="Zmiany sieci do cofnięcia (ten komputer)" Style="{StaticResource Mwp.Text.Section}"/>
+        <DataGrid x:Name="NetworkUndoGrid" MinHeight="60" MaxHeight="200" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Kiedy" Binding="{Binding When}" Width="140"/>
+                <DataGridTextColumn Header="Zmiana" Binding="{Binding Description}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <WrapPanel Margin="0,10,0,0">
+            <Button x:Name="NetworkUndoButton" Content="Cofnij wybraną…" Margin="0,0,8,8"/>
+        </WrapPanel>
+    </StackPanel>
+</UserControl>

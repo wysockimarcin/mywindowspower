@@ -24,6 +24,9 @@
 
     .PARAMETER AfterCommand
         Funkcja okna wywoływana z -Entry po wykonaniu (np. Start-MwpUiPowerRefresh).
+
+    .PARAMETER ConfirmText
+        Napis przycisku potwierdzenia; domyślnie „Wykonaj”, dla operacji destrukcyjnej „Usuń”.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '',
         Justification = 'Podgląd i potwierdzenie zapewnia okno potwierdzenia i funkcje logiki (-WhatIf).')]
@@ -52,6 +55,9 @@
         [AllowEmptyString()]
         [string] $AfterCommand = '',
 
+        [AllowEmptyString()]
+        [string] $ConfirmText = '',
+
         [AllowNull()]
         [object] $Owner
     )
@@ -76,6 +82,7 @@
         Target       = $Target
         RequireText  = $RequireText
         AfterCommand = $AfterCommand
+        ConfirmText  = $(if ($ConfirmText) { $ConfirmText } elseif ($Class -eq 'Destructive') { 'Usuń' } else { 'Wykonaj' })
         ModulePath   = $(if ($null -ne $module) { $module.Path } else { '' })
         Owner        = $Owner
     }
@@ -121,7 +128,7 @@
         }
         $warning = if ($apply.Count -lt $data.Steps.Count) { 'Część pozycji zostanie pominięta (bez zmian albo odmowa — patrz podgląd).' } else { '' }
         $confirmed = Show-MwpConfirmDialog -Header $data.Header -Target $data.Target -ComputerName $computerName -PreviewLine $lines.ToArray() `
-            -Class $data.Class -RequireText $data.RequireText -Warning $warning -ConfirmText $(if ($data.Class -eq 'Destructive') { 'Usuń' } else { 'Wykonaj' }) -Owner $data.Owner
+            -Class $data.Class -RequireText $data.RequireText -Warning $warning -ConfirmText $data.ConfirmText -Owner $data.Owner
         if (-not $confirmed) {
             return
         }

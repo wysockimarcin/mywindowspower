@@ -4,7 +4,7 @@
         Zwraca informacje o module MWP.Update.
 
     .DESCRIPTION
-        Zaślepka z FAZY 1. Potwierdza, że moduł się ładuje. Nie zmienia systemu.
+        Punkt wejścia kontraktu modułu (D-024). Nie zmienia systemu.
 
     .EXAMPLE
         Get-MwpUpdateModuleInfo
@@ -17,6 +17,6 @@
     [pscustomobject]@{
         Name    = $module.Name
         Version = $module.Version
-        Status  = 'Zaślepka'
+        Status  = 'Windows Update: stan i usługi, wyszukiwanie (COM), historia, pauza z cofaniem, reset składników, instalacja lokalna (FAZA 10)'
     }
 }

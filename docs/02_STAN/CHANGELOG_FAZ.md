@@ -17,9 +17,27 @@
 
 ---
 
+## FAZA 10 — Windows Update (2026-10-28)
+- Status: ZAKOŃCZONA (ręczna weryfikacja zmian jako administrator, instalacji i komputera zdalnego — lista w pliku fazy)
+- Commit: `FAZA 10: Windows Update — stan i usługi, wyszukiwanie i historia przez COM, pauza jak Ustawienia z cofaniem, reset składników z kopiami folderów, instalacja lokalna i widok modułu` — hash do uzupełnienia na starcie FAZY 11
+- Start: uzupełniono hash FAZY 9 (`9ceddba`); baza testów — 5.1.26100.9711: 0 uwag, 1572/1572; 7.6.7: 0 uwag, 1572/1572.
+- Decyzje użytkownika (2026-10-28): instalacja lokalnie przez COM z potwierdzeniem (bez automatycznego restartu); instalacja zdalna odroczona z wpisem; pauza jak Ustawienia Windows 11, 1–5 tygodni.
+- Zrobiono:
+  - `MWP.Update` 0.10.0: `Get-MwpUpdateStatus`/`Resolve-MwpUpdateStatus` (usługi, restart, daty, pauza, zasady, kopie), `Find-MwpUpdate`/`Resolve-MwpUpdateSearch` (COM, stałe kryteria, instalowalność z powodem, HRESULT z opisem), `Get-MwpUpdateHistory`/`Resolve-MwpUpdateHistory`, `Suspend-MwpUpdate`/`Resume-MwpUpdate`/`Restore-MwpUpdatePause` (wartości `UX\Settings`, administrator, ponowny odczyt, cofnięcie), `Reset-MwpUpdateComponent`/`Get-MwpUpdateResetStep`/`Restore-MwpUpdateComponent` (Destrukcyjna, podgląd kroków, kopie folderów, wycofanie przy błędzie, dowiązania odrzucane, cofnięcie), `Install-MwpUpdate` (tylko lokalnie, administrator, po jednej aktualizacji z postępem i anulowaniem, pomijanie interakcji i licencji, bez restartu), `Open-MwpUpdatePage`, `Format-MwpUpdateSize`; wszystko z `-Context`, log z nazwą komputera.
+  - `MWP.Core` 0.10.0 (wersja hosta, bez zmian funkcji).
+  - Okno: `Views/Update.xaml`, `Initialize-`/`Update-MwpUpdateView`, `Invoke-MwpUpdateViewAction`, `Start-MwpUiUpdateRefresh`, `Start-MwpUiUpdateInstall`, logika prezentacji bez WPF (`Get-MwpUpdateRow`, `Get-MwpUpdateActionState`, `Get-MwpUpdateDetail`, `Get-MwpUpdateViewOption`, `Get-MwpUiUpdateScript`), wpis w katalogu widoków; `Invoke-MwpUiInstanceChange` z opcjonalnym `-ConfirmText`.
+  - Dokumentacja: `DECYZJE` (D-048), `ARCHITEKTURA` (sekcja „Windows Update”, struktura, rdzeń, ograniczenia zdalne, testy architektoniczne), `FAZA_10_WINDOWS_UPDATE`, `STAN_PROJEKTU`, `README`.
+- Testy: 5.1.26100.9711 — 0 uwag, 1698/1698; 7.6.7 — 0 uwag, 1698/1698 (baza 1572/1572). Nowe: `tests/Modules/MWP.Update/Update.Tests.ps1` (37; symulator COM Windows Update Agent, rejestr w `TestRegistry`, foldery w `TestDrive`, ścieżka zdalna z mockiem transportu), `tests/UI/UpdateView.Tests.ps1` (7); `PowerView.Tests.ps1` — moduł bez widoku: `Network` zamiast `Update`. Test dymny okna w 5.1 (jasny, z prawdziwym wyszukiwaniem) i 7.6.7 (ciemny) — kod wyjścia 0, brak zmian.
+- Poprawione w trakcie: daty z `ConvertFrom-Json` w 7.x w zapisie pauzy, przełącznik `-RestartRequired`, rekurencja domyślnego mocka `New-Object` w zakresie pliku (Pester 6), uwagi PSScriptAnalyzer (`Set-ItemProperty -Type`, nazwy w liczbie mnogiej, `ShouldProcess` w funkcjach publicznych).
+- Niezrobione / odroczone: instalacja na komputerze zdalnym (D-048, dług techniczny; kandydat FAZA 20); retencja kopii folderów z resetu (FAZA 20); widget Dashboardu — poza zakresem.
+- Decyzje: D-048.
+- Do weryfikacji na Windows 11: lista 8 punktów w `docs/03_FAZY/FAZA_10_WINDOWS_UPDATE.md` (pauza w Ustawieniach, reset i cofnięcie jako administrator, instalacja, komputer zdalny).
+- Uwaga: pliki nieśledzone sprzed fazy (`docs/04_PROMPTY/PROMPT_KOREKTA_D031.md`, `docs/scripts/`) pozostawione bez zmian i poza commitem.
+- Następna faza: FAZA 11 — Sieć
+
 ## FAZA 9 — Czyszczenie dysku (2026-10-28)
 - Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwego czyszczenia, uprawnień administratora, DISM i komputera zdalnego — lista w pliku fazy)
-- Commit: `FAZA 9: czyszczenie dysku — kategorie w pliku danych, skan, usuwanie z potwierdzeniem i raportem, ochrona przed dowiązaniami i ścieżkami spoza kategorii, analiza DISM i widok modułu` — hash do uzupełnienia na starcie FAZY 10
+- Commit: `9ceddba` `FAZA 9: czyszczenie dysku — kategorie w pliku danych, skan, usuwanie z potwierdzeniem i raportem, ochrona przed dowiązaniami i ścieżkami spoza kategorii, analiza DISM i widok modułu`
 - Start: uzupełniono hash FAZY 8 (`320362d`); baza testów — 5.1.26100.9711: 0 uwag, 1462/1462; 7.6.7: 0 uwag, 1462/1462.
 - Zrobiono:
   - `MWP.Cleanup` 0.9.0: kategorie jako dane (`Data/cleanup-categories.json`, 8 kategorii z zakresu fazy, `Get-MwpCleanupCategory` z białą listą ścieżek), skan tylko do odczytu (`Measure-MwpCleanupCategory`), usuwanie (`Clear-MwpCleanupCategory`: Destrukcyjna, `ConfirmImpact High`, `-WhatIf`, skan przed potwierdzeniem, log początku i wyniku, bez wpisu cofnięcia), raport (`ConvertTo-MwpCleanupReport`), `Format-MwpCleanupSize`, analiza DISM (`Get-MwpComponentStoreAnalysis`, `Resolve-MwpComponentStoreAnalysis`; tylko analiza, `/English`); trzy linie obrony (walidacja definicji, `Test-MwpCleanupRoot`, blok `Process`: dowiązania, kanoniczność, lokalizacje chronione, pliki w użyciu, puste katalogi bez rekurencji); profile: zdalnie tylko po jawnym wyborze; postęp i anulowanie przez tabelę `-Progress`; wszystko z `-Context`.

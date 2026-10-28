@@ -72,7 +72,7 @@ Cel: kontrola tego, co uruchamia się z systemem. Zakres: Run/RunOnce, folder St
 Cel: bezpieczne zwalnianie miejsca. Zakres: kategorie plików tymczasowych, wyliczenie rozmiaru, podgląd domyślny, czyszczenie z potwierdzeniem, analiza magazynu składników. Kryterium: nigdy nie dotyka plików użytkownika. Zdalnie tylko lokalizacje systemowe.
 
 ### FAZA 10 — Windows Update
-Cel: kontrola nad aktualizacjami. Zakres: oczekujące aktualizacje i historia przez COM, stan usług, pauza, reset komponentów. Kryterium: bez zewnętrznych modułów. Zdalnie z ograniczeniami COM do zbadania.
+Cel: kontrola nad aktualizacjami. Zakres: oczekujące aktualizacje i historia przez COM, stan usług, pauza, reset komponentów. Kryterium: bez zewnętrznych modułów. Zdalnie z ograniczeniami COM do zbadania. Wynik (D-048): instalacja lokalnie przez COM z potwierdzeniem; instalacja zdalna odroczona (WUA odmawia w sesji WinRM).
 
 ### FAZA 11 — Sieć
 Cel: diagnostyka i konfiguracja sieci. Zakres: adaptery, konfiguracja IP, DNS z presetami i cofaniem, flush DNS, resety, testy łączności. Kryterium: zmiana DNS jest odwracalna. Zdalnie z ochroną przed utratą łączności.

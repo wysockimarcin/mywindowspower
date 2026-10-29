@@ -68,7 +68,9 @@
     else {
         Show-MwpView -Key ('instance:' + $instance.Id)
     }
-    if ($Selection.Connect -and $instance.Context.Mode -eq 'Remote') {
-        Connect-MwpUiInstance -Entry $entry -Owner $Owner
+    if ($instance.Context.Mode -eq 'Remote') {
+        # Bez „Połącz od razu” instancja i tak łączy się w tle, gdy hasło komputera jest już w pamięci
+        # procesu (D-052): operacje modułu działają, więc stan „Rozłączono” wprowadzałby w błąd.
+        Connect-MwpUiInstance -Entry $entry -Owner $Owner -Automatic:(-not $Selection.Connect)
     }
 }

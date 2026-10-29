@@ -105,6 +105,7 @@ Korekta po FAZIE 12 (status fazy bez zmian; dotyczy `MWP.Remote` i okna, nie mod
 8. Połączenie z **niezaznaczonym** „Zapamiętaj”: brak wpisu `MWP:<komputer>` w Menedżerze poświadczeń.
 9. Ustawienia → wyłączenie „Zezwalaj na zapamiętywanie haseł…”: okno poświadczeń bez pola „Zapamiętaj”, „Połącz” nie używa wpisu (pyta o hasło); ponowne włączenie przywraca działanie.
 10. Brak hasła w plikach: wyszukaj swoje hasło (lokalnie, nie w rozmowie) w `<katalog danych>\logs\mwp-*.log`, `config\settings.local.json` i `<katalog danych>\undo\*.json` (wyszukiwanie w edytorze tekstu albo `Select-String -SimpleMatch` we własnej konsoli) — brak wystąpień; w logu są wpisy `Remote.SaveCredential`, `Remote.CredentialRejected`, `Remote.RemoveCredential` z kontem, bez hasła.
+11. Po połączeniu jednej instancji (albo widgetu) komputera zdalnego: nowa instancja innego modułu dla tego komputera (także bez „Połącz od razu”) i już otwarte, rozłączone instancje tego komputera przechodzą same w „Połączono” (przycisk „Połącz” nieaktywny, bez okna); instancja rozłączona przyciskiem „Rozłącz” zostaje rozłączona.
 
 ## Do weryfikacji na Windows 11 — lista dla użytkownika
 1. CLI: `(Get-MwpInstalledApp).Data.Apps | Select-MwpInstalledApp | Format-Table Name, Version, Publisher, ScopeText` — porównać z Ustawienia → Aplikacje → Zainstalowane aplikacje.

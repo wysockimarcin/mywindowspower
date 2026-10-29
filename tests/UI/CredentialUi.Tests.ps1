@@ -203,6 +203,53 @@ Describe 'MWP.UI — zapamiętane poświadczenia (logika prezentacji)' {
         }
     }
 
+    Context 'Get-MwpUiAutoConnectInstance — instancje łączone same hasłem z pamięci procesu' {
+        BeforeAll {
+            function New-TestEntry {
+                param([string] $ComputerName, [int] $Busy = 0, [bool] $ManualDisconnect = $false)
+                @{ Instance = [pscustomobject]@{ Context = (New-MwpExecutionContext -ComputerName $ComputerName) }; Busy = $Busy; ManualDisconnect = $ManualDisconnect }
+            }
+        }
+
+        It 'bez sprawdzonego hasła w pamięci: żadnej instancji (bez okna i bez magazynu)' {
+            @(Get-MwpUiAutoConnectInstance -Entry @((New-TestEntry -ComputerName 'PC-HASLO'))).Count | Should -Be 0
+        }
+
+        It 'hasło w pamięci: rozłączona instancja komputera jest wybierana; inne komputery, zajęte, połączone i rozłączone ręcznie — nie' {
+            $null = & $remote { param($c) Set-MwpCachedCredential -ComputerName 'PC-HASLO' -Credential $c } $credential
+            $waiting = New-TestEntry -ComputerName 'PC-HASLO'
+            $busy = New-TestEntry -ComputerName 'PC-HASLO' -Busy 1
+            $manual = New-TestEntry -ComputerName 'PC-HASLO' -ManualDisconnect $true
+            $connected = New-TestEntry -ComputerName 'PC-HASLO'
+            $connected.Instance.Context.Connection.State = 'Connected'
+            $other = New-TestEntry -ComputerName 'PC-INNY'
+            $currentUser = New-TestEntry -ComputerName 'PC-DOMENA'
+            $local = New-TestEntry -ComputerName 'localhost'
+
+            $selected = @(Get-MwpUiAutoConnectInstance -Entry @($waiting, $busy, $manual, $connected, $other, $currentUser, $local) -ComputerName 'PC-HASLO')
+            $all = @(Get-MwpUiAutoConnectInstance -Entry @($waiting, $other, $currentUser, $local))
+
+            $selected.Count | Should -Be 1
+            [object]::ReferenceEquals($selected[0], $waiting) | Should -BeTrue
+            $all.Count | Should -Be 1
+        }
+
+        It 'hasło odrzucone (Invalid): instancja nie łączy się sama' {
+            $generation = & $remote { param($c) Set-MwpCachedCredential -ComputerName 'PC-HASLO' -Credential $c } $credential
+            $null = & $remote { param($g) Set-MwpCachedCredentialInvalid -ComputerName 'PC-HASLO' -Generation $g } $generation
+
+            @(Get-MwpUiAutoConnectInstance -Entry @((New-TestEntry -ComputerName 'PC-HASLO'))).Count | Should -Be 0
+        }
+
+        It 'Connect-MwpUiInstance -Automatic nigdy nie pokazuje okna ani nie czyta magazynu (kod)' {
+            $text = [IO.File]::ReadAllText((Join-Path -Path $root -ChildPath 'src\UI\Wpf\Connect-MwpUiInstance.ps1'), [Text.Encoding]::UTF8)
+
+            $text | Should -Match "-SkipStore:\`$Automatic"
+            $text | Should -Match "\`$Automatic -and \`$plan\.Action -notin @\('None', 'Cache'\)"
+            [IO.File]::ReadAllText((Join-Path -Path $root -ChildPath 'src\UI\Wpf\Disconnect-MwpUiInstance.ps1'), [Text.Encoding]::UTF8) | Should -Match "ManualDisconnect'\] = \`$true"
+        }
+    }
+
     Context 'okna (statycznie, bez WPF)' {
         BeforeAll {
             $uiRoot = Join-Path -Path $root -ChildPath 'src\UI'

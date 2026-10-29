@@ -73,6 +73,7 @@
             $target.Status = 'Idle'
             $target.Pending = $true
             $null = Resume-MwpUiTargetWidget -Widget @($script:MwpUi.Dashboard.Widgets) -ComputerName $target.Instance.Context.ComputerName
+            Connect-MwpUiTargetInstance -ComputerName $target.Instance.Context.ComputerName
         }
         else {
             $target.Status = 'NeedsCredential'

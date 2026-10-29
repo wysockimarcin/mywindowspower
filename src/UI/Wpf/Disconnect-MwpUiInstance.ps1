@@ -11,6 +11,8 @@
 
     $ui = $script:MwpUi
     $context = $Entry.Instance.Context
+    # Ręczne rozłączenie: instancja nie łączy się sama, gdy inna instancja tego komputera się połączy (D-052).
+    $Entry['ManualDisconnect'] = $true
     $Entry.Busy++
     Update-MwpInstanceView -Entry $Entry -StateOnly
     $null = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Rozłączanie: {0}' -f $context.ComputerName) -State $Entry.Id -ArgumentList @(, $context) -ScriptBlock {

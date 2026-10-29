@@ -10,8 +10,13 @@
         (domyślnie wyłączonym). Samo połączenie (Connect-MwpTarget, także odczyt i zapis magazynu)
         działa w zadaniu w tle, więc okno nie czeka na limit czasu niedostępnego komputera. Stan
         połączenia zmienia się w kontekście tej instancji; inne instancje i widoki działają dalej
-        (D-019). Po udanym połączeniu widgety tego komputera czekające na poświadczenia są wznawiane.
+        (D-019). Po udanym połączeniu widgety tego komputera czekające na poświadczenia są wznawiane,
+        a pozostałe instancje tego komputera łączą się same (Connect-MwpUiTargetInstance).
         Wynik trafia do widoku instancji.
+
+    .PARAMETER Automatic
+        Połączenie bez akcji użytkownika: tylko gdy nie trzeba pytać o hasło (sprawdzone hasło
+        w pamięci procesu albo poświadczenie w kontekście); nigdy okno ani Menedżer poświadczeń.
     #>
     [CmdletBinding()]
     param(
@@ -19,7 +24,9 @@
         [hashtable] $Entry,
 
         [AllowNull()]
-        [object] $Owner
+        [object] $Owner,
+
+        [switch] $Automatic
     )
 
     $ui = $script:MwpUi
@@ -27,12 +34,23 @@
     if ($context.Mode -eq 'Local') {
         return
     }
+    if (-not $Automatic) {
+        # Jawne „Połącz” znosi ręczne rozłączenie: instancja znów łączy się sama z resztą komputera.
+        $Entry['ManualDisconnect'] = $false
+    }
+    elseif ([int]$Entry.Busy -gt 0 -or [string]$context.Connection.State -in @('Connected', 'Connecting')) {
+        return
+    }
     $state = Get-MwpConnectionStateInfo -Context $context
     $info = $null
     if ($context.Identity.Authentication -eq 'Credential' -and ($state.NeedsCredential -or $state.State -eq 'Unauthorized')) {
-        $info = @(Get-MwpTargetCredentialInfo -Name $context.ComputerName) | Select-Object -First 1
+        # Automatycznie tylko pamięć procesu: bez odczytu Menedżera poświadczeń (to wymaga „Połącz”).
+        $info = @(Get-MwpTargetCredentialInfo -Name $context.ComputerName -SkipStore:$Automatic) | Select-Object -First 1
     }
     $plan = Get-MwpUiCredentialPlan -State $state -Info $info -UserName $context.Identity.UserName
+    if ($Automatic -and $plan.Action -notin @('None', 'Cache')) {
+        return
+    }
     $credential = $null
     $save = $false
     if ($plan.Action -eq 'Dialog') {
@@ -72,5 +90,8 @@
             }
         }
         Update-MwpInstanceView -Entry $entry
+        if ($null -ne $result -and $result.Success) {
+            Connect-MwpUiTargetInstance -ComputerName $entry.Instance.Context.ComputerName
+        }
     }
 }

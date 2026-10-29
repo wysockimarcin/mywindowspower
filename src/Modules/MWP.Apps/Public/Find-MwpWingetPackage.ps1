@@ -7,6 +7,7 @@
         Operacja klasy Odczyt (D-050). Zapytanie jest sprawdzane przed wysłaniem (litery, cyfry, spacja,
         . _ + - #, do 100 znaków; bez cudzysłowów, D-015). Wynik: MWP.Result z MWP.WingetList (Kind
         Search: nazwa, identyfikator, najnowsza wersja, dopasowanie) w Data; brak wyników = pusta lista.
+        Na komputerze zdalnym winget działa w zadaniu harmonogramu jako SYSTEM (D-051; wymaga administratora).
         Z -AsOperation zwraca uchwyt operacji w tle; wynik zamienia Resolve-MwpWingetPackage -Kind Search.
 
     .PARAMETER Query
@@ -48,11 +49,8 @@
     if ($null -ne $call.Result) {
         return New-MwpResult @common -Success $false -Message $call.Message -ErrorMessage $call.ErrorMessage
     }
-    $list = Resolve-MwpWingetPackage -Kind Search -Data ([pscustomobject]@{
-            Kind = 'MWP.WingetRaw'; Found = $call.Found; WingetPath = $call.WingetPath; ExitCode = $call.ExitCode; TimedOut = $false
-            Lines = $call.Lines; Error = $null; DurationMs = $call.DurationMs
-        })
-    if (-not $call.Success) {
+    $list = Resolve-MwpWingetPackage -Kind Search -Data $call.Raw -ComputerName $Context.ComputerName
+    if ($null -eq $list -or -not $call.Success) {
         return New-MwpResult @common -Success $false -Message $call.Message -ErrorMessage $call.ErrorMessage -Data $list
     }
     New-MwpResult @common -Success $true -Message ("Znaleziono {0} pakietów dla '{1}'." -f @($list.Packages).Count, $Query) -Data $list

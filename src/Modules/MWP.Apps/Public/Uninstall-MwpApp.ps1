@@ -5,25 +5,35 @@
 
     .DESCRIPTION
         Operacja klasy Destrukcyjna (D-027, D-050): ConfirmImpact High — bez -Confirm:$false funkcja
-        zawsze pyta; potwierdzenie i podgląd zawierają nazwę, wersję, wydawcę i komputer.
+        zawsze pyta; potwierdzenie i podgląd zawierają nazwę, wersję, wydawcę, komputer i kontekst.
         Przed podglądem (odmowa = wynik z błędem):
         - lista ochronna i składniki systemu (Get-MwpAppProtection: Appx systemowe, struktury, zasobów,
           nieusuwalne; SystemComponent, NoRemove, aktualizacje; kategorie App i AppxPackage) — także
           z CLI i na komputerze zdalnym;
-        - komputer zdalny: administrator na komputerze docelowym; programy profilu innego użytkownika
-          nie są odinstalowywane (winget i Appx działają w profilu konta połączenia).
-        Sposób: program z rejestru — winget uninstall --id <ARP\…> --exact --silent (identyfikator lokalny
-        z klucza Uninstall); pakiet z -WingetId — winget uninstall --id <Id> --exact --silent; Appx —
-        Remove-AppxPackage (konto sesji). Lokalnie bez administratora instalator może pokazać monit UAC.
-        Log na hoście: nazwa, wersja, wydawca, identyfikatory (przed i po). Sprawdzenie: ponowny odczyt
-        inwentarza. Cofnięcie (wpis tylko, gdy pakiet ma identyfikator w repozytorium winget):
-        Install-MwpWingetPackage -Id — ponowna instalacja najnowszej wersji.
+        - komputer zdalny: administrator na komputerze docelowym; localhost z programem profilu innego
+          użytkownika: aplikacja uruchomiona jako administrator;
+        - program profilu użytkownika (D-051): właściciel profilu musi być zalogowany (winget działa
+          w jego sesji przez zadanie harmonogramu; bez zapisywania haseł, D-034).
+        Kontekst winget (D-051): program komputera — localhost: konto aplikacji, komputer zdalny:
+        zadanie jako SYSTEM; program profilu — sesja właściciela profilu (lokalnie dla konta aplikacji
+        bezpośrednio). Sposób: program z rejestru — winget uninstall --id <ARP\…> --exact --silent
+        (identyfikator lokalny z klucza Uninstall); pakiet z -WingetId — winget uninstall --id <Id>.
+        Program rozpoznany w repozytorium winget: z --source winget (bez umów innych źródeł); program
+        spoza repozytorium: bez źródła i z --accept-source-agreements — potwierdzenie oznacza zgodę na
+        warunki źródeł winget (w tym msstore) dla konta, które uruchamia winget (decyzja użytkownika,
+        D-051). Appx — Remove-AppxPackage (konto sesji). Lokalnie bez administratora instalator może
+        pokazać monit UAC. Log na hoście: nazwa, wersja, wydawca, identyfikatory i kontekst (przed i
+        po). Sprawdzenie: ponowny odczyt inwentarza. Cofnięcie (wpis tylko, gdy pakiet ma identyfikator
+        w repozytorium winget): Install-MwpWingetPackage -Id [-UserSid] — ponowna instalacja.
 
     .PARAMETER AppId
         Identyfikator aplikacji z Get-MwpInstalledApp (Registry:… albo Appx:…).
 
     .PARAMETER WingetId
         Identyfikator pakietu winget (źródła albo lokalny ARP\…, MSIX\…).
+
+    .PARAMETER UserSid
+        Z -WingetId: profil zalogowanego użytkownika, w którym zainstalowany jest pakiet.
 
     .EXAMPLE
         Uninstall-MwpApp -WingetId '7zip.7zip' -WhatIf
@@ -39,6 +49,10 @@
         [ValidateNotNullOrEmpty()]
         [string] $WingetId,
 
+        [Parameter(ParameterSetName = 'Winget')]
+        [ValidatePattern('^S-1-5-21-[0-9-]+$')]
+        [string] $UserSid,
+
         [PSTypeName('MWP.ExecutionContext')]
         [object] $Context = (New-MwpExecutionContext)
     )
@@ -50,7 +64,8 @@
     if ($PSCmdlet.ParameterSetName -eq 'Winget' -and -not (Test-MwpWingetId -Id $WingetId -AllowLocal)) {
         throw ("Niepoprawny identyfikator pakietu winget: '{0}'." -f $WingetId)
     }
-    $found = Get-MwpAppTarget -Context $Context -AppId $(if ($AppId) { $AppId } else { '' }) -WingetId $(if ($WingetId) { $WingetId } else { '' })
+    $lookup = @{ Context = $Context; AppId = $(if ($AppId) { $AppId } else { '' }); WingetId = $(if ($WingetId) { $WingetId } else { '' }); UserSid = $(if ($UserSid) { $UserSid } else { '' }) }
+    $found = Get-MwpAppTarget @lookup
     if (-not $found.Success) {
         $errorMessage = if ($null -ne $found.Result) { $found.Result.ErrorMessage } else { $null }
         return New-MwpResult @common -Success $false -Message $found.Message -ErrorMessage $errorMessage
@@ -61,23 +76,28 @@
     if ($app.IsProtected) {
         return New-MwpResult @common -Success $false -Message ("Aplikacja {0} jest chroniona i nie można jej odinstalować z aplikacji: {1}" -f $describe, $app.ProtectedReason)
     }
-    $remote = $Context.Mode -eq 'Remote'
-    if ($remote) {
-        $admin = Test-MwpAppsAdmin -Context $Context
-        if (-not $admin.Success) {
-            return New-MwpResult @common -Success $false -Message $admin.Result.Message -ErrorMessage $admin.Result.ErrorMessage
-        }
-        if (-not $admin.IsAdministrator) {
-            return New-MwpResult @common -Success $false -Message ("Odinstalowanie na komputerze zdalnym '{0}' wymaga konta administratora w połączeniu." -f $computerName)
-        }
-    }
-    if ($app.Scope -eq 'User' -and $app.UserSid -and $app.UserSid -ne $found.Inventory.CurrentUserSid) {
-        return New-MwpResult @common -Success $false -Message ("Aplikacja {0} należy do profilu {1}; aplikacja odinstalowuje tylko programy komputera i konta połączenia ({2})." -f $describe, $app.UserName, $found.Inventory.CurrentUser)
-    }
     $method = [string]$app.UninstallMethod
+    $remote = $Context.Mode -eq 'Remote'
+    # Kontekst winget: program profilu — sesja właściciela (lokalnie konto aplikacji bezpośrednio).
+    $ownerSid = if ($method -eq 'Winget' -and $app.Scope -eq 'User' -and $app.UserSid) { [string]$app.UserSid } else { '' }
+    $userRun = @{}
+    if ($ownerSid -and ($remote -or $ownerSid -ne (Get-MwpAppsHostSid))) {
+        $userRun = @{ UserSid = @($ownerSid); UserOnly = $true }
+    }
+    $access = Test-MwpWingetRunAccess -Context $Context -UserSid $(if ($userRun.Count -gt 0) { $ownerSid } else { '' }) -What 'Odinstalowanie'
+    if (-not $access.Success) {
+        return New-MwpResult @common -Success $false -Message $access.Message -ErrorMessage $(if ($null -ne $access.Result) { $access.Result.ErrorMessage } else { $null })
+    }
     $uninstallId = if ($PSCmdlet.ParameterSetName -eq 'Winget') { $WingetId } elseif ($app.Source -eq 'Registry') { [string]$app.WingetLocalId } else { '' }
+    $runAs = if ($userRun.Count -gt 0) { 'User' } elseif ($remote) { 'System' } else { 'Direct' }
+    $runUserName = if ($null -ne $found.UserRun -and $found.UserRun.UserName) { [string]$found.UserRun.UserName } else { [string]$app.UserName }
     if ($method -eq 'Winget') {
-        if (-not $found.WingetOk) {
+        if ($runAs -eq 'User') {
+            if ($null -ne $found.UserRun -and -not $found.UserRun.Success) {
+                return New-MwpResult @common -Success $false -Message ("Nie można odinstalować {0}: {1}" -f $describe, $found.UserRun.Message)
+            }
+        }
+        elseif (-not $found.WingetOk) {
             return New-MwpResult @common -Success $false -Message ("Nie można odinstalować {0}: {1}" -f $describe, $found.Message)
         }
         if (-not (Test-MwpWingetId -Id $uninstallId -AllowLocal)) {
@@ -85,13 +105,25 @@
         }
     }
     $sourceId = if ($app.WingetId -and (Test-MwpWingetId -Id ([string]$app.WingetId))) { [string]$app.WingetId } else { '' }
+    $arguments = @('uninstall', '--id', $uninstallId, '--exact', '--silent')
     $notes = @()
     if ($method -eq 'Appx') {
         $notes += 'Sposób: Remove-AppxPackage (pakiet konta {0}).' -f $found.Inventory.CurrentUser
     }
     else {
-        $notes += 'Sposób: winget uninstall --id {0} --exact --silent.' -f $uninstallId
-        if (-not $remote -and $app.Scope -eq 'Machine' -and -not $found.Inventory.IsAdministrator) {
+        if ($sourceId) {
+            # Program rozpoznany w repozytorium winget: tylko źródło winget (bez umów msstore).
+            $arguments += @('--source', (Get-MwpAppsTargetConfig).Source)
+        }
+        else {
+            $arguments += '--accept-source-agreements'
+        }
+        $notes += 'Sposób: winget {0}.' -f ($arguments -join ' ')
+        $notes += Get-MwpWingetRunText -RunAs $runAs -UserName $runUserName -UserSid $ownerSid
+        if (-not $sourceId) {
+            $notes += 'Programu nie ma w repozytorium winget — zatwierdzenie oznacza zgodę na warunki źródeł winget (w tym msstore) dla konta, które uruchamia winget.'
+        }
+        if ($runAs -eq 'Direct' -and $app.Scope -eq 'Machine' -and -not $found.Inventory.IsAdministrator) {
             $notes += 'Program jest zainstalowany dla całego komputera — instalator może pokazać monit UAC.'
         }
     }
@@ -105,7 +137,7 @@
         return New-MwpResult @common -Success $true -IsPreview -Before $app.Version -Message ('Podgląd: {0}' -f $action)
     }
 
-    $logData = @{ Name = $app.Name; Version = $app.Version; Publisher = $app.Publisher; Source = $app.Source; AppId = $app.Id; WingetId = $sourceId; LocalId = $uninstallId; Scope = $app.Scope }
+    $logData = @{ Name = $app.Name; Version = $app.Version; Publisher = $app.Publisher; Source = $app.Source; AppId = $app.Id; WingetId = $sourceId; LocalId = $uninstallId; Scope = $app.Scope; RunAs = $(if ($method -eq 'Appx') { 'Session' } else { $runAs }); UserSid = $ownerSid }
     Write-MwpLog -Level Info -Source 'MWP.Apps' -Operation $operation -ComputerName $computerName -Message ('Odinstalowanie {0} — start.' -f $describe) -Data $logData
     $failure = $null
     $exitNote = ''
@@ -115,11 +147,7 @@
         $failure = if ($null -eq $raw) { $result.Message } elseif ($raw.Error) { [string]$raw.Error } elseif ($raw.Remaining) { 'pakiet nadal jest zainstalowany' } else { $null }
     }
     else {
-        $arguments = @('uninstall', '--id', $uninstallId, '--exact', '--silent')
-        if ($uninstallId -eq $sourceId) {
-            $arguments += @('--source', (Get-MwpAppsTargetConfig).Source)
-        }
-        $call = Invoke-MwpWinget -Context $Context -Argument $arguments -Operation $operation -TimeoutSeconds (Get-MwpAppsTargetConfig).ChangeTimeoutSeconds
+        $call = Invoke-MwpWinget -Context $Context -Argument $arguments -Operation $operation -TimeoutSeconds (Get-MwpAppsTargetConfig).ChangeTimeoutSeconds @userRun
         if (-not $call.Success) {
             $failure = $call.Message
             $exitNote = $call.Message
@@ -133,7 +161,7 @@
         return New-MwpResult @common -Success $false -Before $app.Version -Message $message -ErrorMessage $failure
     }
     # Sprawdzenie: ponowny odczyt (program mógł zniknąć mimo kodu błędu, np. wymaganego restartu).
-    $check = Get-MwpAppTarget -Context $Context -AppId $(if ($AppId) { $AppId } else { '' }) -WingetId $(if ($WingetId) { $WingetId } else { '' })
+    $check = Get-MwpAppTarget @lookup
     $gone = [bool]$check.NotFound
     if ($gone -and $failure -and $method -ne 'Appx') {
         $failure = $null
@@ -148,8 +176,12 @@
     }
     $undoId = $null
     if ($sourceId) {
+        $undoParameters = @{ Id = $sourceId }
+        if ($runAs -eq 'User') {
+            $undoParameters['UserSid'] = $ownerSid
+        }
         $undo = Save-MwpUndoEntry -Module 'MWP.Apps' -Operation $operation -Target $app.Name -ComputerName $computerName -Before $app.Version -After $null `
-            -Description ('Odinstalowano {0} — cofnięcie: ponowna instalacja {1} z winget' -f $describe, $sourceId) -UndoCommand 'Install-MwpWingetPackage' -UndoParameters @{ Id = $sourceId }
+            -Description ('Odinstalowano {0} — cofnięcie: ponowna instalacja {1} z winget' -f $describe, $sourceId) -UndoCommand 'Install-MwpWingetPackage' -UndoParameters $undoParameters
         $undoId = $undo.Id
     }
     $message = "Odinstalowano {0} z komputera '{1}'.{2}" -f $describe, $computerName, $(if ($exitNote) { ' Uwaga winget: ' + $exitNote } else { '' })

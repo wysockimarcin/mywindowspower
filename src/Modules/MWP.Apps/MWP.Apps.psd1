@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Apps.psm1'
-    ModuleVersion        = '0.12.0'
+    ModuleVersion        = '0.12.1'
     GUID                 = '4c98673e-01c8-4b33-84f6-94d3122f4e0c'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -29,6 +29,7 @@
     PrivateData          = @{
         # Kontrakt modułu MyWindowsPower (ARCHITEKTURA.md, „Kontrakt modułu"; D-024).
         # Widok w oknie hosta: src\UI\Views\Apps.xaml (widok modułu wbudowanego, D-044, D-050).
+        # 0.12.1 (korekta D-051): winget na komputerze zdalnym przez jednorazowe zadania harmonogramu (SYSTEM i sesja zalogowanego użytkownika).
         MWP    = @{
             ContractVersion            = 1
             Id                         = 'Apps'

@@ -6,8 +6,10 @@
     .DESCRIPTION
         Operacja klasy Odczyt (D-050): winget --version. Szukany jest alias użytkownika
         (%LOCALAPPDATA%\Microsoft\WindowsApps\winget.exe), a bez niego plik z pakietu
-        Microsoft.DesktopAppInstaller zarejestrowanego dla konta. Wynik: MWP.Result z Data
-        (MWP.WingetInfo: Available, Version, Path); brak winget — Success = $true, Available = $false.
+        Microsoft.DesktopAppInstaller zarejestrowanego dla konta. Na komputerze zdalnym (D-051) winget działa
+        w zadaniu harmonogramu jako SYSTEM (plik z pakietu App Installer wszystkich użytkowników; wymaga
+        administratora). Wynik: MWP.Result z Data (MWP.WingetInfo: Available, Version, Path, RunAs);
+        brak winget — Success = $true, Available = $false.
     #>
     [CmdletBinding()]
     [OutputType([pscustomobject])]
@@ -29,6 +31,7 @@
         Available  = [bool]($call.Success -and $version)
         Version    = $(if ($version) { ([string]$version).Trim().TrimStart('v') } else { '' })
         Path       = [string]$call.WingetPath
+        RunAs      = [string]$call.RunAs
         Message    = $(if ($call.Success) { '' } else { [string]$call.Message })
     }
     $message = if ($info.Available) { "winget {0} jest dostępny na komputerze '{1}'." -f $info.Version, $Context.ComputerName } else { $call.Message }

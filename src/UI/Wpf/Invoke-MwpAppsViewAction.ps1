@@ -8,7 +8,9 @@
         (podgląd -WhatIf w tle, okno potwierdzenia z komputerem docelowym, wykonanie w tle, ponowny
         odczyt). Odinstalowanie to operacja destrukcyjna (okno ostrzegawcze; na komputerze zdalnym
         z wpisaniem nazwy komputera, D-050). Aktualizacja kilku pakietów = osobny krok na pakiet
-        (postęp na pasku stanu, niepowodzenie jednego nie przerywa innych).
+        (postęp na pasku stanu, niepowodzenie jednego nie przerywa innych). Kontekst winget (D-051):
+        pakiet z listy profilu użytkownika jest aktualizowany w jego sesji (-UserSid), instalacja — dla
+        pozycji wybranej w „Zainstaluj dla” (komputer/konto aplikacji albo zalogowany użytkownik).
 
     .PARAMETER Action
         Nazwa przycisku (x:Name) z Views\Apps.xaml.
@@ -47,7 +49,7 @@
         'AppsProfileButton' {
             $selectedProfile = $p['AppsProfileBox'].SelectedItem
             $view.UserSid = if ($null -ne $selectedProfile -and $selectedProfile.Value) { @([string]$selectedProfile.Value) } else { @() }
-            Start-MwpUiAppsRefresh -Entry $Entry -Kind Inventory
+            Start-MwpUiAppsRefresh -Entry $Entry
         }
         'UpgradesRefreshButton' {
             Start-MwpUiAppsRefresh -Entry $Entry -Kind Packages
@@ -70,9 +72,14 @@
             Invoke-MwpUiInstanceChange @parameters
         }
         'AppsUpgradeButton' {
+            $upgrade = @{ Id = [string]$app.WingetId }
+            $userSid = (Get-MwpAppsActionState -Inventory $view.Inventory -AppId ([string]$app.Id) -Packages $view.Packages -WingetAvailable $true -Remote ($context.Mode -ne 'Local')).UpgradeUserSid
+            if ($userSid) {
+                $upgrade['UserSid'] = $userSid
+            }
             Invoke-MwpUiInstanceChange -Entry $Entry -Header 'Aktualizacja aplikacji (winget)' -Target ('{0}: {1} → {2}' -f $app.Name, $app.Version, $app.Available) `
                 -ConfirmText 'Aktualizuj' -AfterCommand $after -Owner $Owner `
-                -Steps @(@{ Command = 'Update-MwpWingetPackage'; Parameters = @{ Id = [string]$app.WingetId }; Label = ('Aktualizacja: {0}' -f $app.Name) })
+                -Steps @(@{ Command = 'Update-MwpWingetPackage'; Parameters = $upgrade; Label = ('Aktualizacja: {0}' -f $app.Name) })
         }
         'UpgradeSelectedButton' {
             $selected = @($p['UpgradesGrid'].SelectedItems | Where-Object { $null -ne $_ })
@@ -81,7 +88,11 @@
                 return
             }
             $steps = @(foreach ($item in $selected) {
-                    @{ Command = 'Update-MwpWingetPackage'; Parameters = @{ Id = [string]$item.Id }; Label = ('Aktualizacja: {0}' -f $item.Name) }
+                    $upgrade = @{ Id = [string]$item.Id }
+                    if ($item.RunAs -eq 'User' -and $item.UserSid) {
+                        $upgrade['UserSid'] = [string]$item.UserSid
+                    }
+                    @{ Command = 'Update-MwpWingetPackage'; Parameters = $upgrade; Label = ('Aktualizacja: {0}{1}' -f $item.Name, $(if ($item.ContextText) { ' (' + $item.ContextText + ')' } else { '' })) }
                 })
             Invoke-MwpUiInstanceChange -Entry $Entry -Header 'Aktualizacja pakietów (winget)' -Target ('Pakiety: {0}' -f $selected.Count) -ConfirmText 'Aktualizuj' `
                 -AfterCommand $after -Owner $Owner -Steps $steps
@@ -99,9 +110,14 @@
             if ($null -eq $package) {
                 return
             }
-            Invoke-MwpUiInstanceChange -Entry $Entry -Header 'Instalacja pakietu (winget)' -Target ('{0} ({1}) {2}' -f $package.Name, $package.Id, $package.Version) `
+            $install = @{ Id = [string]$package.Id }
+            $installTarget = $p['InstallTargetBox'].SelectedItem
+            if ($null -ne $installTarget -and $installTarget.Value) {
+                $install['UserSid'] = [string]$installTarget.Value
+            }
+            Invoke-MwpUiInstanceChange -Entry $Entry -Header 'Instalacja pakietu (winget)' -Target ('{0} ({1}) {2} — {3}' -f $package.Name, $package.Id, $package.Version, $(if ($null -ne $installTarget) { $installTarget.Label } else { '' })) `
                 -ConfirmText 'Zainstaluj' -AfterCommand $after -Owner $Owner `
-                -Steps @(@{ Command = 'Install-MwpWingetPackage'; Parameters = @{ Id = [string]$package.Id }; Label = ('Instalacja: {0}' -f $package.Name) })
+                -Steps @(@{ Command = 'Install-MwpWingetPackage'; Parameters = $install; Label = ('Instalacja: {0}' -f $package.Name) })
         }
         'AppsUndoButton' {
             $undo = $p['AppsUndoGrid'].SelectedItem

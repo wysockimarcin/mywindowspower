@@ -63,22 +63,27 @@
                 $warnings.Add('Konto połączenia nie ma uprawnień administratora na tym komputerze: lista działa, zmiany są niedostępne.')
             }
         }
+        if ($null -ne $packages) {
+            foreach ($warning in @($packages.Warnings)) { $warnings.Add(('winget: {0}' -f $warning)) }
+        }
         if ($remote) {
-            $warnings.Add(('Komputer zdalny: pakiety Appx i winget dotyczą konta połączenia ({0}); programy innych użytkowników — tylko podgląd wybranego, zalogowanego profilu.' -f $(if ($null -ne $inventory) { $inventory.CurrentUser } else { $context.Identity.UserName })))
+            $warnings.Add(('Komputer zdalny: pakiety Appx dotyczą konta połączenia ({0}).' -f $(if ($null -ne $inventory) { $inventory.CurrentUser } else { $context.Identity.UserName })))
         }
         $p['AppsWarningText'].Text = $warnings -join [Environment]::NewLine
         $p['AppsWarningBanner'].Visibility = $(if ($warnings.Count -gt 0) { 'Visible' } else { 'Collapsed' })
+        $p['AppsContextText'].Text = Get-MwpAppsContextText -Remote $remote -Packages $packages
 
-        # Profile użytkowników (komputer zdalny): wybór zalogowanego profilu do odczytu jego programów.
-        $p['AppsProfilePanel'].Visibility = $(if ($remote -and $null -ne $inventory) { 'Visible' } else { 'Collapsed' })
-        if ($remote -and $null -ne $inventory) {
-            $selectedSid = @($view.UserSid) | Select-Object -First 1
-            $options = @([pscustomobject]@{ Label = '(bez programów użytkowników)'; Value = '' }) + @($inventory.Profiles | ForEach-Object {
-                    [pscustomobject]@{ Label = $(if ($_.IsCurrent) { '{0} (konto połączenia)' -f $_.Name } else { [string]$_.Name }); Value = [string]$_.Sid }
-                })
-            $p['AppsProfileBox'].ItemsSource = $options
-            $p['AppsProfileBox'].SelectedItem = @($options | Where-Object { $_.Value -eq [string]$selectedSid }) | Select-Object -First 1
-        }
+        # Profile użytkowników (localhost i komputer zdalny, D-051): wybór zalogowanego profilu do odczytu jego programów i pakietów.
+        $p['AppsProfilePanel'].Visibility = $(if ($null -ne $inventory) { 'Visible' } else { 'Collapsed' })
+        $selectedSid = [string](@($view.UserSid) | Select-Object -First 1)
+        $options = @(Get-MwpAppsTargetOption -Kind Profile -Inventory $inventory -Remote $remote)
+        $p['AppsProfileBox'].ItemsSource = $options
+        $p['AppsProfileBox'].SelectedItem = @($options | Where-Object { $_.Value -eq $selectedSid }) | Select-Object -First 1
+        $installSid = if ($null -ne $p['InstallTargetBox'].SelectedItem) { [string]$p['InstallTargetBox'].SelectedItem.Value } else { '' }
+        $targets = @(Get-MwpAppsTargetOption -Kind Install -Inventory $inventory -Remote $remote)
+        $p['InstallTargetBox'].ItemsSource = $targets
+        $again = @($targets | Where-Object { $_.Value -eq $installSid }) | Select-Object -First 1
+        $p['InstallTargetBox'].SelectedItem = $(if ($null -ne $again) { $again } else { $targets[0] })
 
         $p['UpgradesText'].Text = if ($view.PackagesLoading) {
             'Sprawdzanie pakietów winget na komputerze {0}…' -f $context.ComputerName
@@ -138,7 +143,7 @@
     $appId = if ($null -ne $grid.SelectedItem) { [string]$grid.SelectedItem.Id } else { '' }
     $ready = $connected -and $Entry.Busy -eq 0 -and -not $view.InventoryLoading
     $wingetOk = $null -ne $packages -and [bool]$packages.Success
-    $state = Get-MwpAppsActionState -Inventory $inventory -AppId $appId -WingetAvailable $wingetOk -Remote $remote -Ready $ready `
+    $state = Get-MwpAppsActionState -Inventory $inventory -AppId $appId -WingetAvailable $wingetOk -Packages $packages -Remote $remote -Ready $ready `
         -SelectedUpgrades @($p['UpgradesGrid'].SelectedItems).Count -SearchSelected ($null -ne $p['SearchGrid'].SelectedItem)
     if ($Selection) {
         $detail = Get-MwpAppsDetail -App $state.App

@@ -16,6 +16,14 @@
     .PARAMETER Id
         Tylko pakiet o tym identyfikatorze (dokładne dopasowanie).
 
+    .PARAMETER UserSid
+        Profile zalogowanych użytkowników, których pakiety dołączyć (D-051): winget w ich sesjach przez
+        zadanie harmonogramu. Na komputerze zdalnym uruchomienie podstawowe działa jako SYSTEM i widzi
+        tylko programy komputera; lokalnie — na koncie aplikacji. Pakiety mają RunAs/UserSid.
+
+    .PARAMETER UserOnly
+        Tylko w profilach z -UserSid (bez uruchomienia podstawowego).
+
     .EXAMPLE
         (Get-MwpWingetPackage -UpgradeAvailable).Data.Packages | Format-Table Name, Id, Version, Available
     #>
@@ -30,6 +38,11 @@
 
         [ValidateNotNullOrEmpty()]
         [string] $Id,
+
+        [ValidatePattern('^S-1-5-21-[0-9-]+$')]
+        [string[]] $UserSid = @(),
+
+        [switch] $UserOnly,
 
         [switch] $AsOperation
     )
@@ -46,21 +59,22 @@
         }
         $arguments += @('--id', $Id, '--exact')
     }
+    $run = @{ Context = $Context; Argument = $arguments; Operation = $operation; UserSid = $UserSid; UserOnly = $UserOnly }
     if ($AsOperation) {
-        return Invoke-MwpWinget -Context $Context -Argument $arguments -Operation $operation -AsOperation
+        return Invoke-MwpWinget @run -AsOperation
     }
-    $call = Invoke-MwpWinget -Context $Context -Argument $arguments -Operation $operation -AllowedExitCode 0x8A150014L
+    $call = Invoke-MwpWinget @run -AllowedExitCode 0x8A150014L
     if ($null -ne $call.Result) {
         return New-MwpResult @common -Success $false -Message $call.Message -ErrorMessage $call.ErrorMessage
     }
-    $list = Resolve-MwpWingetPackage -Kind List -Data ([pscustomobject]@{
-            Kind = 'MWP.WingetRaw'; Found = $call.Found; WingetPath = $call.WingetPath; ExitCode = $call.ExitCode; TimedOut = $false
-            Lines = $call.Lines; Error = $null; DurationMs = $call.DurationMs
-        })
-    if (-not $call.Success) {
+    $list = Resolve-MwpWingetPackage -Kind List -Data $call.Raw -ComputerName $Context.ComputerName
+    if ($null -eq $list -or -not $list.Success) {
         return New-MwpResult @common -Success $false -Message $call.Message -ErrorMessage $call.ErrorMessage -Data $list
     }
     $count = @($list.Packages).Count
     $message = if ($UpgradeAvailable) { "Komputer '{0}': {1} pakietów z dostępną aktualizacją (winget)." -f $Context.ComputerName, $count } else { "Komputer '{0}': {1} pakietów rozpoznanych przez winget." -f $Context.ComputerName, $count }
+    if (@($list.Warnings).Count -gt 0) {
+        $message += ' Uwaga: ' + (@($list.Warnings) -join ' ')
+    }
     New-MwpResult @common -Success $true -Message $message -Data $list
 }

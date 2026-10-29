@@ -27,7 +27,7 @@
     if ($App.WingetLocalId) { $lines.Add(('Identyfikator lokalny winget: {0}' -f $App.WingetLocalId)) }
     if ($App.PackageFullName) { $lines.Add(('Pakiet: {0}' -f $App.PackageFullName)) }
     if ($App.InstallLocation) { $lines.Add(('Lokalizacja: {0}' -f $App.InstallLocation)) }
-    $method = if ($App.UninstallMethod -eq 'Appx') { 'Remove-AppxPackage (konto sesji)' } else { 'winget uninstall (identyfikator lokalny)' }
+    $method = if ($App.UninstallMethod -eq 'Appx') { 'Remove-AppxPackage (konto sesji)' } elseif ($App.Scope -eq 'User' -and $App.UserName) { 'winget uninstall (identyfikator lokalny) w sesji użytkownika {0}' -f $App.UserName } else { 'winget uninstall (identyfikator lokalny)' }
     $lines.Add(('Odinstalowanie: {0}{1}' -f $method, $(if ($App.WingetId) { ' · cofnięcie przez ponowną instalację z winget' } else { ' · bez cofnięcia' })))
     if ($App.IsProtected) { $lines.Add(('Chroniona — nie można odinstalować z aplikacji: {0}' -f $App.ProtectedReason)) }
     if ($App.Warning) { $lines.Add(('Uwaga: {0}' -f $App.Warning)) }

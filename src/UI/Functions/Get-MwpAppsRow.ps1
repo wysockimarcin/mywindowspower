@@ -7,7 +7,8 @@
         Czysta funkcja (bez WPF). -Inventory: aplikacje po filtrze Select-MwpInstalledApp (parametry
         z -Filter: Search, Source, Scope, IncludeSystemComponent, UpgradeOnly) z tekstami kolumn (data,
         rozmiar, ochrona). -Package: pakiety MWP.WingetList (aktualizacje albo wyszukiwanie);
-        -Installed (MWP.WingetList listy) oznacza wyniki wyszukiwania już zainstalowane.
+        -Installed (MWP.WingetList listy) oznacza wyniki wyszukiwania już zainstalowane. Wiersz pakietu
+        ma kontekst listy (D-051): RunAs, UserSid i tekst — SYSTEM, użytkownik albo pusty (konto aplikacji).
     #>
     [CmdletBinding(DefaultParameterSetName = 'Inventory')]
     [OutputType([pscustomobject])]
@@ -48,6 +49,9 @@
                 Match         = [string]$item.Match
                 InstalledText = $(if ($installedIds.ContainsKey([string]$item.Id)) { 'Tak ({0})' -f $installedIds[[string]$item.Id] } else { '' })
                 Note          = $(if ($item.Truncated) { 'Wartość ucięta przez winget' } elseif ($item.Table -gt 1) { 'Wymaga jawnego wskazania' } else { '' })
+                RunAs         = $(if ($null -ne $item.PSObject.Properties['RunAs']) { [string]$item.RunAs } else { '' })
+                UserSid       = $(if ($null -ne $item.PSObject.Properties['UserSid']) { [string]$item.UserSid } else { '' })
+                ContextText   = $(if ($null -eq $item.PSObject.Properties['RunAs']) { '' } elseif ($item.RunAs -eq 'System') { 'SYSTEM' } elseif ($item.RunAs -eq 'User') { $(if ($item.UserName) { [string]$item.UserName } else { [string]$item.UserSid }) } else { '' })
             }
         }
         return

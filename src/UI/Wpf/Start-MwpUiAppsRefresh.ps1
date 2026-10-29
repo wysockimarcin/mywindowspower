@@ -9,7 +9,8 @@
         (All) — programy i pakiety równolegle; po obu wynikach lista programów jest łączona z winget
         (Join-MwpAppWinget: identyfikator i dostępna aktualizacja). Błąd lub utrata połączenia zmienia
         tylko ten widok (komunikat), nie aplikację (D-019). Komputer zdalny bez poświadczeń: komunikat
-        z prośbą o „Połącz”.
+        z prośbą o „Połącz”. Pakiety winget wybranego profilu użytkownika są czytane w jego sesji
+        (D-051: -UserSid; na komputerze zdalnym podstawowa lista działa jako SYSTEM).
 
     .PARAMETER Kind
         All (domyślnie), Inventory, Packages albo Search.
@@ -56,7 +57,11 @@
             $name = 'Aplikacje: lista programów ({0})' -f $context.ComputerName
         }
         'Packages' {
-            $operation = Get-MwpWingetPackage -Context $context -AsOperation
+            $packageParameters = @{ Context = $context; AsOperation = $true }
+            if (@($view.UserSid).Count -gt 0) {
+                $packageParameters['UserSid'] = [string[]]@($view.UserSid)
+            }
+            $operation = Get-MwpWingetPackage @packageParameters
             $name = 'Aplikacje: winget list ({0})' -f $context.ComputerName
         }
         'Search' {
@@ -88,8 +93,8 @@
         if ($null -ne $result -and $result.Success) {
             $data = switch ($kind) {
                 'Inventory' { Resolve-MwpInstalledApp -Data $result }
-                'Packages' { Resolve-MwpWingetPackage -Kind List -Data $result }
-                'Search' { Resolve-MwpWingetPackage -Kind Search -Data $result }
+                'Packages' { Resolve-MwpWingetPackage -Kind List -Data $result -ComputerName $entry.Instance.Context.ComputerName }
+                'Search' { Resolve-MwpWingetPackage -Kind Search -Data $result -ComputerName $entry.Instance.Context.ComputerName }
             }
         }
         if ($null -ne $data -and -not ($kind -eq 'Inventory' -and $data.Error)) {

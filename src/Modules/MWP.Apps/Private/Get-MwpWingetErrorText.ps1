@@ -25,6 +25,7 @@
         '0x8A150014' = 'nie znaleziono pakietu pasującego do kryteriów'
         '0x8A150016' = 'kryteria pasują do wielu pakietów'
         '0x8A15002B' = 'brak aktualizacji do zainstalowania'
+        '0x8A150046' = 'źródło winget (np. msstore) wymaga akceptacji umów przez konto, które uruchamia winget'
     }
     $last = @($Line | Where-Object { $_ -and $_.Trim() -and $_ -notmatch '^\s*[-\\|/]\s*$' }) | Select-Object -Last 1
     $text = if ($known.ContainsKey($hex)) { $known[$hex] } elseif ($hex) { 'kod {0}' -f $hex } else { 'brak kodu wyjścia' }

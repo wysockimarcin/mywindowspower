@@ -1,7 +1,8 @@
 <!-- Widok modułu Aplikacje (FAZA 12, D-050): zainstalowane programy z rejestru i pakiety Appx (filtry, sortowanie
      kolumnami, szczegóły, ochrona), odinstalowanie z podglądem i potwierdzeniem, aktualizacje winget (pojedyncza i zaznaczone),
      wyszukiwanie i instalacja pakietu z repozytorium winget oraz zmiany do cofnięcia. Wstawiany do widoku instancji
-     (Instance.xaml, ModuleHost). Kod: Initialize-/Update-MwpAppsView. -->
+     (Instance.xaml, ModuleHost). Kod: Initialize-/Update-MwpAppsView. Korekta D-051: kontekst wykonania winget
+     (AppsContextText), profil użytkownika także na localhost, kontekst pakietu w aktualizacjach, miejsce instalacji. -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
@@ -15,6 +16,7 @@
             <TextBlock x:Name="AppsStatusText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
                        Text="Odczyt listy programów…"/>
         </DockPanel>
+        <TextBlock x:Name="AppsContextText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
         <Border x:Name="AppsWarningBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,10,0,0" Visibility="Collapsed">
             <TextBlock x:Name="AppsWarningText" TextWrapping="Wrap"/>
         </Border>
@@ -31,7 +33,7 @@
                         <CheckBox x:Name="AppsUpgradeCheck" Content="Tylko z aktualizacją" VerticalAlignment="Center" Margin="0,0,12,8"/>
                     </WrapPanel>
                     <WrapPanel x:Name="AppsProfilePanel" Visibility="Collapsed">
-                        <TextBlock Text="Programy profilu (zalogowany użytkownik):" VerticalAlignment="Center" Margin="0,0,6,8"/>
+                        <TextBlock Text="Programy i pakiety profilu (zalogowany użytkownik):" VerticalAlignment="Center" Margin="0,0,6,8"/>
                         <ComboBox x:Name="AppsProfileBox" Width="260" Margin="0,0,8,8" DisplayMemberPath="Label"/>
                         <Button x:Name="AppsProfileButton" Content="Wczytaj" Margin="0,0,8,8"/>
                     </WrapPanel>
@@ -76,6 +78,7 @@
                             <DataGridTextColumn Header="Identyfikator" Binding="{Binding Id}" Width="2*"/>
                             <DataGridTextColumn Header="Wersja" Binding="{Binding Version}" Width="120"/>
                             <DataGridTextColumn Header="Dostępna" Binding="{Binding Available}" Width="120"/>
+                            <DataGridTextColumn Header="Kontekst" Binding="{Binding ContextText}" Width="140"/>
                             <DataGridTextColumn Header="Uwagi" Binding="{Binding Note}" Width="2*"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -106,6 +109,9 @@
                         </DataGrid.Columns>
                     </DataGrid>
                     <WrapPanel Margin="0,10,0,0">
+                        <TextBlock Text="Zainstaluj dla:" VerticalAlignment="Center" Margin="0,0,6,8"/>
+                        <ComboBox x:Name="InstallTargetBox" Width="300" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"
+                                  ToolTip="Komputer zdalny: domyślnie dla wszystkich użytkowników (SYSTEM, --scope machine). Profil użytkownika — instalacja w jego sesji (musi być zalogowany)."/>
                         <Button x:Name="InstallButton" Style="{StaticResource Mwp.Button.Accent}" Content="Zainstaluj…" Margin="0,0,8,8"/>
                     </WrapPanel>
                 </StackPanel>

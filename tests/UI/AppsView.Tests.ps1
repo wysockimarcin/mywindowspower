@@ -3,6 +3,8 @@
     Testy logiki prezentacji widoku aplikacji (FAZA 12, D-050) bez WPF: katalog widoków modułów, wiersze tabel
     (programy z filtrem, aktualizacje, wyniki wyszukiwania z oznaczeniem zainstalowanych), dostępność przycisków
     (ochrona, komputer zdalny bez administratora, program innego profilu, brak winget), szczegóły i pozycje list.
+    Korekta D-051: program innego profilu w jego sesji (lokalnie z administratorem, zablokowany, gdy profil
+    niezalogowany), kontekst pakietów (SYSTEM / użytkownik), profile i miejsce instalacji, tekst kontekstu winget.
     Dane z Resolve-MwpInstalledApp na surowym JSON — bez wywołań systemowych.
 #>
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '',
@@ -30,7 +32,7 @@ Describe 'MWP.UI — widok aplikacji (logika prezentacji)' {
                 Appx = @(
                     [pscustomobject]@{ Name = 'Microsoft.WindowsCamera'; DisplayName = 'Aparat'; PackageFullName = 'Microsoft.WindowsCamera_1_x64__8wekyb3d8bbwe'; PackageFamilyName = 'Microsoft.WindowsCamera_8wekyb3d8bbwe'; Publisher = 'CN=Microsoft Corporation, O=Microsoft Corporation'; Version = '1'; Architecture = 'X64'; SignatureKind = 'Store'; IsFramework = $false; IsResourcePackage = $false; IsBundle = $false; NonRemovable = $false; InstallLocation = '' }
                 )
-                Profiles = @(); Warnings = @(); Error = $null
+                Profiles = @([pscustomobject]@{ Sid = 'S-1-5-21-1-1000'; Name = 'PC\test'; IsCurrent = $true }, [pscustomobject]@{ Sid = 'S-1-5-21-1-1001'; Name = 'PC\anna'; IsCurrent = $false }); Warnings = @(); Error = $null
             }
             $inventory = Resolve-MwpInstalledApp -Data (ConvertTo-Json -Depth 6 -Compress -InputObject $raw)
             $packages = @([pscustomobject]@{ Name = 'Git'; Id = 'Git.Git'; Version = '2.55'; Available = '2.56'; HasUpgrade = $true; Match = ''; Source = 'winget'; IsLocalId = $false; Truncated = $false; Table = 1 })
@@ -102,7 +104,7 @@ Describe 'MWP.UI — widok aplikacji (logika prezentacji)' {
         (Get-MwpAppsActionState -Inventory $inventory -AppId (Get-AppId $inventory 'Git') -WingetAvailable $true -Ready $false).CanUninstall | Should -BeFalse
     }
 
-    It 'komputer zdalny: bez administratora zmiany wyłączone; program innego profilu tylko do odczytu; wyszukiwanie i instalacja wymagają winget' {
+    It 'komputer zdalny: bez administratora zmiany wyłączone; program innego profilu w jego sesji (zablokowany, gdy niezalogowany); wyszukiwanie i instalacja wymagają winget' {
         $inventory = Get-TestInventory -Admin $false
         $state = Get-MwpAppsActionState -Inventory $inventory -AppId (Get-AppId $inventory 'Git') -WingetAvailable $true -Remote $true -SelectedUpgrades 2 -SearchSelected $true
         $state.CanUninstall | Should -BeFalse
@@ -111,8 +113,15 @@ Describe 'MWP.UI — widok aplikacji (logika prezentacji)' {
         $state.Hint | Should -Match 'administratora'
         $admin = Get-TestInventory
         $anna = Get-MwpAppsActionState -Inventory $admin -AppId (Get-AppId $admin 'Program Anny') -WingetAvailable $true -Remote $true
-        $anna.CanUninstall | Should -BeFalse
-        $anna.Hint | Should -Match 'PC\\anna'
+        $anna.CanUninstall | Should -BeTrue
+        $anna.Hint | Should -Match 'w sesji tego użytkownika'
+        $loggedOff = [pscustomobject]@{ Packages = @(); Runs = @([pscustomobject]@{ RunAs = 'System'; UserSid = ''; Success = $true; Message = '' }, [pscustomobject]@{ RunAs = 'User'; UserSid = 'S-1-5-21-1-1001'; UserName = 'PC\anna'; Success = $false; Message = 'Użytkownik PC\anna nie jest zalogowany na komputerze ''PC''.' }) }
+        $blocked = Get-MwpAppsActionState -Inventory $admin -AppId (Get-AppId $admin 'Program Anny') -WingetAvailable $true -Packages $loggedOff -Remote $true
+        $blocked.CanUninstall | Should -BeFalse
+        $blocked.Hint | Should -Match 'nie jest zalogowany'
+        # localhost: program innego profilu w jego sesji tylko jako administrator.
+        (Get-MwpAppsActionState -Inventory (Get-TestInventory -Admin $false) -AppId (Get-AppId $admin 'Program Anny') -WingetAvailable $true).Hint | Should -Match 'administrator'
+        (Get-MwpAppsActionState -Inventory $admin -AppId (Get-AppId $admin 'Program Anny') -WingetAvailable $true).CanUninstall | Should -BeTrue
         $ok = Get-MwpAppsActionState -Inventory $admin -AppId '' -WingetAvailable $true -Remote $true -SelectedUpgrades 1 -SearchSelected $true
         $ok.CanUpgrade | Should -BeTrue
         $ok.CanInstall | Should -BeTrue
@@ -131,5 +140,29 @@ Describe 'MWP.UI — widok aplikacji (logika prezentacji)' {
         (Get-MwpAppsDetail -App $null).Title | Should -Match 'Wybierz'
         @(Get-MwpAppsViewOption -Kind Source).Value | Should -Be @('All', 'Registry', 'Appx')
         @(Get-MwpAppsViewOption -Kind Scope).Value | Should -Be @('All', 'Machine', 'User')
+    }
+
+    It 'kontekst winget (D-051): profile i miejsce instalacji, kontekst pakietów w aktualizacjach, aktualizacja pakietu profilu w jego sesji' {
+        $inventory = Get-TestInventory
+        @(Get-MwpAppsTargetOption -Kind Profile -Inventory $inventory -Remote $true).Value | Should -Be @('', 'S-1-5-21-1-1000', 'S-1-5-21-1-1001')
+        @(Get-MwpAppsTargetOption -Kind Profile -Inventory $inventory).Value | Should -Be @('', 'S-1-5-21-1-1001')
+        $install = @(Get-MwpAppsTargetOption -Kind Install -Inventory $inventory -Remote $true)
+        $install[0].Label | Should -Match 'SYSTEM'
+        $install[0].Value | Should -Be ''
+        (Get-MwpAppsTargetOption -Kind Install -Inventory $null)[0].Label | Should -Be 'Konto aplikacji'
+        $list = [pscustomobject]@{
+            Packages = @(
+                [pscustomobject]@{ Name = 'Git'; Id = 'Git.Git'; Version = '2.55'; Available = '2.56'; HasUpgrade = $true; Match = ''; Truncated = $false; Table = 1; RunAs = 'System'; UserSid = ''; UserName = '' }
+                [pscustomobject]@{ Name = 'Teams'; Id = 'Microsoft.Teams'; Version = '1'; Available = '2'; HasUpgrade = $true; Match = ''; Truncated = $false; Table = 1; RunAs = 'User'; UserSid = 'S-1-5-21-1-1001'; UserName = 'PC\anna' }
+            )
+            Runs     = @([pscustomobject]@{ RunAs = 'System'; UserSid = ''; Success = $true; Message = '' }, [pscustomobject]@{ RunAs = 'User'; UserSid = 'S-1-5-21-1-1001'; UserName = 'PC\anna'; Success = $true; Message = '' })
+        }
+        $rows = @(Get-MwpAppsRow -Package $list)
+        $rows[0].ContextText | Should -Be 'SYSTEM'
+        $rows[1].ContextText | Should -Be 'PC\anna'
+        $rows[1].UserSid | Should -Be 'S-1-5-21-1-1001'
+        (Get-MwpAppsActionState -Inventory $inventory -AppId (Get-AppId $inventory 'Git') -WingetAvailable $true -Packages $list -Remote $true).UpgradeUserSid | Should -Be ''
+        Get-MwpAppsContextText -Remote $true -Packages $list | Should -Match 'SYSTEM.*Profil PC\\anna: odczytany'
+        Get-MwpAppsContextText | Should -Match 'bezpośrednio na koncie aplikacji'
     }
 }

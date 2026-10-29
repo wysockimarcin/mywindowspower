@@ -17,6 +17,20 @@
 
 ---
 
+## Korekta po FAZIE 12 — winget na komputerze zdalnym (2026-10-29)
+- Status: ZAKOŃCZONA (korekta, nie nowa faza; status FAZY 12 bez zmian; ręczna weryfikacja na komputerze zdalnym — lista w pliku FAZY 12, sekcja „Korekta D-051”)
+- Commit: `FAZA 12 (korekta): winget na komputerze zdalnym przez zadanie harmonogramu — parytet z localhost (D-051)` — hash do uzupełnienia na starcie FAZY 13
+- Start: FAZA 12 zamknięta (`6436379`), prompt korekty w `56b346b`; baza testów — 5.1.26100.9711: 0 uwag, 1913/1913; 7.6.7: 0 uwag, 1913/1913.
+- Powód: wymaganie użytkownika — moduł Aplikacje ma działać tak samo dla `localhost` i komputera zdalnego; w sesji WinRM winget nie działa (D-050).
+- Sonda (za zgodą użytkownika, 2 rundy, skrypt poza repozytorium, zadania i pliki usunięte i sprawdzone): SYSTEM uruchamia `winget.exe` z pakietu App Installer wszystkich użytkowników (`--version`, `list --source winget`, `search` — kod 0), bez `--source` — `0x8A150046` (umowa `msstore`), SYSTEM nie widzi programów użytkownika; zadanie `Interactive` zalogowanego użytkownika działa w jego sesji (jego programy); narzut ok. 3 s; zatrzymanie zadania działa.
+- Decyzje użytkownika (2026-10-29): zgoda na umowy źródeł przy odinstalowaniu programu spoza repozytorium winget (w podglądzie); profil niezalogowanego właściciela — odmowa przed podglądem; parytet także lokalnie dla innych profili; instalacja zdalnie domyślnie jako SYSTEM (`--scope machine`) z wyborem użytkownika.
+- Zrobiono: D-051; `MWP.Apps` 0.12.1 — `Invoke-MwpWinget` z planem uruchomienia (`Direct`/`System`/`User`), blok `WingetTask` (jednorazowe zadania `\MyWindowsPower\MWP-Winget-<GUID>`, stały skrypt `Get-MwpWingetTaskScript` z blokiem `Winget` w żądaniu, wynik JSON w `%ProgramData%\MyWindowsPower\winget` z ACL, limit, przerwanie z zatrzymaniem drzewa procesów, sprzątanie osieroconych zadań i plików), `-UserSid` w liście, instalacji, aktualizacji i odinstalowaniu, zestaw przebiegów w `Resolve-MwpWingetPackage`, kontekst w podglądzie, logu i wyniku, `0x8A150046` po polsku. Widok: kontekst winget, profil także na `localhost`, kolumna „Kontekst” aktualizacji, „Zainstaluj dla”. Dokumentacja: `DECYZJE` (D-051, status D-050), `ARCHITEKTURA` (Aplikacje, ograniczenia zdalne, testy architektoniczne), `FAZA_12_APLIKACJE` (korekta z tabelą parytetu i listą weryfikacji), `STAN_PROJEKTU`.
+- Testy: 5.1.26100.9711 — 0 uwag, 1943/1943; 7.6.7 — 0 uwag, 1943/1943 (+30: `Apps.Tests.ps1` 34 → 47, `AppsView.Tests.ps1` 6 → 7, testy kodowania i eksportu nowych plików). Symulator harmonogramu w `Apps.Tests.ps1` (zadanie wykonuje skrypt ze swojego polecenia; tryby zawieszenia i awarii), nowe przypadki zdalne i lokalne (lista, aktualizacje, wyszukiwanie, profile, odinstalowanie SYSTEM i w sesji właściciela, instalacja, aktualizacja, limit i przerwanie, osierocone zadania, brak administratora, brak App Installer, OEM, Id ze spacją, sekrety i długość polecenia); `AppsView.Tests.ps1` — kontekst i profile.
+- Niezrobione / odroczone: prawdziwe zmiany na komputerze zdalnym (weryfikacja ręczna); pakiety Appx zalogowanego użytkownika zdalnie (dług); anulowanie lokalnego `Direct` nadal nie zatrzymuje procesu winget (dług D-050).
+- Decyzje: D-051 (D-050 — zakres zdalny zastąpiony).
+- Uwaga: pliki nieśledzone sprzed fazy (`docs/04_PROMPTY/PROMPT_KOREKTA_D031.md`, `docs/scripts/`) pozostawione bez zmian i poza commitem.
+- Następna faza: FAZA 13 — Prywatność i tweaki
+
 ## FAZA 12 — Aplikacje i winget (2026-10-29)
 - Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwej instalacji, aktualizacji i odinstalowania oraz komputera zdalnego — lista w pliku fazy)
 - Commit: `FAZA 12: aplikacje i winget — programy z rejestru i Appx, winget z parsowaniem niezależnym od języka, aktualizacje, wyszukiwanie i instalacja, odinstalowanie z listą ochronną i widok modułu` — hash do uzupełnienia na starcie FAZY 13

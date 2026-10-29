@@ -5,7 +5,10 @@
     wyjściu) i kończy się podanym kodem (także HRESULT 0x8A15…); po poleceniu może podmienić listę pakietów
     i inwentarz (stan „po instalacji” / „po odinstalowaniu”). Inwentarz i usuwanie Appx to atrapy bloków komputera
     docelowego (mock Get-MwpAppsScript) czytające i zmieniające plik JSON w TestDrive. Komputer zdalny — mock
-    transportu WinRM. Testy nie instalują, nie aktualizują i nie usuwają prawdziwych programów; jedyny test na
+    transportu WinRM. winget przez zadania harmonogramu (D-051) — symulator harmonogramu w zakresie MWP.Remote
+    (tam wykonują się bloki): zarejestrowane zadanie „uruchamia się” przez wykonanie skryptu z jego polecenia
+    (-EncodedCommand), więc działa ten sam kod co na komputerze docelowym; tryby Hang (zadanie nie kończy się)
+    i Crash (kończy się bez wyniku); zalogowani użytkownicy i drzewo procesów przez mock CIM. Testy nie instalują, nie aktualizują i nie usuwają prawdziwych programów; jedyny test na
     prawdziwym systemie tylko czyta rejestr (blok Inventory bez Appx).
 #>
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '',
@@ -51,7 +54,9 @@ Describe 'MWP.Apps — aplikacje i winget' {
             'if "%C%"=="--version" set "C=version"'
             'if exist "%D%\%C%.next" copy /y "%D%\%C%.next" "%D%\list.txt" >nul'
             'if exist "%D%\%C%.inv" copy /y "%D%\%C%.inv" "%D%\inventory.json" >nul'
-            'if exist "%D%\%C%.txt" type "%D%\%C%.txt"'
+            'set "OUT=%D%\%C%.txt"'
+            'if defined MWP_FAKE_USER if exist "%D%\%C%.user.txt" set "OUT=%D%\%C%.user.txt"'
+            'if exist "%OUT%" type "%OUT%"'
             'set "CODE=0"'
             'if exist "%D%\%C%.code" set /p CODE=<"%D%\%C%.code"'
             'exit /b %CODE%'
@@ -59,10 +64,122 @@ Describe 'MWP.Apps — aplikacje i winget' {
         $script:ConfiguredWinget = $script:WingetPath
         Mock -ModuleName MWP.Apps Get-MwpAppsTargetConfig {
             [pscustomobject]@{
-                Source = 'winget'; WingetPath = $script:ConfiguredWinget; ReadTimeoutSeconds = 60; ChangeTimeoutSeconds = 60; SearchCount = 50
+                Source = 'winget'; WingetPath = $script:ConfiguredWinget; ReadTimeoutSeconds = $script:ReadTimeout; ChangeTimeoutSeconds = 60; SearchCount = 50
                 RuntimePatterns = @('Microsoft Visual C++*Redistributable*', 'Microsoft .NET*Runtime*', 'Microsoft.VCRedist.*', 'Microsoft.DotNet.*')
+                TaskPath = '\MyWindowsPower\'; TaskPrefix = 'MWP-Winget-'; ResultRoot = $script:ResultRoot; ProtectResultRoot = $false; OrphanMinutes = 40
+                PollMilliseconds = 50; StartGraceSeconds = $script:StartGrace; MaxCommandLength = 16000; CheckAdministrator = $script:CheckAdmin
             }
         }
+        $script:ReadTimeout = 60
+        $script:StartGrace = 5
+        $script:CheckAdmin = $false
+        $script:ResultRoot = Join-Path -Path $TestDrive -ChildPath 'winget-results'
+        # Konto aplikacji = konto „test” z atrapy inwentarza; administrator lokalnie — wg testu.
+        Mock -ModuleName MWP.Apps Get-MwpAppsHostSid { 'S-1-5-21-1-2-3-1000' }
+        $script:LocalAdmin = $false
+        Mock -ModuleName MWP.Apps Test-MwpAdmin { $script:LocalAdmin }
+
+        # Symulator harmonogramu i procesów (D-051) w zakresie MWP.Remote — tam wykonują się bloki komputera docelowego.
+        $script:Tasks = New-Object -TypeName System.Collections.Generic.List[object]
+        $script:Calls = New-Object -TypeName System.Collections.Generic.List[string]
+        $script:TaskMode = 'Run'
+        $script:LoggedOn = @('S-1-5-21-1-2-3-1001')
+        Mock -ModuleName MWP.Remote New-ScheduledTaskAction { [pscustomobject]@{ Execute = $PesterBoundParameters['Execute']; Arguments = $PesterBoundParameters['Argument'] } }
+        Mock -ModuleName MWP.Remote New-ScheduledTaskTrigger { [pscustomobject]@{ StartBoundary = ([datetime]$PesterBoundParameters['At']).ToString('s'); EndBoundary = $null } }
+        Mock -ModuleName MWP.Remote New-ScheduledTaskPrincipal { [pscustomobject]@{ UserId = [string]$PesterBoundParameters['UserId']; LogonType = [string]$PesterBoundParameters['LogonType']; RunLevel = [string]$PesterBoundParameters['RunLevel'] } }
+        Mock -ModuleName MWP.Remote New-ScheduledTaskSettingsSet { [pscustomobject]@{ ExecutionTimeLimit = $PesterBoundParameters['ExecutionTimeLimit']; DeleteExpiredTaskAfter = $PesterBoundParameters['DeleteExpiredTaskAfter'] } }
+        Mock -ModuleName MWP.Remote Get-ScheduledTask {
+            $path = [string]$PesterBoundParameters['TaskPath']
+            $name = [string]$PesterBoundParameters['TaskName']
+            @($script:Tasks | Where-Object { $_.TaskPath -eq $path -and (-not $name -or $_.TaskName -eq $name) })
+        }
+        Mock -ModuleName MWP.Remote Get-ScheduledTaskInfo {
+            $task = @($script:Tasks | Where-Object { $_.TaskName -eq [string]$PesterBoundParameters['TaskName'] }) | Select-Object -First 1
+            if ($null -ne $task) { [pscustomobject]@{ LastRunTime = $task.LastRunTime; LastTaskResult = 1 } }
+        }
+        Mock -ModuleName MWP.Remote Unregister-ScheduledTask {
+            $name = [string]$PesterBoundParameters['TaskName']
+            $script:Calls.Add(('Unregister {0}' -f $name))
+            $task = @($script:Tasks | Where-Object { $_.TaskName -eq $name }) | Select-Object -First 1
+            if ($null -ne $task) { $null = $script:Tasks.Remove($task) }
+        }
+        Mock -ModuleName MWP.Remote Stop-ScheduledTask {
+            $script:Calls.Add(('Stop {0}' -f $PesterBoundParameters['TaskName']))
+            @($script:Tasks | Where-Object { $_.TaskName -eq [string]$PesterBoundParameters['TaskName'] }) | ForEach-Object { $_.State = 'Ready' }
+        }
+        # „Uruchomienie” zadania: skrypt z polecenia zadania (jak zrobiłby to harmonogram), zadanie użytkownika ze znacznikiem dla atrapy.
+        Mock -ModuleName MWP.Remote Start-ScheduledTask {
+            $name = [string]$PesterBoundParameters['TaskName']
+            $script:Calls.Add(('Start {0}' -f $name))
+            $task = @($script:Tasks | Where-Object { $_.TaskName -eq $name }) | Select-Object -First 1
+            $null = ([string]@($task.Actions)[0].Arguments) -match '-EncodedCommand\s+([A-Za-z0-9+/=]+)'
+            $text = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($Matches[1]))
+            $task.LastRunTime = Get-Date
+            switch ($script:TaskMode) {
+                'Hang' {
+                    $null = $text -match "FromBase64String\('([A-Za-z0-9+/=]+)'\)"
+                    $taskRequest = ConvertFrom-Json -InputObject ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Matches[1])))
+                    [IO.File]::WriteAllText([string]$taskRequest.PidFile, '4242')
+                    $task.State = 'Running'
+                }
+                'Crash' {
+                    $task.State = 'Ready'
+                }
+                default {
+                    if ([string]$task.Principal.LogonType -eq 'Interactive') { $env:MWP_FAKE_USER = '1' }
+                    try {
+                        & ((Get-Module -Name MWP.Remote).NewBoundScriptBlock([scriptblock]::Create($text)))
+                    }
+                    finally {
+                        Remove-Item -Path Env:\MWP_FAKE_USER -ErrorAction SilentlyContinue
+                    }
+                    $task.State = 'Ready'
+                }
+            }
+        }
+        Mock -ModuleName MWP.Remote Get-CimInstance {
+            $filter = [string]$PesterBoundParameters['Filter']
+            if ($filter -match 'explorer') { @($script:LoggedOn | ForEach-Object { [pscustomobject]@{ Name = 'explorer.exe'; Sid = $_ } }) }
+            elseif ($filter -eq 'ProcessId = 4242') { [pscustomobject]@{ Name = 'powershell.exe'; ProcessId = 4242 } }
+            elseif ($filter -eq 'ParentProcessId = 4242') { [pscustomobject]@{ Name = 'winget.exe'; ProcessId = 4243 } }
+        }
+        Mock -ModuleName MWP.Remote Invoke-CimMethod { [pscustomobject]@{ Sid = $PesterBoundParameters['InputObject'].Sid } } -RemoveParameterType InputObject
+        Mock -ModuleName MWP.Remote Stop-Process { $script:Calls.Add(('Kill {0}' -f (@($PesterBoundParameters['Id']) -join ','))) }
+        $script:CancelOnSleep = $false
+        Mock -ModuleName MWP.Remote Start-Sleep {
+            if ($script:CancelOnSleep) { throw 'Przerwano (symulacja anulowania operacji).' }
+            [Threading.Thread]::Sleep(20)
+        }
+        # Żądanie wewnątrz polecenia zadania (Base64 w skrypcie zadania): RunRequest, ResultFile, PidFile.
+        function Get-TaskRequest {
+            param([object] $Task)
+            $null = (Get-TaskCommandText -Task $Task) -match "FromBase64String\('([A-Za-z0-9+/=]+)'\)"
+            ConvertFrom-Json -InputObject ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Matches[1])))
+        }
+        function Get-TaskCommandText {
+            param([object] $Task)
+            $null = ([string]@($Task.Actions)[0].Arguments) -match '-EncodedCommand\s+([A-Za-z0-9+/=]+)'
+            [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($Matches[1]))
+        }
+        # Zadania zarejestrowane w tym teście (nazwy z dziennika wywołań); zasada i polecenie — w $script:Registered.
+        function Get-RegisteredTask {
+            @($script:Calls | Where-Object { $_ -like 'Register *' } | ForEach-Object { $script:Registered[$_.Substring(9)] })
+        }
+        $script:Registered = @{}
+        Mock -ModuleName MWP.Remote New-ScheduledTask {
+            [pscustomobject]@{ Actions = @($PesterBoundParameters['Action']); Triggers = @($PesterBoundParameters['Trigger']); Principal = $PesterBoundParameters['Principal']; Settings = $PesterBoundParameters['Settings']; Description = $PesterBoundParameters['Description'] }
+        } -RemoveParameterType Action, Trigger, Principal, Settings
+        Mock -ModuleName MWP.Remote Register-ScheduledTask {
+            $definition = $PesterBoundParameters['InputObject']
+            $name = [string]$PesterBoundParameters['TaskName']
+            $script:Calls.Add(('Register {0}' -f $name))
+            $entry = [pscustomobject]@{
+                TaskName = $name; TaskPath = [string]$PesterBoundParameters['TaskPath']; State = 'Ready'; LastRunTime = $null
+                Description = $definition.Description; Actions = $definition.Actions; Triggers = $definition.Triggers; Principal = $definition.Principal; Settings = $definition.Settings
+            }
+            $script:Registered[$name] = $entry
+            $script:Tasks.Add($entry)
+        } -RemoveParameterType InputObject
         $oemCodePage = [int](Get-ItemProperty -LiteralPath 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Nls\CodePage' -Name 'OEMCP').OEMCP
         $script:Oem = [Text.Encoding]::GetEncoding($oemCodePage)
 
@@ -142,7 +259,7 @@ Describe 'MWP.Apps — aplikacje i winget' {
                 ) -join [Environment]::NewLine))
         # Prawdziwe bloki zapamiętane przed mockiem (Winget uruchamia atrapę winget.cmd).
         $script:RealBlocks = @{}
-        foreach ($blockName in 'Inventory', 'Winget', 'RemoveAppx') {
+        foreach ($blockName in 'Inventory', 'Winget', 'WingetTask', 'RemoveAppx') {
             $script:RealBlocks[$blockName] = InModuleScope MWP.Apps -Parameters @{ Name = $blockName } { param($Name) Get-MwpAppsScript -Name $Name }
         }
         Mock -ModuleName MWP.Apps Get-MwpAppsScript {
@@ -178,6 +295,17 @@ Describe 'MWP.Apps — aplikacje i winget' {
         Write-FakeInventory -Inventory (Get-FakeInventory)
         Write-FakeWinget -Command 'version' -Line @('v1.29.380')
         Write-FakeWinget -Command 'list' -Line $script:ListGit
+        $script:Tasks.Clear()
+        $script:Calls.Clear()
+        $script:Registered = @{}
+        $script:TaskMode = 'Run'
+        $script:LoggedOn = @('S-1-5-21-1-2-3-1001')
+        $script:ReadTimeout = 60
+        $script:StartGrace = 5
+        $script:CheckAdmin = $false
+        $script:LocalAdmin = $false
+        $script:CancelOnSleep = $false
+        if (Test-Path -LiteralPath $script:ResultRoot) { Remove-Item -LiteralPath $script:ResultRoot -Recurse -Force }
     }
 
     AfterAll {
@@ -503,7 +631,8 @@ Describe 'MWP.Apps — aplikacje i winget' {
             $result.Success | Should -BeTrue -Because $result.Message
             $result.Changed | Should -BeTrue
             $result.Before | Should -Be '2.55.0.3'
-            @(Get-FakeArgument) | Should -Contain 'uninstall --id ARP\Machine\X64\Git_is1 --exact --silent --disable-interactivity'
+            # Program rozpoznany w repozytorium winget: tylko źródło winget (bez umów msstore, D-051).
+            @(Get-FakeArgument) | Should -Contain 'uninstall --id ARP\Machine\X64\Git_is1 --exact --silent --source winget --disable-interactivity'
             $log = @(Get-AppsLog | Where-Object { $_.operation -eq 'Apps.Uninstall' })
             $log.Count | Should -Be 2
             $log[-1].data.Name | Should -Be 'Git'
@@ -525,10 +654,12 @@ Describe 'MWP.Apps — aplikacje i winget' {
             $inventory.Registry = @($inventory.Registry | Where-Object { $_.KeyName -ne 'Edytor Pro' })
             Write-FakeWinget -Command 'uninstall' -Line @('Successfully uninstalled') -Inventory $inventory
             $editor = @((Get-MwpInstalledApp).Data.Apps) | Where-Object { $_.Name -eq 'Edytor Łódź' }
+            # Program spoza repozytorium winget: bez źródła, z akceptacją umów źródeł — zapowiedziane w podglądzie (D-051).
+            (Uninstall-MwpApp -AppId $editor.Id -WhatIf).Message | Should -Match 'msstore'
             $result = Uninstall-MwpApp -AppId $editor.Id -Confirm:$false
             $result.Success | Should -BeTrue -Because $result.Message
             $result.UndoId | Should -BeNullOrEmpty
-            @(Get-FakeArgument) | Should -Contain 'uninstall --id "ARP\Machine\X86\Edytor Pro" --exact --silent --disable-interactivity'
+            @(Get-FakeArgument) | Should -Contain 'uninstall --id "ARP\Machine\X86\Edytor Pro" --exact --silent --accept-source-agreements --disable-interactivity'
         }
 
         It 'pakiet Appx: Remove-AppxPackage konta sesji, bez wpisu cofnięcia; program nadal obecny = błąd' {
@@ -548,12 +679,18 @@ Describe 'MWP.Apps — aplikacje i winget' {
             @(Get-AppsLog | Where-Object { $_.operation -eq 'Apps.Uninstall' -and $_.level -eq 'Error' }).Count | Should -Be 1
         }
 
-        It 'program innego profilu i nieistniejący identyfikator są odrzucane przed podglądem' {
+        It 'program innego profilu lokalnie: bez administratora odmowa przed podglądem, jako administrator — w sesji tego użytkownika (D-051); nieistniejący identyfikator odrzucony' {
             $inventory = Get-MwpInstalledApp -UserSid 'S-1-5-21-1-2-3-1001'
             $anna = @($inventory.Data.Apps) | Where-Object { $_.Name -eq 'Narzędzie Anny' }
             $result = Uninstall-MwpApp -AppId $anna.Id -WhatIf
             $result.Success | Should -BeFalse
-            $result.Message | Should -Match 'PC\\anna'
+            $result.Message | Should -Match 'administrator'
+            $script:LocalAdmin = $true
+            $preview = Uninstall-MwpApp -AppId $anna.Id -WhatIf
+            $preview.IsPreview | Should -BeTrue -Because $preview.Message
+            $preview.Message | Should -Match 'w sesji użytkownika'
+            @(Get-RegisteredTask | Where-Object { $_.Principal.LogonType -eq 'Interactive' }).Count | Should -BeGreaterThan 0
+            @(Get-FakeArgument | Where-Object { $_ -like 'uninstall*' }).Count | Should -Be 0
             (Uninstall-MwpApp -AppId 'Registry:Machine:X64::Nie-ma' -WhatIf).Message | Should -Match 'nie ma już'
             { Uninstall-MwpApp -WingetId 'zły"id' -WhatIf } | Should -Throw
         }
@@ -621,7 +758,7 @@ Describe 'MWP.Apps — aplikacje i winget' {
         }
 
         It 'utrata połączenia w trakcie odinstalowania: błąd tylko tej instancji, inny kontekst działa' {
-            Mock -ModuleName MWP.Remote Invoke-MwpSessionCommand -ParameterFilter { $ScriptBlock.ToString() -match 'ProcessStartInfo' -and ($ArgumentList -join ' ') -match 'uninstall' } {
+            Mock -ModuleName MWP.Remote Invoke-MwpSessionCommand -ParameterFilter { $ScriptBlock.ToString() -match 'MWP.WingetRawSet' -and ($ArgumentList -join ' ') -match '"uninstall"' } {
                 throw (New-Object -TypeName Management.Automation.Remoting.PSRemotingTransportException -ArgumentList 'Połączenie zerwane')
             }
             $git = @((Get-MwpInstalledApp -Context $remote).Data.Apps) | Where-Object { $_.Name -eq 'Git' }
@@ -636,6 +773,264 @@ Describe 'MWP.Apps — aplikacje i winget' {
         }
     }
 
+    Context 'winget przez zadanie harmonogramu na komputerze zdalnym (D-051)' {
+        BeforeEach {
+            $script:RemoteAdmin = $true
+            Mock -ModuleName MWP.Remote Remove-MwpPSSession { }
+            Mock -ModuleName MWP.Remote New-MwpPSSession { [pscustomobject]@{ ComputerName = $ComputerName; State = 'Opened' } }
+            Mock -ModuleName MWP.Remote Invoke-MwpSessionCommand {
+                $bound = (Get-Module -Name MWP.Remote).NewBoundScriptBlock($ScriptBlock)
+                [pscustomobject]@{ Output = @(& $bound @ArgumentList); Errors = @() }
+            }
+            Mock -ModuleName MWP.Remote Invoke-MwpSessionCommand -ParameterFilter { $ScriptBlock.ToString() -match 'IsInRole' -and $ScriptBlock.ToString() -notmatch 'RequestJson' } {
+                [pscustomobject]@{ Output = @($script:RemoteAdmin); Errors = @() }
+            }
+            $remote = New-MwpExecutionContext -ComputerName $remoteName
+            $annaSid = 'S-1-5-21-1-2-3-1001'
+        }
+
+        It 'plan uruchomienia: localhost bezpośrednio, profil innego użytkownika — zadanie; komputer zdalny — SYSTEM i profile' {
+            InModuleScope MWP.Apps -Parameters @{ Remote = $remote } {
+                param($Remote)
+                $local = New-MwpExecutionContext
+                @(Get-MwpWingetRunPlan -Context $local).Mode | Should -Be @('Direct')
+                @(Get-MwpWingetRunPlan -Context $local -UserSid 'S-1-5-21-1-2-3-1000').Mode | Should -Be @('Direct')
+                @(Get-MwpWingetRunPlan -Context $local -UserSid 'S-1-5-21-1-2-3-1001').Mode | Should -Be @('Direct', 'User')
+                @(Get-MwpWingetRunPlan -Context $local -UserSid 'S-1-5-21-1-2-3-1001' -UserOnly).Mode | Should -Be @('User')
+                @(Get-MwpWingetRunPlan -Context $Remote).Mode | Should -Be @('System')
+                @(Get-MwpWingetRunPlan -Context $Remote -UserSid 'S-1-5-21-1-2-3-1001', 'S-1-5-21-1-2-3-1001').Mode | Should -Be @('System', 'User')
+            }
+        }
+
+        It 'lista zdalnie: zadanie SYSTEM ze stałym poleceniem, wynik jak lokalnie, zadanie i pliki usunięte, polecenie bez sekretów i w limicie długości' {
+            $result = Get-MwpWingetPackage -Context $remote
+            $result.Success | Should -BeTrue -Because $result.Message
+            $result.ComputerName | Should -Be $remoteName
+            @($result.Data.Packages).Count | Should -Be 3
+            $result.Data.RunAs | Should -Be 'System'
+            @($result.Data.Packages.RunAs | Select-Object -Unique) | Should -Be @('System')
+            @(Get-FakeArgument)[-1] | Should -Be 'list --source winget --disable-interactivity'
+            $task = @(Get-RegisteredTask)
+            $task.Count | Should -Be 1
+            $task[0].TaskPath | Should -Be '\MyWindowsPower\'
+            $task[0].TaskName | Should -Match '^MWP-Winget-[0-9a-f-]{36}$'
+            $task[0].Principal.UserId | Should -Be 'SYSTEM'
+            $arguments = [string]@($task[0].Actions)[0].Arguments
+            $arguments | Should -Match '^-NoProfile -NonInteractive -EncodedCommand [A-Za-z0-9+/=]+$'
+            $arguments.Length | Should -BeLessThan 16000
+            @($task[0].Actions)[0].Execute | Should -Match 'WindowsPowerShell\\v1\.0\\powershell\.exe$'
+            # Osierocone zadanie samo wygaśnie i zostanie usunięte przez harmonogram.
+            [datetime]@($task[0].Triggers)[0].EndBoundary | Should -BeGreaterThan (Get-Date)
+            $task[0].Settings.DeleteExpiredTaskAfter | Should -Not -BeNullOrEmpty
+            $text = Get-TaskCommandText -Task $task[0]
+            $text | Should -Not -Match 'Password|Credential|SecureString'
+            $null = $text -match "FromBase64String\('([A-Za-z0-9+/=]+)'\)"
+            [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Matches[1])) | Should -Not -Match 'Password|Credential'
+            $script:Tasks.Count | Should -Be 0
+            $script:Calls | Should -Contain ('Unregister {0}' -f $task[0].TaskName)
+            @(Get-ChildItem -LiteralPath $script:ResultRoot -Recurse -File -ErrorAction SilentlyContinue).Count | Should -Be 0
+        }
+
+        It 'aktualizacje i wyszukiwanie zdalnie: te same argumenty co lokalnie; polskie znaki w stronie OEM przez plik wyniku zadania' {
+            Write-FakeWinget -Command 'list' -Line (Get-ListLine -Header 'Nazwa', 'Identyfikator', 'Wersja', 'Dostępne' -Row @(, @('Edytor Łódź', 'Firma.Edytor', '1.0', '1.1')))
+            $upgrades = Get-MwpWingetPackage -Context $remote -UpgradeAvailable
+            $upgrades.Success | Should -BeTrue -Because $upgrades.Message
+            $upgrades.Data.Packages[0].Name | Should -Be 'Edytor Łódź'
+            $upgrades.Data.Packages[0].Available | Should -Be '1.1'
+            @(Get-FakeArgument)[-1] | Should -Be 'list --source winget --upgrade-available --disable-interactivity'
+            Write-FakeWinget -Command 'search' -Line $script:Search
+            $search = Find-MwpWingetPackage -Query '7 zip' -Context $remote
+            $search.Success | Should -BeTrue -Because $search.Message
+            $search.Data.Packages[0].Id | Should -Be '7zip.7zip'
+            @(Get-FakeArgument)[-1] | Should -Be 'search "7 zip" --source winget --count 50 --disable-interactivity'
+            (Get-MwpWingetInfo -Context $remote).Data.RunAs | Should -Be 'System'
+            # Surowy zestaw przebiegów (wynik operacji w tle): o sukcesie decyduje pierwszy, błąd profilu — ostrzeżenie.
+            $set = ConvertTo-Json -Depth 4 -Compress -InputObject ([pscustomobject]@{
+                    Kind = 'MWP.WingetRawSet'; ComputerName = 'PC'; IsAdministrator = $true; Warnings = @(); DurationMs = 10
+                    Runs = @(
+                        [pscustomobject]@{ Kind = 'MWP.WingetRaw'; Found = $true; WingetPath = 'w'; ExitCode = 0; TimedOut = $false; Lines = @($script:ListGit); Error = $null; DurationMs = 5; RunAs = 'System'; UserSid = ''; UserName = ''; Reason = '' }
+                        [pscustomobject]@{ Kind = 'MWP.WingetRaw'; Found = $false; WingetPath = ''; ExitCode = $null; TimedOut = $false; Lines = @(); Error = $null; DurationMs = 0; RunAs = 'User'; UserSid = $annaSid; UserName = 'PC\anna'; Reason = 'UserNotLoggedOn' }
+                    )
+                })
+            $resolved = Resolve-MwpWingetPackage -Data $set -ComputerName $remoteName
+            $resolved.Success | Should -BeTrue
+            $resolved.RunAs | Should -Be 'System'
+            @($resolved.Packages).Count | Should -Be 3
+            @($resolved.Warnings)[0] | Should -Match "PC\\anna nie jest zalogowany na komputerze '$remoteName'"
+        }
+
+        It 'profil zalogowanego użytkownika: zadanie Interactive w jego sesji, pakiety jego profilu dołączone; niezalogowany — ostrzeżenie' {
+            Write-FakeWinget -Command 'list' -Line $script:ListGit
+            [IO.File]::WriteAllText((Join-Path -Path $script:Fake -ChildPath 'list.user.txt'), ((Get-ListLine -Row @(@('Git', 'Git.Git', '2.55.0.3', '2.56.0.3'), @('Teams', 'Microsoft.Teams', '26.1', '26.2'))) -join "`r`n") + "`r`n", $script:Oem)
+            $result = Get-MwpWingetPackage -Context $remote -UserSid $annaSid
+            $result.Success | Should -BeTrue -Because $result.Message
+            @($result.Data.Packages).Count | Should -Be 4
+            ($result.Data.Packages | Where-Object { $_.Id -eq 'Microsoft.Teams' }).RunAs | Should -Be 'User'
+            ($result.Data.Packages | Where-Object { $_.Id -eq 'Microsoft.Teams' }).UserSid | Should -Be $annaSid
+            ($result.Data.Packages | Where-Object { $_.Id -eq 'Git.Git' }).RunAs | Should -Be 'System'
+            $tasks = @(Get-RegisteredTask)
+            $tasks.Count | Should -Be 2
+            ($tasks | Where-Object { $_.Principal.LogonType -eq 'Interactive' }).Principal.RunLevel | Should -Be 'Limited'
+            Test-Path -LiteralPath (Join-Path -Path $script:ResultRoot -ChildPath ('user-' + $annaSid)) | Should -BeTrue
+            $script:LoggedOn = @()
+            $script:Calls.Clear()
+            $alone = Get-MwpWingetPackage -Context $remote -UserSid $annaSid
+            $alone.Success | Should -BeTrue
+            @($alone.Data.Packages).Count | Should -Be 3
+            $alone.Message | Should -Match 'nie jest zalogowany'
+            @(Get-RegisteredTask).Count | Should -Be 1
+        }
+
+        It 'odinstalowanie programu komputera jako SYSTEM: Id lokalne ze spacją jako jeden argument, wpis cofnięcia z nazwą komputera' {
+            $inventory = Get-FakeInventory
+            $inventory.Registry = @($inventory.Registry | Where-Object { $_.KeyName -ne 'Edytor Pro' })
+            Write-FakeWinget -Command 'uninstall' -Line @('Successfully uninstalled') -Inventory $inventory
+            $editor = @((Get-MwpInstalledApp -Context $remote).Data.Apps) | Where-Object { $_.Name -eq 'Edytor Łódź' }
+            $preview = Uninstall-MwpApp -AppId $editor.Id -Context $remote -WhatIf
+            $preview.Message | Should -Match 'jako SYSTEM'
+            $result = Uninstall-MwpApp -AppId $editor.Id -Context $remote -Confirm:$false
+            $result.Success | Should -BeTrue -Because $result.Message
+            @(Get-FakeArgument) | Should -Contain 'uninstall --id "ARP\Machine\X86\Edytor Pro" --exact --silent --accept-source-agreements --disable-interactivity'
+            $uninstallTask = @(Get-RegisteredTask) | Where-Object { (Get-TaskCommandText -Task $_) -match 'FromBase64' } | Select-Object -Last 1
+            $uninstallTask.Principal.UserId | Should -Be 'SYSTEM'
+            (@(Get-AppsLog | Where-Object { $_.operation -eq 'Apps.Uninstall' -and $_.computer -eq $remoteName })[-1]).data.RunAs | Should -Be 'System'
+            $script:Tasks.Count | Should -Be 0
+        }
+
+        It 'odinstalowanie programu profilu: w sesji zalogowanego właściciela; niezalogowany — odmowa przed podglądem (jedyny wyjątek od parytetu)' {
+            $anna = @((Get-MwpInstalledApp -Context $remote -UserSid $annaSid).Data.Apps) | Where-Object { $_.Name -eq 'Narzędzie Anny' }
+            $inventory = Get-FakeInventory
+            $inventory.Registry = @($inventory.Registry | Where-Object { $_.KeyName -ne 'Narzedzie' })
+            Write-FakeWinget -Command 'uninstall' -Line @('Successfully uninstalled') -Inventory $inventory
+            $preview = Uninstall-MwpApp -AppId $anna.Id -Context $remote -WhatIf
+            $preview.IsPreview | Should -BeTrue -Because $preview.Message
+            $preview.Message | Should -Match 'w sesji użytkownika'
+            $script:Calls.Clear()
+            $result = Uninstall-MwpApp -AppId $anna.Id -Context $remote -Confirm:$false
+            $result.Success | Should -BeTrue -Because $result.Message
+            @(Get-FakeArgument) | Should -Contain 'uninstall --id ARP\User\X64\Narzedzie --exact --silent --accept-source-agreements --disable-interactivity'
+            $users = @(Get-RegisteredTask | Where-Object { $_.Principal.LogonType -eq 'Interactive' })
+            $users.Count | Should -BeGreaterThan 0
+            # Bez zalogowanego właściciela: odmowa przed podglądem, bez wywołania uninstall.
+            Write-FakeInventory -Inventory (Get-FakeInventory)
+            $script:LoggedOn = @()
+            $before = @(Get-FakeArgument | Where-Object { $_ -like 'uninstall*' }).Count
+            $denied = Uninstall-MwpApp -AppId $anna.Id -Context $remote -WhatIf
+            $denied.Success | Should -BeFalse
+            $denied.Message | Should -Match 'nie jest zalogowany'
+            $denied.Message | Should -Match $remoteName
+            @(Get-FakeArgument | Where-Object { $_ -like 'uninstall*' }).Count | Should -Be $before
+        }
+
+        It 'instalacja zdalnie: domyślnie SYSTEM z --scope machine i cofnięciem; dla zalogowanego użytkownika — w jego sesji, cofnięcie z jego profilem' {
+            Write-FakeWinget -Command 'search' -Line $script:Search
+            Write-FakeWinget -Command 'install' -Line @('Successfully installed') -Next (Get-ListLine -Row @(, @('7-Zip', '7zip.7zip', '26.05', '')))
+            $preview = Install-MwpWingetPackage -Id '7zip.7zip' -Context $remote -WhatIf
+            $preview.Message | Should -Match 'jako SYSTEM'
+            $preview.Message | Should -Match 'scope machine'
+            $result = Install-MwpWingetPackage -Id '7zip.7zip' -Context $remote -Confirm:$false
+            $result.Success | Should -BeTrue -Because $result.Message
+            @(Get-FakeArgument) | Should -Contain 'install --id 7zip.7zip --exact --source winget --silent --accept-package-agreements --accept-source-agreements --scope machine --disable-interactivity'
+            (Get-AppsUndo -ComputerName $remoteName | Where-Object { $_.Id -eq $result.UndoId }).UndoParameters.WingetId | Should -Be '7zip.7zip'
+            # Dla użytkownika: --scope user, zadanie Interactive, wpis cofnięcia z SID.
+            Write-FakeWinget -Command 'list' -Line $script:ListGit
+            $script:Calls.Clear()
+            $forUser = Install-MwpWingetPackage -Id '7zip.7zip' -UserSid $annaSid -Context $remote -Confirm:$false
+            $forUser.Success | Should -BeTrue -Because $forUser.Message
+            @(Get-FakeArgument)[-2] | Should -Be 'install --id 7zip.7zip --exact --source winget --silent --accept-package-agreements --accept-source-agreements --scope user --disable-interactivity'
+            $installTask = @(Get-RegisteredTask | Where-Object { (Get-TaskRequest -Task $_).RunRequest -match '"install"' })
+            $installTask.Count | Should -Be 1
+            $installTask[0].Principal.LogonType | Should -Be 'Interactive'
+            (Get-AppsUndo -ComputerName $remoteName | Where-Object { $_.Id -eq $forUser.UndoId }).UndoParameters.UserSid | Should -Be $annaSid
+            $script:LoggedOn = @()
+            (Install-MwpWingetPackage -Id '7zip.7zip' -UserSid $annaSid -Context $remote -WhatIf).Message | Should -Match 'nie jest zalogowany'
+        }
+
+        It 'aktualizacja zdalnie jako SYSTEM, pakiet profilu w sesji użytkownika' {
+            Write-FakeWinget -Command 'upgrade' -Line @('Successfully installed') -Next (Get-ListLine -Row @(, @('Git', 'Git.Git', '2.56.0.3', '')))
+            $result = Update-MwpWingetPackage -Id 'Git.Git' -Context $remote -Confirm:$false
+            $result.Success | Should -BeTrue -Because $result.Message
+            $result.After | Should -Be '2.56.0.3'
+            @(Get-RegisteredTask).Principal.UserId | Select-Object -Unique | Should -Be 'SYSTEM'
+            Write-FakeWinget -Command 'list' -Line $script:ListGit
+            $script:Calls.Clear()
+            (Update-MwpWingetPackage -Id 'Git.Git' -UserSid $annaSid -Context $remote -WhatIf).Message | Should -Match 'w sesji użytkownika'
+            @(Get-RegisteredTask).Principal.LogonType | Select-Object -Unique | Should -Be 'Interactive'
+        }
+
+        It 'przekroczenie limitu: zadanie zatrzymane, drzewo procesów zakończone, zadanie i pliki usunięte (8)' {
+            $script:TaskMode = 'Hang'
+            $script:ReadTimeout = 1
+            $script:StartGrace = 0
+            $result = Get-MwpWingetPackage -Context $remote
+            $result.Success | Should -BeFalse
+            $result.Message | Should -Match 'limicie czasu.*zatrzymane'
+            $name = @(Get-RegisteredTask)[0].TaskName
+            $script:Calls | Should -Contain ('Stop {0}' -f $name)
+            $script:Calls | Should -Contain 'Kill 4242'
+            $script:Calls | Should -Contain 'Kill 4243'
+            $script:Calls | Should -Contain ('Unregister {0}' -f $name)
+            $script:Tasks.Count | Should -Be 0
+            @(Get-ChildItem -LiteralPath $script:ResultRoot -Recurse -File -ErrorAction SilentlyContinue).Count | Should -Be 0
+        }
+
+        It 'przerwanie w trakcie (anulowanie operacji): zadanie zatrzymane i usunięte, błąd tylko tej instancji (8)' {
+            $script:TaskMode = 'Hang'
+            $script:CancelOnSleep = $true
+            $result = Get-MwpWingetPackage -Context $remote
+            $result.Success | Should -BeFalse
+            $name = @(Get-RegisteredTask)[0].TaskName
+            $script:Calls | Should -Contain ('Stop {0}' -f $name)
+            $script:Calls | Should -Contain 'Kill 4242'
+            $script:Tasks.Count | Should -Be 0
+            $script:CancelOnSleep = $false
+            $script:TaskMode = 'Run'
+            (Get-MwpWingetPackage).Success | Should -BeTrue
+        }
+
+        It 'zadanie zakończone bez wyniku: błąd bez czekania do limitu; osierocone zadania i pliki sprzątane przy następnym wywołaniu' {
+            $script:TaskMode = 'Crash'
+            $started = Get-Date
+            $crash = Get-MwpWingetPackage -Context $remote
+            $crash.Success | Should -BeFalse
+            $crash.Message | Should -Match 'bez wyniku'
+            ((Get-Date) - $started).TotalSeconds | Should -BeLessThan 30
+            $script:TaskMode = 'Run'
+            $old = [pscustomobject]@{ TaskName = 'MWP-Winget-stare'; TaskPath = '\MyWindowsPower\'; State = 'Ready'; LastRunTime = $null; Triggers = @([pscustomobject]@{ EndBoundary = (Get-Date).AddMinutes(-5).ToString('s') }); Actions = @(); Principal = $null; Settings = $null; Description = '' }
+            $busy = [pscustomobject]@{ TaskName = 'MWP-Winget-trwa'; TaskPath = '\MyWindowsPower\'; State = 'Running'; LastRunTime = $null; Triggers = @([pscustomobject]@{ EndBoundary = (Get-Date).AddMinutes(30).ToString('s') }); Actions = @(); Principal = $null; Settings = $null; Description = '' }
+            $other = [pscustomobject]@{ TaskName = 'MWP-NetworkRollback-1'; TaskPath = '\MyWindowsPower\'; State = 'Ready'; LastRunTime = $null; Triggers = @([pscustomobject]@{ EndBoundary = $null }); Actions = @(); Principal = $null; Settings = $null; Description = '' }
+            foreach ($task in $old, $busy, $other) { $script:Tasks.Add($task) }
+            $null = New-Item -ItemType Directory -Path $script:ResultRoot -Force
+            $stale = Join-Path -Path $script:ResultRoot -ChildPath 'MWP-Winget-stare.json'
+            Set-Content -LiteralPath $stale -Value '{}'
+            (Get-Item -LiteralPath $stale).LastWriteTime = (Get-Date).AddHours(-2)
+            (Get-MwpWingetPackage -Context $remote).Success | Should -BeTrue
+            @($script:Tasks.ToArray() | ForEach-Object { $_.TaskName }) | Should -Not -Contain 'MWP-Winget-stare'
+            @($script:Tasks.ToArray() | ForEach-Object { $_.TaskName }) | Should -Contain 'MWP-Winget-trwa'
+            @($script:Tasks.ToArray() | ForEach-Object { $_.TaskName }) | Should -Contain 'MWP-NetworkRollback-1'
+            Test-Path -LiteralPath $stale | Should -BeFalse
+        }
+
+        It 'brak administratora: odczyt winget zdalnie z czytelnym komunikatem, zmiany odrzucone przed podglądem (12)' -Skip:((New-Object -TypeName Security.Principal.WindowsPrincipal -ArgumentList ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            $script:CheckAdmin = $true
+            $result = Get-MwpWingetPackage -Context $remote
+            $result.Success | Should -BeFalse
+            $result.Message | Should -Match 'administratora'
+            $result.Message | Should -Match $remoteName
+            @(Get-RegisteredTask).Count | Should -Be 0
+            $script:RemoteAdmin = $false
+            (Install-MwpWingetPackage -Id '7zip.7zip' -Context $remote -WhatIf).Message | Should -Match 'administratora'
+        }
+
+        It 'winget niezainstalowany dla SYSTEM (brak pakietu App Installer): komunikat bez rejestracji zadania' {
+            $script:ConfiguredWinget = ''
+            Mock -ModuleName MWP.Remote Get-AppxPackage { @() }
+            $result = Get-MwpWingetPackage -Context $remote
+            $result.Success | Should -BeFalse
+            $result.Message | Should -Match 'niedostępny.*SYSTEM'
+            @(Get-RegisteredTask).Count | Should -Be 0
+        }
+    }
     Context 'kontrakt modułu i bloki komputera docelowego' {
         It 'manifest deklaruje komputer zdalny, tryby widoku i zgodny kontrakt' {
             $definition = @(Get-MwpModuleDefinition | Where-Object { $_.Id -eq 'Apps' })[0]
@@ -646,8 +1041,12 @@ Describe 'MWP.Apps — aplikacje i winget' {
         }
 
         It 'bloki parsują się bez błędów i nie używają składni tylko z 7.x' {
-            foreach ($name in 'Inventory', 'Winget', 'RemoveAppx') {
-                $block = $script:RealBlocks[$name]
+            $texts = @{ TaskScript = (InModuleScope MWP.Apps { Get-MwpWingetTaskScript }) }
+            foreach ($name in 'Inventory', 'Winget', 'WingetTask', 'RemoveAppx') {
+                $texts[$name] = $script:RealBlocks[$name].ToString()
+            }
+            foreach ($name in $texts.Keys) {
+                $block = $texts[$name]
                 $errors = $null
                 $null = [Management.Automation.Language.Parser]::ParseInput($block.ToString(), [ref]$null, [ref]$errors)
                 $errors | Should -BeNullOrEmpty -Because $name

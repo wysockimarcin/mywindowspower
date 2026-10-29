@@ -15,6 +15,7 @@ FAZY 2, 3 i 4 zakończone (widget statusu RDP wymaga też FAZY 5).
 - Widget „Status połączenia RDP z innym komputerem" dla Dashboardu.
 - Widoki `Rdp.xaml` i `Screenshot.xaml`; testy Pester z mockami.
 - Poświadczenia: magazyn istnieje od korekty D-052 (Menedżer poświadczeń Windows, wpis generic `MWP:<komputer>` tylko dla WinRM, adapter w `MWP.Remote`). Decyzja użytkownika (2026-10-29): RDP **nie współdzieli** tego wpisu — `mstsc` sam zarządza swoimi wpisami `TERMSRV/<komputer>`; aplikacja nie kopiuje haseł między wpisami.
+- Widget (korekta D-053): widget Dashboardu wg D-053 — każdy moduł deklaruje co najmniej jeden widget (reguła kompletności w `tests/UI/ModuleWidgets.Tests.ps1`): parametry wyboru danych z minimalnymi wartościami domyślnymi, `DefaultRefreshSeconds = 0` dla odczytów kosztownych, `LocalOnly`/`Enabled` w razie potrzeby; użytkownik ukrywa typ i ustawia domyślne parametry w widoku „Moduły” (sekcja „Widżety”).
 
 ## Poza zakresem
 Własny serwer lub agent zdalny, nagrywanie sesji, przesyłanie obrazu poza komputery użytkownika (dane zostają lokalnie).
@@ -27,6 +28,7 @@ Własny serwer lub agent zdalny, nagrywanie sesji, przesyłanie obrazu poza komp
 - [ ] Moduły dopisane do listy w `tests/Modules.Tests.ps1`
 - [ ] Widoki i widget statusu RDP
 - [ ] Działa dla `localhost` i dla komputera zdalnego (kontekst wykonania `-Context`, błąd połączenia obsłużony na poziomie instancji)
+- [ ] Widget Dashboardu zgodny z D-053 (parametry z minimum domyślnym, reguła kompletności)
 - [ ] Testy Pester, PSScriptAnalyzer
 - [ ] Dokumentacja zaktualizowana, commit `FAZA 18: ...`
 

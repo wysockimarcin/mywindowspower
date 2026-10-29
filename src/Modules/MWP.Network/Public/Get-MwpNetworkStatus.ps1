@@ -13,15 +13,23 @@
         runspace'ów (Start-MwpOperation) i zwraca uchwyt MWP.Operation — wynik zamienia
         Resolve-MwpNetworkStatus.
 
+    .PARAMETER WidgetParameters
+        Parametry widgetu „Sieć” (kontrakt D-043); dane są zawsze pełne, adaptery i szczegóły wybiera ConvertTo-MwpNetworkStatusView.
+
     .EXAMPLE
         (Get-MwpNetworkStatus).Data.Adapters | Format-Table Name, StatusText, IPv4Text, DnsText
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'WidgetParameters',
+        Justification = 'Parametr wymagany przez kontrakt widgetu (D-043, D-053); adaptery i szczegóły wybiera funkcja widoku.')]
     [CmdletBinding()]
     [OutputType([pscustomobject])]
     param(
         [Parameter(Position = 0)]
         [PSTypeName('MWP.ExecutionContext')]
         [object] $Context = (New-MwpExecutionContext),
+
+        [AllowNull()]
+        [Collections.IDictionary] $WidgetParameters,
 
         [switch] $AsOperation
     )

@@ -14,6 +14,7 @@ FAZY 2, 3 i 4 zakończone.
 - **Lista ochronna:** nie wyłączaj ostatniego aktywnego konta administratora, bieżącego konta ani kont wbudowanych krytycznych; nie usuwaj bieżącego użytkownika z grupy Administratorzy.
 - Cmdlety `Microsoft.PowerShell.LocalAccounts` (sprawdź dostępność i zgodność w 5.1 i 7.x, w razie potrzeby wariant przez CIM/ADSI); dla komputera zdalnego przez `Invoke-MwpOnTarget`.
 - Widok `Accounts.xaml`; testy Pester z mockami.
+- Widget: nowy moduł dostaje widget (np. „Konta lokalne”: liczba kont, wyłączone, administratorzy) — widget Dashboardu wg D-053 — każdy moduł deklaruje co najmniej jeden widget (reguła kompletności w `tests/UI/ModuleWidgets.Tests.ps1`): parametry wyboru danych z minimalnymi wartościami domyślnymi, `DefaultRefreshSeconds = 0` dla odczytów kosztownych, `LocalOnly`/`Enabled` w razie potrzeby; użytkownik ukrywa typ i ustawia domyślne parametry w widoku „Moduły” (sekcja „Widżety”).
 
 ## Poza zakresem
 Tworzenie i usuwanie kont, zmiana i reset haseł (sekrety), konta domenowe i Entra ID, polityki haseł.
@@ -25,6 +26,7 @@ Tworzenie i usuwanie kont, zmiana i reset haseł (sekrety), konta domenowe i Ent
 - [ ] Moduł dopisany do listy w `tests/Modules.Tests.ps1`
 - [ ] Widok `Accounts.xaml`
 - [ ] Działa dla `localhost` i dla komputera zdalnego (kontekst wykonania `-Context`, błąd połączenia obsłużony na poziomie instancji)
+- [ ] Widget Dashboardu zgodny z D-053 (parametry z minimum domyślnym, reguła kompletności)
 - [ ] Testy Pester, PSScriptAnalyzer
 - [ ] Dokumentacja zaktualizowana, commit `FAZA 17: ...`
 

@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Services.psm1'
-    ModuleVersion        = '0.7.0'
+    ModuleVersion        = '0.7.1'
     GUID                 = '1bb3180e-664a-4926-87f6-9b9ff8ebd1fa'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -54,10 +54,19 @@
                     ViewCommand           = 'ConvertTo-MwpServiceStatusView'
                     DefaultRefreshSeconds = 60
                     Parameters            = @{
-                        Names = @{
+                        Names    = @{
                             Type    = 'StringArray'
                             Default = @('WinRM', 'WinDefend', 'mpssvc', 'wuauserv', 'BITS', 'Spooler')
                             Label   = 'Obserwowane usługi (nazwy usług, po przecinku)'
+                        }
+                        # D-053: domyślnie minimum; PreviousDefault — dla widgetów zapisanych, zanim parametr istniał.
+                        Sections = @{
+                            Type            = 'StringArray'
+                            Default         = @('Watched')
+                            PreviousDefault = @('Watched', 'Summary', 'AutoStopped')
+                            Values          = @('Watched', 'Summary', 'AutoStopped')
+                            Label           = 'Sekcje'
+                            ValueLabels     = @{ Watched = 'Obserwowane usługi'; Summary = 'Podsumowanie'; AutoStopped = 'Automatyczne, zatrzymane' }
                         }
                     }
                 }

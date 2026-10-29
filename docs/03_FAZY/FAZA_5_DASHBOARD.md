@@ -78,5 +78,21 @@ Zakończona 2026-10-27.
 7. Paczka przykładowa `samples/MWP.Przyklad` 1.1.0 (instrukcja w `samples/README.md`; przy zainstalowanej wersji 1.0.0 najpierw ją odinstalować): instalacja, **Pulpit → + Dodaj widget → „Komputer (przykład)”** (localhost i komputer zdalny), potem **Moduły → odinstalowanie** — widgety modułu znikają z Pulpitu i z `config/settings.local.json`, pozostałe działają dalej. Wariant: zamknięcie aplikacji z widgetem modułu, ręczne usunięcie folderu modułu z `<katalog danych>\modules`, start — baner o pominiętym widgecie i brak wpisu w zapisie.
 8. Motyw ciemny i skalowanie 125–150% (kafelki, paski, okno edycji).
 
+### Korekta D-053 — widget w każdym module i konfiguracja widgetów modułu (2026-10-29)
+
+Powód: w oknie „Dodaj widżet” były tylko 3 typy (pole `Widgets` miały tylko `Dashboard`, `Power`, `Services`). Po korekcie każdy moduł deklaruje widget (13 typów; 11 na liście dodawania — zalążki `Security` i `Tweaks` domyślnie ukryte), a użytkownik w widoku „Moduły” (sekcja „Widżety”) ukrywa typy i ustawia domyślne parametry nowych widgetów. Szczegóły: D-053, `ARCHITEKTURA.md` („Dashboard i widgety”). Zainstalowana u użytkownika paczka `MWP.Przyklad` 1.0.0 nie ma widgetu — to stara wersja, nie błąd; widget „Komputer (przykład)” jest w 1.1.0 (`samples/MWP.Przyklad`). Host nie aktualizuje modułów (D-031): Moduły → „Odinstaluj” 1.0.0, potem „Zainstaluj z pliku .mwpmod…” z paczką 1.1.0 (instrukcja pakowania w `samples/README.md`).
+
+Do weryfikacji na Windows 11 — lista dla użytkownika (prawdziwa aplikacja; hasła tylko w oknie aplikacji, nigdy w rozmowie):
+1. Pulpit → „+ Dodaj widżet”: na liście są Windows Update, Sieć, Autostart, Programy, Aktualizacje programów, Miejsce do odzyskania, Dziennik operacji, Komputery oraz dotychczasowe Informacje o systemie, Zasilanie, Status usług; pozycje „tylko ten komputer” (Dziennik operacji, Komputery) nie pozwalają wybrać komputera zdalnego; lista jest czytelna (posortowana po module).
+2. Dodaj każdy nowy typ dla `localhost` i dla jednego komputera zdalnego (tam, gdzie się da): stany Ładowanie → Aktualne; odśwież ręcznie i poczekaj na automatyczne; nowy widget pokazuje tylko minimum danych (np. „Sieć” — połączone adaptery z IPv4, „Programy” — same liczby).
+3. Widgety kosztowne: „Miejsce do odzyskania” i „Aktualizacje programów” odświeżają się tylko ręcznie i nie blokują okna w trakcie (kilka–kilkanaście sekund); na komputerze zdalnym „Aktualizacje programów” bez konta administratora pokazuje czytelne ostrzeżenie; „Miejsce do odzyskania” niczego nie usuwa (porównaj z widokiem modułu Czyszczenie — te same sumy).
+4. Stany błędów: wyłączony komputer zdalny (Utrata połączenia), komputer bez hasła w pamięci (Wymaga poświadczeń → „Połącz”), widget „Komputery” pokazuje komputer jako niedostępny.
+5. Moduły → wybierz moduł → sekcja „Widżety”: odznacz „Pokazuj na liście »Dodaj widżet«” dla jednego typu — typ znika z okna „Dodaj widżet”, a dodany wcześniej widget tego typu zostaje na Pulpicie i po restarcie aplikacji też.
+6. „Moduł dostępny jako widżet” (odznacz/zaznacz) — wszystkie typy modułu znikają i wracają; dla `Security`/`Tweaks` zaznaczenie pokazuje widget-zalążek.
+7. Zmień domyślne parametry (np. „Informacje o systemie” — tylko System i Pamięć RAM), dodaj nowy widget — pokazuje tylko wybrane sekcje i zajmuje mniej miejsca; istniejące widgety bez zmian; „Przywróć domyślne” wraca do manifestu.
+8. `config/settings.local.json` ma tylko oczekiwane klucze `modules.<Id>.widgets.<Id>` (`visible`, `defaultParameters`); po odinstalowaniu modułu z paczki jego wpis `modules.<Id>` znika.
+9. Istniejące widgety „Zasilanie” i „Status usług” sprzed korekty wyglądają jak dotąd (wszystkie sekcje) — `PreviousDefault`; edycja widgetu pokazuje te sekcje zaznaczone.
+10. Paczka przykładowa: odinstaluj 1.0.0, zainstaluj 1.1.0 — pojawia się widget „Komputer (przykład)”.
+
 ## Następna faza
 FAZA 6 — Zasilanie. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_6.md`.

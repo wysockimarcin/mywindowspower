@@ -384,6 +384,28 @@ Describe 'MWP.Startup — autostart i harmonogram' {
         }
     }
 
+    Context 'widget Dashboardu (D-053)' {
+        It 'widok „Autostart”: domyślnie podsumowanie; włączone i ryzykowne z parametrów; brak danych bez wyjątku' {
+            $data = (Get-MwpStartupItem -Context $context).Data
+            $view = ConvertTo-MwpStartupSummaryView -Data $data
+            $view.PSObject.TypeNames | Should -Contain 'MWP.WidgetView'
+            @($view.Sections | ForEach-Object Title) | Should -Be @('Autostart')
+            $enabled = @($data.Items | Where-Object { $_.CanToggle -and $_.Enabled }).Count
+            $view.Sections[0].Items[0].Value | Should -Be ([string]$enabled)
+            $full = ConvertTo-MwpStartupSummaryView -Data $data -WidgetParameters @{ Sections = @('Enabled', 'Risky'); Top = 1 }
+            @($full.Sections | ForEach-Object Title) | Should -Be @('Włączone programy', 'Do sprawdzenia')
+            $full.Sections[0].Items[-1].Label | Should -Match 'innych'
+            ConvertTo-MwpStartupSummaryView -Data $null | Should -BeNullOrEmpty
+        }
+
+        It 'bez sekcji „Ryzykowne” funkcja danych nie sprawdza podpisów (szybszy odczyt)' {
+            Mock -ModuleName MWP.Startup Invoke-MwpStartupRead { [pscustomobject]@{ PSTypeName = 'MWP.Operation'; NoSignature = [bool]$NoSignature } }
+            (Get-MwpStartupItem -Context $context -AsOperation -WidgetParameters @{ Sections = @('Summary') }).NoSignature | Should -BeTrue
+            (Get-MwpStartupItem -Context $context -AsOperation -WidgetParameters @{ Sections = @('Summary', 'Risky') }).NoSignature | Should -BeFalse
+            (Get-MwpStartupItem -Context $context -AsOperation).NoSignature | Should -BeFalse
+        }
+    }
+
     Context 'autostart — włączanie i wyłączanie (StartupApproved)' {
         It '-WhatIf: podgląd z nazwą komputera, bez zapisu do rejestru' {
             $item = (Get-ItemMap)['MwpTestChat']

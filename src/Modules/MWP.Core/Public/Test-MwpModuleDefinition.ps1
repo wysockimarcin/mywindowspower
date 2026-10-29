@@ -166,6 +166,12 @@
                 if ($widget.Contains('DefaultRefreshSeconds') -and $vocabulary.WidgetRefreshSeconds -notcontains $widget['DefaultRefreshSeconds']) {
                     $errors.Add(("Niedozwolone DefaultRefreshSeconds {0} widgetu '{1}' (dozwolone: {2})." -f $widget['DefaultRefreshSeconds'], $widgetId, ($vocabulary.WidgetRefreshSeconds -join ', ')))
                 }
+                # Konfiguracja widgetów modułu (D-053): pola opcjonalne, wartości logiczne.
+                foreach ($field in @('Enabled', 'LocalOnly')) {
+                    if ($widget.Contains($field) -and $widget[$field] -isnot [bool]) {
+                        $errors.Add(("Pole {0} widgetu '{1}' musi być wartością logiczną (`$true albo `$false)." -f $field, $widgetId))
+                    }
+                }
                 if ($widget.Contains('Parameters')) {
                     $parameters = $widget['Parameters']
                     if ($parameters -isnot [Collections.IDictionary]) {
@@ -182,6 +188,9 @@
                         }
                         elseif ($parameter.Contains('Values') -and @($parameter['Default'] | Where-Object { @($parameter['Values']) -notcontains $_ }).Count -gt 0) {
                             $errors.Add(("Wartość domyślna parametru '{0}' widgetu '{1}' spoza listy Values." -f $key, $widgetId))
+                        }
+                        elseif ($parameter.Contains('Values') -and $parameter.Contains('PreviousDefault') -and @($parameter['PreviousDefault'] | Where-Object { @($parameter['Values']) -notcontains $_ }).Count -gt 0) {
+                            $errors.Add(("Wartość PreviousDefault parametru '{0}' widgetu '{1}' spoza listy Values." -f $key, $widgetId))
                         }
                     }
                 }

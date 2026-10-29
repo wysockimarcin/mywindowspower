@@ -17,6 +17,19 @@
 
 ---
 
+## Korekta po FAZIE 12 — widget w każdym module i konfiguracja widgetów modułu (2026-10-29)
+- Status: ZAKOŃCZONA (korekta, nie nowa faza; status FAZY 12 bez zmian; ręczna weryfikacja w prawdziwym oknie — lista w pliku FAZY 5, sekcja „Korekta D-053”)
+- Commit: `FAZA 12 (korekta): widgety we wszystkich modułach obszarów — Windows Update, sieć, autostart, programy, czyszczenie i reguła kompletności (D-053)` — hash do uzupełnienia na starcie FAZY 13
+- Start: korekty D-051 i D-052 zacommitowane (`df4cc15`, `935e74d`, `ea616da`); baza testów — 5.1.26100.9711: 0 uwag, 2059/2059; 7.6.7: 0 uwag, 2059/2059. Numer D-053 wolny.
+- Powód: pytanie użytkownika — w oknie „Dodaj widżet” tylko 3 typy (pole `Widgets` miały tylko `Dashboard`, `Power`, `Services`); wymaganie: każdy moduł może tworzyć widget, a użytkownik ukrywa typy i wybiera pokazywane dane.
+- Decyzje użytkownika (2026-10-29): widget dla każdego istniejącego i tworzonego modułu (także `Core`, `Remote`, zalążki), o widoczności decyduje użytkownik w ustawieniach modułu; odświeżanie zróżnicowane (0 dla Cleanup i winget, 900 s programy i autostart, 300 s Update, 60 s Sieć); jeden typ na moduł + „Aktualizacje programów”; reguła kompletności jako błąd testu; projekt zaakceptowany. Z promptu (decyzje wcześniejsze): sekcja „Widżety” w widoku „Moduły”, ukrywanie per typ (skrót dla modułu), ukrycie tylko z listy dodawania, domyślne parametry dla nowych widgetów, `Widgets[].Enabled`.
+- Zrobiono: 10 nowych widgetów (Windows Update, Sieć, Autostart, Programy, Aktualizacje programów, Miejsce do odzyskania, Dziennik operacji, Komputery, 2 zalążki) — razem 13 typów, 11 na liście dodawania; `-WidgetParameters` w funkcjach danych; `Measure-MwpCleanupCategory -AsOperation` (blok `Estimate`, tylko skan) i `Resolve-MwpCleanupScan`; `Get-MwpWingetUpgrade`, `Get-MwpLogSummary`, `Get-MwpTargetStatus`; pola kontraktu `Enabled`, `LocalOnly`, `PreviousDefault`; `New-MwpModuleInstance -ForWidget`; minimalne dane domyślne także w „Informacje o systemie”, „Zasilanie”, „Status usług” (bez zmiany wyglądu istniejących widgetów); `Get-`/`Set-MwpWidgetSetting`, `Get-MwpWidgetDefinition -Addable`; okno widgetu z katalogiem do dodawania, posortowane, z oznaczeniem „tylko ten komputer”; wspólne pola parametrów; sekcja „Widżety” w widoku „Moduły”; wymóg widgetu w plikach i promptach FAZ 13–18.
+- Testy: 5.1.26100.9711 — 0 uwag, 2177/2177; 7.6.7 — 0 uwag, 2177/2177 (+118: WidgetSettings.Tests.ps1 (14), ModuleWidgets.Tests.ps1 (27 z regułą kompletności dla 12 modułów), sekcje widgetów w testach 7 modułów (12), instancja widgetu modułu bazowego, testy kodowania i eksportu nowych plików; test dymny okna w 5.1 i 7.6.7: 13 typów widgetów w stanie Aktualne i sekcja „Widżety”).
+- Niezrobione / odroczone: eksport nowych widgetów; widgety z danymi `Security`/`Tweaks` (FAZY 14/13); wzór w `settings.example.json` (świadomie — szablon to wartości domyślne); ręczna weryfikacja w oknie.
+- Decyzje: D-053
+- Do weryfikacji na Windows 11: lista 10 punktów w `docs/03_FAZY/FAZA_5_DASHBOARD.md` (sekcja „Korekta D-053”).
+- Następna faza: FAZA 13 — Prywatność i tweaki (przed nią opcjonalnie korekta D-054 — `PROMPT_KOREKTA_D054.md`)
+
 ## Korekta po FAZIE 12 — zapamiętywanie poświadczeń komputerów zdalnych (2026-10-29)
 - Status: ZAKOŃCZONA (korekta, nie nowa faza; status FAZY 12 bez zmian; ręczna weryfikacja z prawdziwym Menedżerem poświadczeń — lista w pliku FAZY 12, sekcja „Korekta D-052”)
 - Commit: `FAZA 12 (korekta): zapamiętywanie poświadczeń komputerów zdalnych w Menedżerze poświadczeń Windows (D-052)` — hash do uzupełnienia na starcie FAZY 13

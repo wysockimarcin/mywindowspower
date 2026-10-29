@@ -15,9 +15,19 @@
         -Progress (opcjonalna tabela: Percent, Message, CancelRequested — np. z zadania GUI) dostaje postęp
         po kategoriach; CancelRequested przerywa skan (lokalnie także w trakcie kategorii).
         Zwraca MWP.Result z MWP.CleanupScan w Data (Categories: MWP.CleanupCategoryResult).
+        Z -AsOperation (widget „Miejsce do odzyskania”, D-053) cały skan idzie jednym wywołaniem bloku
+        Estimate w tle (Start-MwpOperation): te same kroki (lokalizacje, Test-MwpCleanupRoot, blok
+        Process wyłącznie w trybie Scan), bez postępu i bez profili innych użytkowników; zwraca uchwyt
+        MWP.Operation, a wynik zamienia Resolve-MwpCleanupScan.
 
     .PARAMETER Category
         Identyfikatory kategorii (domyślnie wszystkie).
+
+    .PARAMETER WidgetParameters
+        Parametry widgetu: Categories (identyfikatory kategorii); -Category ma pierwszeństwo.
+
+    .PARAMETER AsOperation
+        Skan w tle (Start-MwpOperation); bez -IncludeUserProfiles i -Progress.
 
     .EXAMPLE
         (Measure-MwpCleanupCategory).Data.Categories | Format-Table Name, FileCount, SizeText, SkippedCount
@@ -37,7 +47,12 @@
         [switch] $IncludeUserProfiles,
 
         [AllowNull()]
-        [hashtable] $Progress
+        [hashtable] $Progress,
+
+        [AllowNull()]
+        [Collections.IDictionary] $WidgetParameters,
+
+        [switch] $AsOperation
     )
 
     $operation = 'Cleanup.Scan'
@@ -50,6 +65,10 @@
     foreach ($warning in @($definitionWarnings)) {
         $warnings.Add([string]$warning)
     }
+    if (-not $PSBoundParameters.ContainsKey('Category') -and $null -ne $WidgetParameters -and $WidgetParameters.Contains('Categories')) {
+        $Category = @(@($WidgetParameters['Categories']) | Where-Object { $_ } | ForEach-Object { [string]$_ })
+        $PSBoundParameters['Category'] = $Category
+    }
     if ($PSBoundParameters.ContainsKey('Category')) {
         $known = @($definitions | ForEach-Object { $_.Id })
         foreach ($id in @($Category | Where-Object { $known -notcontains $_ })) {
@@ -59,7 +78,26 @@
     }
 
     if ($definitions.Count -eq 0) {
+        if ($AsOperation) {
+            throw ('Brak kategorii czyszczenia do skanowania. {0}' -f ($warnings -join ' ')).Trim()
+        }
         return New-MwpResult @common -Success $false -Message ('Brak kategorii czyszczenia do skanowania. {0}' -f ($warnings -join ' ')).Trim()
+    }
+    if ($AsOperation) {
+        $request = ConvertTo-Json -Compress -Depth 6 -InputObject ([pscustomobject]@{
+                Remote     = $isRemote
+                Categories = @($definitions | ForEach-Object {
+                        [pscustomobject]@{
+                            Id          = $_.Id
+                            Name        = $_.Name
+                            Description = $_.Description
+                            Scope       = $_.Scope
+                            Roots       = @($_.Roots)
+                        }
+                    })
+                Warnings   = $warnings.ToArray()
+            })
+        return Start-MwpOperation -Context $Context -ScriptBlock (Get-MwpCleanupScript -Name Estimate) -ArgumentList @($request) -Operation $operation -TimeoutSeconds 1800
     }
 
     $environment = Get-MwpCleanupEnvironment -Context $Context -Operation $operation
@@ -117,27 +155,8 @@
         $warnings.Add('Skan przerwany — wyniki są niepełne.')
     }
 
-    $totalBytes = [long]0
-    $totalFiles = [long]0
-    foreach ($item in $results) {
-        $totalBytes += $item.SizeBytes
-        $totalFiles += $item.FileCount
-    }
-    $scan = [pscustomobject]@{
-        PSTypeName          = 'MWP.CleanupScan'
-        ComputerName        = $computerName
-        CollectedAt         = Get-Date
-        IsAdministrator     = [bool]$environment.IsAdministrator
-        IsRemote            = $isRemote
-        IncludeUserProfiles = [bool]$IncludeUserProfiles
-        UserProfiles        = @($selectedProfiles | ForEach-Object { [string]$_.UserName })
-        Categories          = $results.ToArray()
-        TotalFiles          = $totalFiles
-        TotalBytes          = $totalBytes
-        TotalText           = Format-MwpCleanupSize -Bytes $totalBytes
-        Cancelled           = $cancelled
-        Warnings            = $warnings.ToArray()
-    }
-    $message = "Skan komputera '{0}': {1} kategorii, do zwolnienia {2} ({3} plików){4}." -f $computerName, $results.Count, $scan.TotalText, $totalFiles, $(if ($cancelled) { ' — skan przerwany' } else { '' })
+    $scan = New-MwpCleanupScan -ComputerName $computerName -Category $results.ToArray() -IsAdministrator ([bool]$environment.IsAdministrator) -IsRemote $isRemote `
+        -IncludeUserProfiles ([bool]$IncludeUserProfiles) -UserProfile @($selectedProfiles | ForEach-Object { [string]$_.UserName }) -Cancelled $cancelled -Warning $warnings.ToArray()
+    $message = "Skan komputera '{0}': {1} kategorii, do zwolnienia {2} ({3} plików){4}." -f $computerName, $results.Count, $scan.TotalText, $scan.TotalFiles, $(if ($cancelled) { ' — skan przerwany' } else { '' })
     New-MwpResult @common -Success $true -Message $message -Data $scan
 }

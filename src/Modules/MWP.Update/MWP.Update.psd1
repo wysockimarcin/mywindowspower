@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Update.psm1'
-    ModuleVersion        = '0.10.0'
+    ModuleVersion        = '0.10.1'
     GUID                 = '98134e45-6a27-4337-8c76-31d3c8b7f17b'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -9,6 +9,7 @@
     PowerShellVersion    = '5.1'
     CompatiblePSEditions = @('Desktop', 'Core')
     FunctionsToExport    = @(
+        'ConvertTo-MwpUpdateStatusView'
         'Find-MwpUpdate'
         'Format-MwpUpdateSize'
         'Get-MwpUpdateHistory'
@@ -43,9 +44,28 @@
                 @{ Id = 'Remote'; MinimumVersion = '0.5.0' }
             )
             Capabilities               = @('Read', 'Change', 'Destructive', 'Undo', 'RemoteTarget')
-            SupportedPresentationModes = @('Embedded', 'SeparateWindow')
+            SupportedPresentationModes = @('Embedded', 'SeparateWindow', 'DashboardWidget')
             RequiredPermissions        = @('User', 'Administrator')
             ConfigurationSchema        = @{}
+            Widgets                    = @(
+                @{
+                    Id                    = 'UpdateStatus'
+                    Name                  = 'Windows Update'
+                    Description           = 'Wymagany restart, pauza aktualizacji, ostatnie wyszukiwanie i instalacja, usługi Windows Update.'
+                    DataCommand           = 'Get-MwpUpdateStatus'
+                    ViewCommand           = 'ConvertTo-MwpUpdateStatusView'
+                    DefaultRefreshSeconds = 300
+                    Parameters            = @{
+                        Sections = @{
+                            Type        = 'StringArray'
+                            Default     = @('Restart', 'Pause')
+                            Values      = @('Restart', 'Pause', 'LastActivity', 'Services')
+                            Label       = 'Sekcje'
+                            ValueLabels = @{ Restart = 'Restart'; Pause = 'Pauza'; LastActivity = 'Ostatnie wyszukiwanie i instalacja'; Services = 'Usługi' }
+                        }
+                    }
+                }
+            )
         }
         PSData = @{
             ProjectUri = 'https://github.com/wysockimarcin/mywindowspower'

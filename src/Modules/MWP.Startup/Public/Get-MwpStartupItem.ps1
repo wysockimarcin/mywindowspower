@@ -16,6 +16,9 @@
     .PARAMETER NoSignature
         Bez sprawdzania podpisów (Get-AuthenticodeSignature) — szybszy odczyt.
 
+    .PARAMETER WidgetParameters
+        Parametry widgetu „Autostart” (kontrakt D-043, D-053): bez sekcji Risky w Sections podpisy nie są sprawdzane (jak -NoSignature) — odczyt jest wtedy szybszy.
+
     .EXAMPLE
         (Get-MwpStartupItem -State Enabled).Data.Items | Format-Table Name, LocationText, RiskText, Publisher
 
@@ -43,10 +46,16 @@
 
         [switch] $NoSignature,
 
+        [AllowNull()]
+        [Collections.IDictionary] $WidgetParameters,
+
         [switch] $AsOperation
     )
 
     $operation = 'Startup.ListItems'
+    if ($null -ne $WidgetParameters -and $WidgetParameters.Contains('Sections') -and @($WidgetParameters['Sections']) -notcontains 'Risky') {
+        $NoSignature = [switch]$true
+    }
     if ($AsOperation) {
         return Invoke-MwpStartupRead -Context $Context -Operation $operation -Kind Item -NoSignature:$NoSignature -AsOperation
     }

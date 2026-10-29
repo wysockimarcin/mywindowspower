@@ -10,6 +10,8 @@ i `SeparateWindow` (od wersji 1.1.0 także `DashboardWidget`). Służy do ręczn
 - tryb w oknie głównym i w osobnym oknie,
 - (FAZA 5) widget Dashboardu „Komputer (przykład)” (pole `Widgets`, D-043): po instalacji **Pulpit → + Dodaj widget**;
   po odinstalowaniu modułu jego widgety znikają z Pulpitu i z `config/settings.local.json` (D-031).
+  Wersja 1.0.0 (FAZA 4) nie ma widgetu — jeśli jest zainstalowana, odinstaluj ją w widoku „Moduły” i zainstaluj 1.1.0
+  (host nie aktualizuje modułów, D-031). Paczka jest wzorcem dla autorów modułów: od D-053 każdy moduł deklaruje widget.
 
 Moduł nie jest wbudowany (folder `samples` nie jest skanowany przez `Get-MwpModuleDefinition`).
 Paczkę buduje się ręcznie — archiwum ZIP z jednym folderem głównym `MWP.Przyklad`:

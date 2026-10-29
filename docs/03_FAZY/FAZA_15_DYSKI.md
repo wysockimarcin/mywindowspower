@@ -14,6 +14,7 @@ FAZY 2, 3 i 4 zakończone (widget Dashboardu wymaga też FAZY 5).
 - Widok `Disks.xaml` (pełny widok) oraz widget „Wykorzystanie dysków" dla Dashboardu (kontrakt widgetu z FAZY 5).
 - Eksport listy do JSON i tekstu.
 - Testy Pester z mockami.
+- Widget (korekta D-053): widget Dashboardu wg D-053 — każdy moduł deklaruje co najmniej jeden widget (reguła kompletności w `tests/UI/ModuleWidgets.Tests.ps1`): parametry wyboru danych z minimalnymi wartościami domyślnymi, `DefaultRefreshSeconds = 0` dla odczytów kosztownych, `LocalOnly`/`Enabled` w razie potrzeby; użytkownik ukrywa typ i ustawia domyślne parametry w widoku „Moduły” (sekcja „Widżety”).
 
 ## Poza zakresem
 Formatowanie, partycjonowanie, zmiana liter dysków, BitLocker, SMART w głąb (surowe atrybuty producenta).
@@ -23,6 +24,7 @@ Formatowanie, partycjonowanie, zmiana liter dysków, BitLocker, SMART w głąb (
 - [ ] Moduł dopisany do listy w `tests/Modules.Tests.ps1`
 - [ ] Widok `Disks.xaml` i widget Dashboardu
 - [ ] Działa dla `localhost` i dla komputera zdalnego (kontekst wykonania `-Context`, błąd połączenia obsłużony na poziomie instancji)
+- [ ] Widget Dashboardu zgodny z D-053 (parametry z minimum domyślnym, reguła kompletności)
 - [ ] Testy Pester, PSScriptAnalyzer
 - [ ] Dokumentacja zaktualizowana, commit `FAZA 15: ...`
 

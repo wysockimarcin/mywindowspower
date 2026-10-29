@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Dashboard.psm1'
-    ModuleVersion        = '0.5.0'
+    ModuleVersion        = '0.5.1'
     GUID                 = '97ba3923-8081-42ea-971d-f45bd0a2a0ac'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -47,7 +47,9 @@
                     Parameters            = @{
                         Sections = @{
                             Type    = 'StringArray'
-                            Default = @('System', 'Cpu', 'Memory', 'Disks')
+                            # D-053: domyślnie minimum; PreviousDefault — dla widgetów zapisanych bez parametru Sections.
+                            Default = @('System', 'Memory', 'Disks')
+                            PreviousDefault = @('System', 'Cpu', 'Memory', 'Disks')
                             Values  = @('System', 'Cpu', 'Memory', 'Gpu', 'Disks', 'Board', 'Battery', 'Network')
                             Label   = 'Sekcje'
                             ValueLabels = @{

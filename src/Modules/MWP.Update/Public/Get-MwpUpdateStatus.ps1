@@ -13,15 +13,23 @@
         runspace'ów (Start-MwpOperation) i zwraca uchwyt MWP.Operation — wynik zamienia
         Resolve-MwpUpdateStatus.
 
+    .PARAMETER WidgetParameters
+        Parametry widgetu „Windows Update” (kontrakt D-043); dane są zawsze pełne, sekcje wybiera ConvertTo-MwpUpdateStatusView.
+
     .EXAMPLE
         (Get-MwpUpdateStatus).Data | Format-List RebootRequired, PauseText, LastSearchText
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'WidgetParameters',
+        Justification = 'Parametr wymagany przez kontrakt widgetu (D-043, D-053); sekcje wybiera funkcja widoku.')]
     [CmdletBinding()]
     [OutputType([pscustomobject])]
     param(
         [Parameter(Position = 0)]
         [PSTypeName('MWP.ExecutionContext')]
         [object] $Context = (New-MwpExecutionContext),
+
+        [AllowNull()]
+        [Collections.IDictionary] $WidgetParameters,
 
         [switch] $AsOperation
     )

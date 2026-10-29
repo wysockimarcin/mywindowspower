@@ -5,14 +5,14 @@
 
     .DESCRIPTION
         Funkcja widoku z kontraktu widgetu (D-043): czysta, bez WPF i bez wywołań systemowych.
-        Przyjmuje wynik Get-MwpPowerStatus (także surowy wynik operacji w tle). Zwraca $null, gdy
+        Przyjmuje wynik Get-MwpPowerStatus (także surowy wynik operacji w tle). Parametr Sections
+        (D-053) wybiera sekcje: Plan, Timeouts (ekran i uśpienie), Hibernate (hibernacja, szybkie
+        uruchamianie, bateria); bez parametru — wszystkie (widgety sprzed D-053). Zwraca $null, gdy
         danych nie ma.
 
     .PARAMETER WidgetParameters
-        Parametry widgetu (kontrakt D-043); widget zasilania nie ma parametrów.
+        Parametry widgetu: Sections (lista sekcji).
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'WidgetParameters',
-        Justification = 'Parametr wymagany przez kontrakt widgetu (D-043).')]
     [CmdletBinding()]
     [OutputType([pscustomobject])]
     param(
@@ -36,6 +36,10 @@
         if ($null -eq $State) { 'brak danych' } elseif ($State) { $On } else { $Off }
     }
 
+    $chosen = @('Plan', 'Timeouts', 'Hibernate')
+    if ($null -ne $WidgetParameters -and $WidgetParameters.Contains('Sections')) {
+        $chosen = @(@($WidgetParameters['Sections']) | Where-Object { @('Plan', 'Timeouts', 'Hibernate') -contains $_ })
+    }
     $planItems = @(& $row 'Plan aktywny' $(if ($null -ne $status.ActivePlan) { $status.ActivePlan.Name } else { $null }) 'Success')
     $planItems += & $row 'Plany' ([string]@($status.Plans).Count)
     $settingItems = @(foreach ($setting in @($status.Settings | Where-Object { $_.Available -and $_.Kind -eq 'Timeout' -and $_.Id -ne 'HibernateTimeout' })) {
@@ -52,9 +56,9 @@
         Summary     = '{0} · {1}' -f $status.ComputerName, $(if ($null -ne $status.ActivePlan) { $status.ActivePlan.Name } else { 'brak planu aktywnego' })
         CollectedAt = $status.CollectedAt
         Sections    = @(
-            [pscustomobject]@{ Title = 'Plan zasilania'; Items = $planItems }
-            [pscustomobject]@{ Title = 'Ekran i uśpienie'; Items = $settingItems }
-            [pscustomobject]@{ Title = 'Hibernacja'; Items = $systemItems }
+            if ($chosen -contains 'Plan') { [pscustomobject]@{ Title = 'Plan zasilania'; Items = $planItems } }
+            if ($chosen -contains 'Timeouts') { [pscustomobject]@{ Title = 'Ekran i uśpienie'; Items = $settingItems } }
+            if ($chosen -contains 'Hibernate') { [pscustomobject]@{ Title = 'Hibernacja'; Items = $systemItems } }
         )
         Warnings    = @($status.Warnings)
     }

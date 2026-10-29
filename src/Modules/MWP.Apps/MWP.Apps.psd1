@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Apps.psm1'
-    ModuleVersion        = '0.12.1'
+    ModuleVersion        = '0.12.2'
     GUID                 = '4c98673e-01c8-4b33-84f6-94d3122f4e0c'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -10,11 +10,14 @@
     CompatiblePSEditions = @('Desktop', 'Core')
     FunctionsToExport    = @(
         'ConvertFrom-MwpWingetOutput'
+        'ConvertTo-MwpAppsSummaryView'
+        'ConvertTo-MwpAppsUpdatesView'
         'Find-MwpWingetPackage'
         'Get-MwpAppsModuleInfo'
         'Get-MwpInstalledApp'
         'Get-MwpWingetInfo'
         'Get-MwpWingetPackage'
+        'Get-MwpWingetUpgrade'
         'Install-MwpWingetPackage'
         'Join-MwpAppWinget'
         'Resolve-MwpInstalledApp'
@@ -41,9 +44,48 @@
                 @{ Id = 'Remote'; MinimumVersion = '0.5.0' }
             )
             Capabilities               = @('Read', 'Change', 'Destructive', 'Undo', 'RemoteTarget')
-            SupportedPresentationModes = @('Embedded', 'SeparateWindow')
+            SupportedPresentationModes = @('Embedded', 'SeparateWindow', 'DashboardWidget')
             RequiredPermissions        = @('User', 'Administrator')
             ConfigurationSchema        = @{}
+            Widgets                    = @(
+                @{
+                    Id                    = 'AppsSummary'
+                    Name                  = 'Programy'
+                    Description           = 'Liczba zainstalowanych programów i aplikacji Appx; do wyboru największe i ostatnio zainstalowane (bez winget).'
+                    DataCommand           = 'Get-MwpInstalledApp'
+                    ViewCommand           = 'ConvertTo-MwpAppsSummaryView'
+                    DefaultRefreshSeconds = 900
+                    Parameters            = @{
+                        Sections = @{
+                            Type        = 'StringArray'
+                            Default     = @('Summary')
+                            Values      = @('Summary', 'Largest', 'Recent')
+                            Label       = 'Sekcje'
+                            ValueLabels = @{ Summary = 'Podsumowanie'; Largest = 'Największe'; Recent = 'Ostatnio zainstalowane' }
+                        }
+                        Top      = @{
+                            Type    = 'Int'
+                            Default = 5
+                            Label   = 'Liczba pozycji na listach'
+                        }
+                    }
+                }
+                @{
+                    Id                    = 'AppsUpdates'
+                    Name                  = 'Aktualizacje programów'
+                    Description           = 'Pakiety winget z dostępną aktualizacją. Odczyt trwa kilka–kilkanaście sekund; na komputerze zdalnym wymaga konta administratora.'
+                    DataCommand           = 'Get-MwpWingetUpgrade'
+                    ViewCommand           = 'ConvertTo-MwpAppsUpdatesView'
+                    DefaultRefreshSeconds = 0
+                    Parameters            = @{
+                        Top = @{
+                            Type    = 'Int'
+                            Default = 5
+                            Label   = 'Liczba pakietów na liście'
+                        }
+                    }
+                }
+            )
         }
         PSData = @{
             ProjectUri = 'https://github.com/wysockimarcin/mywindowspower'

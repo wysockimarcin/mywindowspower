@@ -334,6 +334,29 @@ Describe 'MWP.Update — Windows Update' {
         }
     }
 
+    Context 'widget Dashboardu (D-053)' {
+        It 'widok „Windows Update”: domyślnie restart i pauza, sekcje z parametru, brak danych bez wyjątku' {
+            $script:Fake.Reboot = $true
+            $data = (Get-MwpUpdateStatus -Context $context).Data
+            $view = ConvertTo-MwpUpdateStatusView -Data $data
+            $view.PSObject.TypeNames | Should -Contain 'MWP.WidgetView'
+            @($view.Sections | ForEach-Object Title) | Should -Be @('Restart', 'Pauza')
+            $view.Sections[0].Items[0].Value | Should -Be 'wymagany'
+            $view.Sections[0].Items[0].Tone | Should -Be 'Warning'
+            $view.Summary | Should -Match 'wymaga restartu'
+            $all = ConvertTo-MwpUpdateStatusView -Data $data -WidgetParameters @{ Sections = @('LastActivity', 'Services') }
+            @($all.Sections | ForEach-Object Title) | Should -Be @('Ostatnio', 'Usługi')
+            @($all.Sections[1].Items).Count | Should -Be 4
+            ConvertTo-MwpUpdateStatusView -Data $null | Should -BeNullOrEmpty
+            ConvertTo-MwpUpdateStatusView -Data 'to nie jest JSON' | Should -BeNullOrEmpty
+        }
+
+        It 'funkcja danych przyjmuje -WidgetParameters i z -AsOperation tylko odczytuje (blok Status)' {
+            Mock -ModuleName MWP.Update Start-MwpOperation { [pscustomobject]@{ PSTypeName = 'MWP.Operation'; Operation = $Operation } }
+            (Get-MwpUpdateStatus -Context $context -AsOperation -WidgetParameters @{ Sections = @('Restart') }).Operation | Should -Be 'Update.Status'
+        }
+    }
+
     Context 'wyszukiwanie aktualizacji (COM)' {
         It 'zwraca oczekujące aktualizacje ze stałymi kryteriami, KB, rozmiarem, restartem i instalowalnością' {
             $result = Find-MwpUpdate -Context $context

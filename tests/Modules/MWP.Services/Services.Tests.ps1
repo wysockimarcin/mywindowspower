@@ -520,6 +520,16 @@ Describe 'MWP.Services — usługi Windows' {
         }
     }
 
+    Context 'widget „Status usług” — sekcje (D-053)' {
+        It 'parametr Sections wybiera sekcje; bez parametru wszystkie' {
+            $data = Get-MwpService -Context $context
+            $view = ConvertTo-MwpServiceStatusView -Data $data -WidgetParameters @{ Names = @('MwpTestBase'); Sections = @('Watched') }
+            @($view.Sections | ForEach-Object Title) | Should -Be @('Obserwowane')
+            $legacy = ConvertTo-MwpServiceStatusView -Data $data -WidgetParameters @{ Names = @('MwpTestBase') }
+            @($legacy.Sections | ForEach-Object Title) | Should -Contain 'Podsumowanie'
+        }
+    }
+
     Context 'komputer zdalny (D-019)' {
         BeforeEach {
             Mock -ModuleName MWP.Remote Remove-MwpPSSession { }

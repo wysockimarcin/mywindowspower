@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Startup.psm1'
-    ModuleVersion        = '0.8.0'
+    ModuleVersion        = '0.8.1'
     GUID                 = '3f086f85-a2b1-49c1-9e22-870c45c11274'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -9,6 +9,7 @@
     PowerShellVersion    = '5.1'
     CompatiblePSEditions = @('Desktop', 'Core')
     FunctionsToExport    = @(
+        'ConvertTo-MwpStartupSummaryView'
         'Get-MwpScheduledTask'
         'Get-MwpSignatureRisk'
         'Get-MwpStartupItem'
@@ -41,9 +42,33 @@
                 @{ Id = 'Remote'; MinimumVersion = '0.5.0' }
             )
             Capabilities               = @('Read', 'Change', 'Undo', 'RemoteTarget')
-            SupportedPresentationModes = @('Embedded', 'SeparateWindow')
+            SupportedPresentationModes = @('Embedded', 'SeparateWindow', 'DashboardWidget')
             RequiredPermissions        = @('User', 'Administrator')
             ConfigurationSchema        = @{}
+            Widgets                    = @(
+                @{
+                    Id                    = 'StartupSummary'
+                    Name                  = 'Autostart'
+                    Description           = 'Liczba programów uruchamianych przy starcie; do wyboru lista włączonych i pozycje niepodpisane lub bez pliku.'
+                    DataCommand           = 'Get-MwpStartupItem'
+                    ViewCommand           = 'ConvertTo-MwpStartupSummaryView'
+                    DefaultRefreshSeconds = 900
+                    Parameters            = @{
+                        Sections = @{
+                            Type        = 'StringArray'
+                            Default     = @('Summary')
+                            Values      = @('Summary', 'Enabled', 'Risky')
+                            Label       = 'Sekcje (pozycje ryzykowne wymagają sprawdzenia podpisów — wolniej)'
+                            ValueLabels = @{ Summary = 'Podsumowanie'; Enabled = 'Włączone programy'; Risky = 'Pozycje ryzykowne' }
+                        }
+                        Top      = @{
+                            Type    = 'Int'
+                            Default = 5
+                            Label   = 'Liczba pozycji na listach'
+                        }
+                    }
+                }
+            )
         }
         PSData = @{
             ProjectUri = 'https://github.com/wysockimarcin/mywindowspower'

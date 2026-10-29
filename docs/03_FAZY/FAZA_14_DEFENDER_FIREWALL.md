@@ -17,6 +17,7 @@ FAZY 2, 3 i 4 zakończone.
 - Widok `Security.xaml` (zakładki: Defender, Zapora), operacje w tle.
 - Testy Pester z mockami.
 - Obsługa komputera docelowego (D-019): status Defendera, sygnatury, skan i reguły zapory przez kontekst wykonania. **Ostrzeżenie:** zmiana reguły zapory na komputerze zdalnym może odciąć połączenie (np. reguła WinRM) — wymagane potwierdzenie z nazwą komputera i dodatkowe ostrzeżenie dla reguł związanych z połączeniem.
+- Widget: zastąpić widget-zalążek „Defender i zapora (zalążek)” (`Security.ModuleStatus`, `Enabled = $false`) widgetem z danymi obszaru i włączyć go — widget Dashboardu wg D-053 — każdy moduł deklaruje co najmniej jeden widget (reguła kompletności w `tests/UI/ModuleWidgets.Tests.ps1`): parametry wyboru danych z minimalnymi wartościami domyślnymi, `DefaultRefreshSeconds = 0` dla odczytów kosztownych, `LocalOnly`/`Enabled` w razie potrzeby; użytkownik ukrywa typ i ustawia domyślne parametry w widoku „Moduły” (sekcja „Widżety”).
 
 ## Poza zakresem
 Tworzenie nowych reguł zapory z poziomu GUI, zarządzanie innymi produktami AV.
@@ -29,6 +30,7 @@ Tworzenie nowych reguł zapory z poziomu GUI, zarządzanie innymi produktami AV.
 - [ ] Profile i reguły zapory, włącz/wyłącz regułę
 - [ ] Decyzja o zakazie wyłączania ochrony zapisana w `DECYZJE.md`
 - [ ] Widok `Security.xaml`
+- [ ] Widget Dashboardu zgodny z D-053 (parametry z minimum domyślnym, reguła kompletności)
 - [ ] Testy Pester, PSScriptAnalyzer
 - [ ] Działa dla `localhost` i dla komputera zdalnego (kontekst wykonania `-Context`, błąd połączenia obsłużony na poziomie instancji)
 - [ ] Dokumentacja zaktualizowana, commit `FAZA 14: ...`

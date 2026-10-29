@@ -9,8 +9,9 @@
         pusta tabela) i cykl życia: Created -> Initialized (Initialize-MwpModuleInstance) ->
         Closed (Close-MwpModuleInstance: anulowanie operacji, zamknięcie sesji, zwolnienie stanu).
         Fabryką instancji jest host (MWP.Remote); moduł nie musi jej dostarczać (D-035).
-        Warunki: definicja istnieje i ma poprawny kontrakt; nie jest modułem bazowym; dla komputera
-        zdalnego moduł deklaruje możliwość RemoteTarget w Capabilities.
+        Warunki: definicja istnieje i ma poprawny kontrakt; nie jest modułem bazowym (wyjątek: instancja
+        widgetu Dashboardu, -ForWidget, gdy moduł bazowy deklaruje tryb DashboardWidget — D-053); dla
+        komputera zdalnego moduł deklaruje możliwość RemoteTarget w Capabilities.
         Instancja trafia do rejestru instancji procesu (Get-MwpModuleInstance).
 
     .PARAMETER ModuleId
@@ -18,6 +19,10 @@
 
     .PARAMETER Name
         Nazwa wyświetlana instancji; domyślnie „<nazwa modułu> — <komputer>".
+
+    .PARAMETER ForWidget
+        Instancja widgetu Dashboardu (New-MwpWidgetRuntime): moduł musi deklarować tryb DashboardWidget;
+        dozwolona także dla modułu bazowego (D-053).
 
     .EXAMPLE
         $local = New-MwpModuleInstance -ModuleId 'Services'
@@ -43,7 +48,9 @@
         [Collections.IDictionary] $ModuleParameters,
 
         [ValidateNotNullOrEmpty()]
-        [string] $Name
+        [string] $Name,
+
+        [switch] $ForWidget
     )
 
     $definition = @(Get-MwpModuleDefinition | Where-Object { $_.Id -eq $ModuleId -or $_.ModuleName -eq $ModuleId }) | Select-Object -First 1
@@ -53,8 +60,12 @@
     if (-not $definition.IsValid) {
         throw ("Moduł '{0}' ma niepoprawny kontrakt: {1}" -f $definition.ModuleName, ($definition.Errors -join ' '))
     }
-    if ($definition.IsBase) {
-        throw ("Moduł bazowy '{0}' nie tworzy instancji." -f $definition.ModuleName)
+    $widgetMode = @($definition.SupportedPresentationModes) -contains 'DashboardWidget'
+    if ($ForWidget -and -not $widgetMode) {
+        throw ("Moduł '{0}' nie udostępnia widgetów (brak trybu DashboardWidget)." -f $definition.ModuleName)
+    }
+    if ($definition.IsBase -and -not $ForWidget) {
+        throw ("Moduł bazowy '{0}' nie tworzy instancji (poza widgetem Dashboardu)." -f $definition.ModuleName)
     }
 
     $id = [guid]::NewGuid().ToString()

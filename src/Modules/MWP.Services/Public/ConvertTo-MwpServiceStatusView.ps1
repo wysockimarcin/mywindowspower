@@ -6,11 +6,12 @@
     .DESCRIPTION
         Funkcja widoku z kontraktu widgetu (D-043): czysta, bez WPF i bez wywołań systemowych.
         Przyjmuje wynik Get-MwpService (także surowy wynik operacji w tle). Parametr widgetu Names —
-        obserwowane usługi (nazwy usług). Tony: działa — Success, zatrzymana automatyczna — Warning,
+        obserwowane usługi (nazwy usług); Sections (D-053) — Watched, Summary, AutoStopped (bez
+        parametru — wszystkie, jak w widgetach sprzed D-053). Tony: działa — Success, zatrzymana automatyczna — Warning,
         brak usługi — Danger. Zwraca $null, gdy danych nie ma.
 
     .PARAMETER WidgetParameters
-        Parametry widgetu: Names (lista nazw usług).
+        Parametry widgetu: Names (lista nazw usług), Sections (lista sekcji).
     #>
     [CmdletBinding()]
     [OutputType([pscustomobject])]
@@ -32,6 +33,10 @@
     $names = @()
     if ($null -ne $WidgetParameters -and $WidgetParameters.Contains('Names')) {
         $names = @($WidgetParameters['Names'] | Where-Object { $_ } | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ })
+    }
+    $chosen = @('Watched', 'Summary', 'AutoStopped')
+    if ($null -ne $WidgetParameters -and $WidgetParameters.Contains('Sections')) {
+        $chosen = @(@($WidgetParameters['Sections']) | Where-Object { @('Watched', 'Summary', 'AutoStopped') -contains $_ })
     }
     $services = @($list.Services)
     $byName = @{}
@@ -62,11 +67,13 @@
             & $row $service.DisplayName ('{0} · {1}' -f $service.StatusText, $service.StartupTypeText) $tone
         })
     $sections = @()
-    if ($watchItems.Count -gt 0) {
+    if ($watchItems.Count -gt 0 -and $chosen -contains 'Watched') {
         $sections += [pscustomobject]@{ Title = 'Obserwowane'; Items = $watchItems }
     }
-    $sections += [pscustomobject]@{ Title = 'Podsumowanie'; Items = $summaryItems }
-    if ($autoStopped.Count -gt 0) {
+    if ($chosen -contains 'Summary') {
+        $sections += [pscustomobject]@{ Title = 'Podsumowanie'; Items = $summaryItems }
+    }
+    if ($autoStopped.Count -gt 0 -and $chosen -contains 'AutoStopped') {
         $items = @($autoStopped | Select-Object -First 8 | ForEach-Object { & $row $_.DisplayName $_.Name 'Warning' })
         if ($autoStopped.Count -gt 8) {
             $items += & $row ('… i {0} innych' -f ($autoStopped.Count - 8)) ''

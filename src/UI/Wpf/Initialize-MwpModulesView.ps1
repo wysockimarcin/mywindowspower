@@ -1,7 +1,8 @@
 ﻿function Initialize-MwpModulesView {
     <#
     .SYNOPSIS
-        Podpina widok „Moduły": instalacja z .mwpmod, odinstalowanie, przeniesienie dawnych instalacji, szczegóły.
+        Podpina widok „Moduły": instalacja z .mwpmod, odinstalowanie, przeniesienie dawnych instalacji, szczegóły
+        i sekcja „Widżety” (widoczność typów widgetów modułu i domyślne parametry, D-053).
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '',
         Justification = 'Parametry obsługi zdarzeń WPF są używane w zagnieżdżonych blokach (Invoke-MwpUiSafe -Action), czego reguła nie widzi.')]
@@ -12,6 +13,10 @@
     )
 
     $v = $View.Controls
+    # Stan sekcji „Widżety” (Update-MwpModuleWidgetSection, Save-MwpUiWidgetSetting).
+    $View | Add-Member -NotePropertyName WidgetRows -NotePropertyValue @()
+    $View | Add-Member -NotePropertyName WidgetUpdating -NotePropertyValue $false
+    $View | Add-Member -NotePropertyName WidgetParameters -NotePropertyValue $null
     $v['ModulesGrid'].Add_SelectionChanged({
             param($control)
             $controls = $script:MwpUi.Views['modules'].Controls
@@ -31,6 +36,24 @@
                 }
                 $lines -join [Environment]::NewLine
             }
+            Invoke-MwpUiSafe -Name 'UI.Modules.Widgets' -Action { Update-MwpModuleWidgetSection }
+        })
+    $v['WidgetTypeCombo'].Add_SelectionChanged({
+            $view = $script:MwpUi.Views['modules']
+            if ($null -ne $view -and -not $view.WidgetUpdating -and $null -ne $view.Controls['WidgetTypeCombo'].SelectedItem) {
+                Invoke-MwpUiSafe -Name 'UI.Modules.Widgets' -Action { Update-MwpModuleWidgetSection -WidgetId $view.Controls['WidgetTypeCombo'].SelectedItem.WidgetId }
+            }
+        })
+    $v['WidgetVisibleCheck'].Add_Click({
+            param($control)
+            Invoke-MwpUiSafe -Name 'UI.Modules.WidgetVisible' -Action { Save-MwpUiWidgetSetting -Visible ($true -eq $control.IsChecked) }
+        })
+    $v['ModuleWidgetsCheck'].Add_Click({
+            param($control)
+            Invoke-MwpUiSafe -Name 'UI.Modules.ModuleWidgets' -Action { Save-MwpUiWidgetSetting -ModuleVisible ($true -eq $control.IsChecked) }
+        })
+    $v['WidgetResetButton'].Add_Click({
+            Invoke-MwpUiSafe -Name 'UI.Modules.WidgetReset' -Action { Save-MwpUiWidgetSetting -Reset }
         })
     $v['RefreshButton'].Add_Click({
             Invoke-MwpUiSafe -Name 'UI.Modules.Refresh' -Action { Update-MwpModuleCatalog }

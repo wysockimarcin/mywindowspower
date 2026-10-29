@@ -19,6 +19,7 @@ FAZY 2, 3 i 4 zakończone.
 - Widok `Tweaks.xaml`: lista z kategoriami, filtrowanie, przełączniki, podgląd zmian.
 - Testy Pester z mockami rejestru (testowy klucz, nie realne gałęzie).
 - Obsługa komputera docelowego (D-019): zdalnie tweaki obejmujące `HKLM`. Tweaki `HKCU` dotyczą profilu, w którym działa sesja, a nie zalogowanego użytkownika zdalnego komputera — dla komputera zdalnego tylko po jawnym wyborze profilu albo odroczone z wpisem w `DECYZJE.md`. Punkt przywracania tworzony na komputerze docelowym.
+- Widget: zastąpić widget-zalążek „Prywatność i tweaki (zalążek)” (`Tweaks.ModuleStatus`, `Enabled = $false`) widgetem z danymi obszaru i włączyć go — widget Dashboardu wg D-053 — każdy moduł deklaruje co najmniej jeden widget (reguła kompletności w `tests/UI/ModuleWidgets.Tests.ps1`): parametry wyboru danych z minimalnymi wartościami domyślnymi, `DefaultRefreshSeconds = 0` dla odczytów kosztownych, `LocalOnly`/`Enabled` w razie potrzeby; użytkownik ukrywa typ i ustawia domyślne parametry w widoku „Moduły” (sekcja „Widżety”).
 
 ## Poza zakresem
 Usuwanie wbudowanych aplikacji, wyłączanie Defendera i aktualizacji zabezpieczeń.
@@ -31,6 +32,7 @@ Usuwanie wbudowanych aplikacji, wyłączanie Defendera i aktualizacji zabezpiecz
 - [ ] Punkt przywracania i eksport kluczy przed grupą zmian
 - [ ] Początkowy katalog tweaków (bezpiecznych) z ryzykiem i uzasadnieniem
 - [ ] Widok `Tweaks.xaml`
+- [ ] Widget Dashboardu zgodny z D-053 (parametry z minimum domyślnym, reguła kompletności)
 - [ ] Testy Pester, PSScriptAnalyzer
 - [ ] Działa dla `localhost` i dla komputera zdalnego (kontekst wykonania `-Context`, błąd połączenia obsłużony na poziomie instancji)
 - [ ] Dokumentacja zaktualizowana, commit `FAZA 13: ...`

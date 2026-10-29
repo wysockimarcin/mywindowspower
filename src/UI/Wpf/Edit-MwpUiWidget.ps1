@@ -7,7 +7,9 @@
         Zmiana komputera = nowa instancja modułu dla widgetu (kontekst wykonania jest niezmienny, D-035):
         stara instancja jest zamykana (anulowanie zadania, sesje, poświadczenia), a widget zostaje na
         swoim miejscu. Pozostałe zmiany (nazwa, odświeżanie, rozmiar, parametry) zachowują instancję
-        i połączenie; widget jest odświeżany od razu.
+        i połączenie; widget jest odświeżany od razu. Nowy widget wybiera się z katalogu do dodawania
+        (Get-MwpWidgetDefinition -Addable — bez typów ukrytych w widoku „Moduły”, z domyślnymi
+        parametrami użytkownika; czytany przy każdym otwarciu okna, D-053); edycja używa katalogu pełnego.
 
     .PARAMETER Id
         Identyfikator edytowanego widgetu; bez niego — nowy widget na końcu Dashboardu.
@@ -31,11 +33,15 @@
             return
         }
     }
-    if (@($dashboard.Catalog).Count -eq 0) {
-        Show-MwpMessage -Text 'Żaden moduł nie udostępnia widgetów Dashboardu.' -Kind Warning -Owner $Owner
+    $catalog = @($dashboard.Catalog)
+    if ($null -eq $widget) {
+        $catalog = @(Get-MwpWidgetDefinition -Definition $ui.Definitions -Addable)
+    }
+    if ($catalog.Count -eq 0) {
+        Show-MwpMessage -Text 'Żaden moduł nie udostępnia widgetów Dashboardu albo wszystkie typy są ukryte (widok „Moduły”, sekcja „Widżety”).' -Kind Warning -Owner $Owner
         return
     }
-    $config = Show-MwpWidgetEditor -Widget $widget -Catalog @($dashboard.Catalog) -Owner $Owner
+    $config = Show-MwpWidgetEditor -Widget $widget -Catalog $catalog -Owner $Owner
     if ($null -eq $config) {
         return
     }

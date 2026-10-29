@@ -29,6 +29,9 @@
 | Instancja modułu | Konkretne uruchomienie definicji modułu w jednym kontekście wykonania, z własnym stanem i cyklem życia |
 | Host | Główna aplikacja: okno, nawigacja, ładowanie modułów, zarządzanie instancjami, konfiguracja |
 | Widget | Uproszczony widok danych modułu na Dashboardzie; osobny kontrakt prezentacji, powiązany z instancją i komputerem |
+| Typ widgetu | Widget zadeklarowany w manifeście modułu (`<Id modułu>.<Id widgetu>`); od D-053 każdy moduł ma co najmniej jeden. Użytkownik może ukryć typ na liście „Dodaj widżet” i ustawić domyślne parametry nowych widgetów (widok „Moduły”, sekcja „Widżety”) |
+| Katalog do dodawania | Typy widgetów widoczne w oknie „Dodaj widżet” (`Get-MwpWidgetDefinition -Addable`); katalog pełny (bez filtra) służy do odtwarzania Pulpitu, więc ukryty typ nadal działa (D-053) |
+| Widget-zalążek | Widget modułu-zalążka (`Security`, `Tweaks`) pokazujący tylko wersję modułu; zadeklarowany z `Enabled = $false`, zastępuje go faza obszaru (D-053) |
 | Tryb prezentacji | Sposób pokazania modułu: Embedded, SeparateWindow, DashboardWidget, Standalone, CLI |
 | Transport | Mechanizm wykonania operacji na komputerze zdalnym (np. WinRM, CIM) |
 | Adapter transportu | Prywatne funkcje `MWP.Remote`, jedyne miejsce z poleceniami WinRM/CIM (`New-MwpPSSession`, `Invoke-MwpSessionCommand`, `New-MwpCimSession`…); w testach podmieniane mockami (D-034) |

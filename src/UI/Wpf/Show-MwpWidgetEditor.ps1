@@ -7,7 +7,9 @@
         Rodzaj widgetu z katalogu (Get-MwpWidgetDefinition), komputer z rejestru (Get-MwpTarget;
         komputery zdalne tylko dla modułów z RemoteTarget), nazwa, częstotliwość odświeżania, rozmiar
         kafelka i parametry ze schematu widgetu (StringArray z listą Values — pola wyboru, Bool — pole
-        wyboru, pozostałe — pole tekstowe). Przy edycji rodzaju widgetu nie można zmienić.
+        wyboru, pozostałe — pole tekstowe; wspólne kontrolki New-MwpUiWidgetParameterPanel). Przy edycji
+        rodzaju widgetu nie można zmienić. Nowy widget dostaje wartości początkowe z DefaultParameters
+        definicji (domyślne parametry ustawione przez użytkownika w widoku „Moduły”, D-053).
 
     .PARAMETER Widget
         Edytowany widget (tabela z New-MwpWidgetRuntime) albo $null dla nowego.
@@ -41,8 +43,9 @@
     $config = $(if ($null -ne $Widget) { $Widget.Config } else { $null })
     $c['HeaderText'].Text = $(if ($null -ne $config) { 'Ustawienia widgetu' } else { 'Nowy widget' })
 
-    $widgetRows = @(foreach ($definition in $Catalog) {
-            [pscustomobject]@{ Title = '{0} ({1})' -f $definition.Name, $definition.ModuleTitle; Definition = $definition }
+    $widgetRows = @(foreach ($definition in @($Catalog | Sort-Object -Property ModuleTitle, Name)) {
+            $suffix = $(if ($definition.SupportsRemote) { '' } else { ' · tylko ten komputer' })
+            [pscustomobject]@{ Title = '{0} ({1}){2}' -f $definition.Name, $definition.ModuleTitle, $suffix; Definition = $definition }
         })
     $c['WidgetCombo'].ItemsSource = $widgetRows
     $refreshRows = @(
@@ -58,7 +61,7 @@
         [pscustomobject]@{ Title = 'Szeroki'; Value = 'Wide' }
     )
     $c['SizeCombo'].ItemsSource = $sizeRows
-    $state = @{ Result = $null; Inputs = @{} }
+    $state = @{ Result = $null; Parameters = $null }
 
     $fillTargets = {
         $selected = $c['WidgetCombo'].SelectedItem
@@ -76,51 +79,31 @@
         $c['TargetCombo'].SelectedItem = @($rows | Where-Object { $_.Name -eq $current }) + @($rows) | Select-Object -First 1
     }
     $fillParameters = {
-        $panel = $c['ParametersPanel']
-        $panel.Children.Clear()
-        $state.Inputs = @{}
         $selected = $c['WidgetCombo'].SelectedItem
+        $state.Parameters = $null
+        $c['ParametersPanel'].Children.Clear()
         $c['ParametersHeader'].Visibility = 'Collapsed'
         if ($null -eq $selected) {
             return
         }
         $c['WidgetDescription'].Text = $selected.Definition.Description
-        $saved = $(if ($null -ne $config -and $config['parameters'] -is [Collections.IDictionary]) { $config['parameters'] } else { @{} })
-        foreach ($key in @($selected.Definition.Parameters.Keys)) {
-            $schema = $selected.Definition.Parameters[$key]
-            $value = $(if ($saved.Contains($key)) { $saved[$key] } else { $schema['Default'] })
-            $label = New-Object -TypeName System.Windows.Controls.TextBlock
-            $label.Text = $(if ($schema.Contains('Label')) { [string]$schema['Label'] } else { [string]$key })
-            $label.Margin = '0,6,0,2'
-            $null = $panel.Children.Add($label)
-            $c['ParametersHeader'].Visibility = 'Visible'
-            if ($schema['Type'] -eq 'StringArray' -and $schema.Contains('Values')) {
-                $wrap = New-Object -TypeName System.Windows.Controls.WrapPanel
-                $boxes = @{}
-                foreach ($option in @($schema['Values'])) {
-                    $box = New-Object -TypeName System.Windows.Controls.CheckBox
-                    $box.Content = $(if ($schema.Contains('ValueLabels') -and $schema['ValueLabels'].Contains($option)) { $schema['ValueLabels'][$option] } else { $option })
-                    $box.IsChecked = @($value) -contains $option
-                    $box.Margin = '0,2,16,2'
-                    $null = $wrap.Children.Add($box)
-                    $boxes[[string]$option] = $box
-                }
-                $null = $panel.Children.Add($wrap)
-                $state.Inputs[$key] = @{ Type = 'Choices'; Boxes = $boxes; Order = @($schema['Values']) }
+        # Edycja: parametry, którymi widget działa (z PreviousDefault dla kluczy sprzed D-053); nowy: domyślne użytkownika.
+        $values = $(if ($null -ne $Widget -and $Widget.Parameters -is [Collections.IDictionary]) {
+                $Widget.Parameters
             }
-            elseif ($schema['Type'] -eq 'Bool') {
-                $box = New-Object -TypeName System.Windows.Controls.CheckBox
-                $box.Content = 'Włączone'
-                $box.IsChecked = [bool]$value
-                $null = $panel.Children.Add($box)
-                $state.Inputs[$key] = @{ Type = 'Bool'; Control = $box }
+            elseif ($null -ne $config -and $config['parameters'] -is [Collections.IDictionary]) {
+                $config['parameters']
+            }
+            elseif ($null -ne $selected.Definition.PSObject.Properties['DefaultParameters']) {
+                $selected.Definition.DefaultParameters
             }
             else {
-                $box = New-Object -TypeName System.Windows.Controls.TextBox
-                $box.Text = $(if ($schema['Type'] -eq 'StringArray') { @($value) -join ', ' } else { [string]$value })
-                $null = $panel.Children.Add($box)
-                $state.Inputs[$key] = @{ Type = [string]$schema['Type']; Control = $box }
-            }
+                @{}
+            })
+        $fields = @(Get-MwpWidgetParameterField -Schema $selected.Definition.Parameters -Value $values)
+        $state.Parameters = New-MwpUiWidgetParameterPanel -Panel $c['ParametersPanel'] -Field $fields
+        if ($fields.Count -gt 0) {
+            $c['ParametersHeader'].Visibility = 'Visible'
         }
     }
 
@@ -143,6 +126,11 @@
     $c['WidgetCombo'].Add_SelectionChanged({
             & $fillTargets
             & $fillParameters
+            # Nowy widget: domyślna częstotliwość wybranego typu (widgety kosztowne — tylko ręcznie, D-053).
+            $selected = $c['WidgetCombo'].SelectedItem
+            if ($null -eq $config -and $null -ne $selected) {
+                $c['RefreshCombo'].SelectedItem = @($refreshRows | Where-Object { $_.Value -eq $selected.Definition.DefaultRefreshSeconds }) + @($refreshRows[2]) | Select-Object -First 1
+            }
         })
 
     $c['OkButton'].Add_Click({
@@ -156,26 +144,11 @@
                 $problem = 'Wybierz komputer docelowy.'
             }
             $parameters = [ordered]@{}
-            foreach ($key in @($state.Inputs.Keys | Sort-Object)) {
-                $field = $state.Inputs[$key]
-                switch ($field.Type) {
-                    'Choices' {
-                        $chosen = @($field.Order | Where-Object { $field.Boxes[[string]$_].IsChecked })
-                        if ($chosen.Count -eq 0) {
-                            $problem = 'Wybierz co najmniej jedną wartość parametru „{0}”.' -f $key
-                        }
-                        $parameters[$key] = $chosen
-                    }
-                    'Bool' { $parameters[$key] = [bool]$field.Control.IsChecked }
-                    'Int' {
-                        $number = 0
-                        if (-not [int]::TryParse($field.Control.Text, [ref]$number)) {
-                            $problem = 'Parametr „{0}” musi być liczbą całkowitą.' -f $key
-                        }
-                        $parameters[$key] = $number
-                    }
-                    'StringArray' { $parameters[$key] = @($field.Control.Text -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
-                    default { $parameters[$key] = $field.Control.Text }
+            if ($null -ne $state.Parameters) {
+                $read = & $state.Parameters.Read
+                $parameters = $read.Parameters
+                if ($read.Problem -and -not $problem) {
+                    $problem = $read.Problem
                 }
             }
             if ($problem) {

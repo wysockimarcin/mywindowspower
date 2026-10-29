@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Power.psm1'
-    ModuleVersion        = '0.6.0'
+    ModuleVersion        = '0.6.1'
     GUID                 = '11d47c40-6897-408f-ac88-edec49d70ecc'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -56,7 +56,17 @@
                     DataCommand           = 'Get-MwpPowerStatus'
                     ViewCommand           = 'ConvertTo-MwpPowerStatusView'
                     DefaultRefreshSeconds = 300
-                    Parameters            = @{}
+                    Parameters            = @{
+                        # D-053: domyślnie minimum; PreviousDefault — dla widgetów zapisanych, zanim parametr istniał.
+                        Sections = @{
+                            Type            = 'StringArray'
+                            Default         = @('Plan')
+                            PreviousDefault = @('Plan', 'Timeouts', 'Hibernate')
+                            Values          = @('Plan', 'Timeouts', 'Hibernate')
+                            Label           = 'Sekcje'
+                            ValueLabels     = @{ Plan = 'Plan zasilania'; Timeouts = 'Ekran i uśpienie'; Hibernate = 'Hibernacja i szybkie uruchamianie' }
+                        }
+                    }
                 }
             )
         }

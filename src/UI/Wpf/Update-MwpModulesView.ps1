@@ -19,6 +19,7 @@
     if ($null -ne $selected) {
         $v['ModulesGrid'].SelectedItem = @($rows | Where-Object { $_.Id -eq $selected.Id }) | Select-Object -First 1
     }
+    Update-MwpModuleWidgetSection
     $installed = @($rows | Where-Object { $_.Source -eq 'Z paczki' }).Count
     $invalid = @($rows | Where-Object { -not $_.IsValid }).Count
     $location = Get-MwpDataLocation

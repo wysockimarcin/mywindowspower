@@ -1,4 +1,4 @@
-<!-- Widok „Moduły" (D-031): moduły wbudowane i z paczek, instalacja z .mwpmod, odinstalowanie. -->
+<!-- Widok „Moduły" (D-031): moduły wbudowane i z paczek, instalacja z .mwpmod, odinstalowanie; ustawienia widżetów modułu (D-053). -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <DockPanel Margin="32,28">
@@ -19,6 +19,29 @@
                 <Button x:Name="RefreshButton" Content="Odśwież"/>
             </WrapPanel>
         </StackPanel>
+
+        <!-- Sekcja „Widżety” (D-053): widoczność typów widgetów modułu na liście „Dodaj widżet” i domyślne parametry nowych widgetów. -->
+        <Border x:Name="WidgetsCard" DockPanel.Dock="Bottom" Style="{StaticResource Mwp.Card}" Margin="0,12,0,0" Padding="14,10" Visibility="Collapsed">
+            <StackPanel>
+                <DockPanel>
+                    <CheckBox x:Name="ModuleWidgetsCheck" DockPanel.Dock="Right" Content="Moduł dostępny jako widżet" VerticalAlignment="Center"/>
+                    <TextBlock Text="Widżety" Style="{StaticResource Mwp.Text.Section}"/>
+                </DockPanel>
+                <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,4,0,8"
+                           Text="Ukrycie typu usuwa go tylko z listy „Dodaj widżet”: widżety już dodane na Pulpit zostają i działają. Domyślne parametry dotyczą nowych widżetów; zmiany zapisują się od razu."/>
+                <DockPanel>
+                    <Button x:Name="WidgetResetButton" DockPanel.Dock="Right" Content="Przywróć domyślne" Margin="8,0,0,0"/>
+                    <ComboBox x:Name="WidgetTypeCombo" DisplayMemberPath="Title"/>
+                </DockPanel>
+                <TextBlock x:Name="WidgetDescriptionText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                <CheckBox x:Name="WidgetVisibleCheck" Content="Pokazuj na liście „Dodaj widżet”" Margin="0,8,0,0"/>
+                <TextBlock x:Name="WidgetParametersHeader" Text="Domyślne parametry nowych widżetów" Style="{StaticResource Mwp.Text.Label}" Margin="0,10,0,0"/>
+                <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="WidgetParametersPanel"/>
+                </ScrollViewer>
+                <TextBlock x:Name="WidgetStatusText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Border>
 
         <Border DockPanel.Dock="Bottom" Style="{StaticResource Mwp.Card}" Margin="0,12,0,0" Padding="14,10">
             <TextBlock x:Name="DetailsText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap"

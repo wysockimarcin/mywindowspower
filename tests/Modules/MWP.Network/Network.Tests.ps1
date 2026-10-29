@@ -292,6 +292,27 @@ Describe 'MWP.Network — sieć' {
         }
     }
 
+    Context 'widget Dashboardu (D-053)' {
+        It 'widok „Sieć”: domyślnie tylko połączone adaptery z IPv4; szczegóły i wszystkie adaptery z parametrów' {
+            $data = (Get-MwpNetworkStatus).Data
+            $connected = @($data.Adapters | Where-Object { $_.Status -eq 'Up' })
+            $view = ConvertTo-MwpNetworkStatusView -Data $data
+            $view.PSObject.TypeNames | Should -Contain 'MWP.WidgetView'
+            @($view.Sections).Count | Should -Be $connected.Count
+            @($view.Sections[0].Items | ForEach-Object Label) | Should -Be @('Stan', 'IPv4')
+            $full = ConvertTo-MwpNetworkStatusView -Data $data -WidgetParameters @{ OnlyConnected = $false; Details = @('IPv4', 'Gateway', 'Dns', 'Dhcp', 'IPv6') }
+            @($full.Sections).Count | Should -Be @($data.Adapters).Count
+            @($full.Sections[0].Items | ForEach-Object Label) | Should -Be @('Stan', 'IPv4', 'Brama', 'DNS', 'Adres IP', 'IPv6')
+            ConvertTo-MwpNetworkStatusView -Data $null | Should -BeNullOrEmpty
+            ConvertTo-MwpNetworkStatusView -Data 'to nie jest JSON' | Should -BeNullOrEmpty
+        }
+
+        It 'funkcja danych przyjmuje -WidgetParameters (kontrakt widgetu)' {
+            Mock -ModuleName MWP.Network Start-MwpOperation { [pscustomobject]@{ PSTypeName = 'MWP.Operation'; Operation = $Operation } }
+            (Get-MwpNetworkStatus -AsOperation -WidgetParameters @{ OnlyConnected = $true }).Operation | Should -Be 'Network.Status'
+        }
+    }
+
     Context 'zmiana DNS z cofaniem i automatycznym wycofaniem' {
         It '-WhatIf: podgląd przed i po z informacją o wycofaniu; nic nie zmienia i nie rejestruje zadania' {
             $result = Set-MwpDnsServer -InterfaceIndex 11 -Preset Cloudflare -WhatIf

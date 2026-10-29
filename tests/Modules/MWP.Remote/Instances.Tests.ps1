@@ -208,6 +208,18 @@ Describe 'Instancje modułów' {
         { New-MwpModuleInstance -ModuleId 'Remote' } | Should -Throw '*bazowy*'
     }
 
+    It 'moduł bazowy z widgetem tworzy instancję tylko dla widgetu (-ForWidget, D-053); moduł bez trybu DashboardWidget — nie' {
+        $instance = New-MwpModuleInstance -ModuleId 'Core' -ForWidget
+        try {
+            $instance.ModuleId | Should -Be 'Core'
+            $instance.Context.Mode | Should -Be 'Local'
+        }
+        finally {
+            $null = Close-MwpModuleInstance -Instance $instance
+        }
+        { New-MwpModuleInstance -ModuleId 'LocalOnly' -ForWidget } | Should -Throw '*DashboardWidget*'
+    }
+
     It 'filtruje instancje po komputerze' {
         $null = New-MwpModuleInstance -ModuleId 'Probe'
         $null = New-MwpModuleInstance -ModuleId 'Probe' -ComputerName $computerOne

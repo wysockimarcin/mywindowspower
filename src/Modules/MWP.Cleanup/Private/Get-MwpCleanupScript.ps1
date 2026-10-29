@@ -18,6 +18,12 @@
           pracę po bieżącym pliku (CancelRequested); zdalnie jest pusty.
         - ComponentStore: DISM /Online /Cleanup-Image /AnalyzeComponentStore /English (tylko analiza;
           wymaga administratora), linie wyniku i kod wyjścia.
+        - Estimate (widget „Miejsce do odzyskania”, D-053): jedno wywołanie dla operacji w tle — blok
+          Environment, rozwinięcie lokalizacji kategorii (Resolve-MwpCleanupRoot z Test-MwpCleanupRoot,
+          druga linia obrony, ta sama co na hoście) i blok Process wyłącznie w trybie Scan (tryb jest
+          stały w bloku, nie przychodzi z żądania). Blok jest złożony z kodu tego modułu (nie z tekstu
+          wejściowego, D-015); kategorie przychodzą jako JSON. Wynik: JSON Kind = 'MWP.CleanupEstimateRaw'
+          z wynikami bloków Environment i Process (tekst JSON) oraz lokalizacjami.
 
     .PARAMETER Name
         Nazwa bloku.
@@ -26,9 +32,74 @@
     [OutputType([scriptblock])]
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('Environment', 'Process', 'ComponentStore')]
+        [ValidateSet('Environment', 'Process', 'ComponentStore', 'Estimate')]
         [string] $Name
     )
+
+    if ($Name -eq 'Estimate') {
+        $orchestrator = {
+            param([string] $RequestJson, [scriptblock] $EnvironmentBlock, [scriptblock] $ProcessBlock)
+            $ErrorActionPreference = 'Continue'
+            $request = ConvertFrom-Json -InputObject $RequestJson
+            $environmentJson = @(& $EnvironmentBlock | Where-Object { $_ }) | Select-Object -Last 1
+            $environment = $null
+            try {
+                $environment = ConvertFrom-Json -InputObject ([string]$environmentJson) -ErrorAction Stop
+            }
+            catch {
+                $environment = $null
+            }
+            $roots = @()
+            $processJson = $null
+            if ($null -ne $environment -and $environment.SystemRoot) {
+                $roots = @(Resolve-MwpCleanupRoot -Category @($request.Categories) -Environment $environment -Remote:([bool]$request.Remote))
+                $available = @($roots | Where-Object { $_.Available })
+                if ($available.Count -gt 0) {
+                    $processRequest = ConvertTo-Json -Compress -Depth 5 -InputObject ([pscustomobject]@{
+                            Mode       = 'Scan'
+                            MaxSamples = 0
+                            Protected  = @($environment.Protected)
+                            Roots      = @($available | ForEach-Object {
+                                    [pscustomobject]@{
+                                        Key                    = $_.Key
+                                        Path                   = $_.Path
+                                        Recurse                = [bool]$_.Recurse
+                                        Patterns               = @($_.Patterns)
+                                        Exclude                = @($_.Exclude)
+                                        MinAgeDays             = [int]$_.MinAgeDays
+                                        RemoveEmptyDirectories = [bool]$_.RemoveEmptyDirectories
+                                    }
+                                })
+                        })
+                    $processJson = @(& $ProcessBlock $processRequest $null | Where-Object { $_ }) | Select-Object -Last 1
+                }
+            }
+            ConvertTo-Json -Compress -Depth 6 -InputObject ([pscustomobject]@{
+                    Kind        = 'MWP.CleanupEstimateRaw'
+                    Remote      = [bool]$request.Remote
+                    Environment = [string]$environmentJson
+                    Process     = $(if ($null -ne $processJson) { [string]$processJson } else { $null })
+                    Roots       = @($roots | ForEach-Object {
+                            [pscustomobject]@{
+                                Key = $_.Key; CategoryId = $_.CategoryId; Path = $_.Path; Scope = $_.Scope; Sid = $_.Sid; UserName = $_.UserName
+                                RequiresAdmin = [bool]$_.RequiresAdmin; Available = [bool]$_.Available; Reason = $_.Reason; ReasonText = $_.ReasonText
+                                Recurse = [bool]$_.Recurse; Patterns = @($_.Patterns); Exclude = @($_.Exclude); MinAgeDays = [int]$_.MinAgeDays
+                                RemoveEmptyDirectories = [bool]$_.RemoveEmptyDirectories
+                            }
+                        })
+                    Categories  = @($request.Categories)
+                    Warnings    = @($request.Warnings | Where-Object { $_ })
+                })
+        }
+        $text = @(
+            'param([string] $RequestJson)'
+            ('function Get-MwpCleanupText {{{0}}}' -f ${function:Get-MwpCleanupText})
+            ('function Test-MwpCleanupRoot {{{0}}}' -f ${function:Test-MwpCleanupRoot})
+            ('function Resolve-MwpCleanupRoot {{{0}}}' -f ${function:Resolve-MwpCleanupRoot})
+            ('& {{{0}}} $RequestJson {{{1}}} {{{2}}}' -f $orchestrator, (Get-MwpCleanupScript -Name Environment), (Get-MwpCleanupScript -Name Process))
+        ) -join [Environment]::NewLine
+        return [scriptblock]::Create($text)
+    }
 
     switch ($Name) {
         'Environment' {

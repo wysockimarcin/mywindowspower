@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Remote.psm1'
-    ModuleVersion        = '0.12.1'
+    ModuleVersion        = '0.12.2'
     GUID                 = 'c2b4ddbe-4c75-4db6-89d9-700ff0abe8b2'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -13,6 +13,7 @@
         'Clear-MwpTargetCredentialCache'
         'Close-MwpModuleInstance'
         'Connect-MwpTarget'
+        'ConvertTo-MwpTargetStatusView'
         'Disconnect-MwpTarget'
         'Get-MwpCimSessionParameter'
         'Get-MwpModuleInstance'
@@ -20,12 +21,14 @@
         'Get-MwpTarget'
         'Get-MwpTargetCredentialInfo'
         'Get-MwpTargetInfo'
+        'Get-MwpTargetStatus'
         'Initialize-MwpModuleInstance'
         'Invoke-MwpOnTarget'
         'New-MwpExecutionContext'
         'New-MwpModuleInstance'
         'Remove-MwpTarget'
         'Remove-MwpTargetCredential'
+        'Resolve-MwpTargetStatus'
         'Save-MwpTargetCredential'
         'Set-MwpTarget'
         'Start-MwpOperation'
@@ -39,6 +42,7 @@
     PrivateData          = @{
         # Kontrakt modułu MyWindowsPower (ARCHITEKTURA.md, „Kontrakt modułu"; D-024).
         # Moduł bazowy (D-031): nie można go odinstalować.
+        # Widget „Komputery” (D-053): tylko komputer lokalny (LocalOnly) — próby połączenia wychodzą z komputera aplikacji.
         MWP    = @{
             ContractVersion            = 1
             Id                         = 'Remote'
@@ -49,9 +53,27 @@
                 @{ Id = 'Core'; MinimumVersion = '0.4.0' }
             )
             Capabilities               = @('HostServices', 'RemoteTarget')
-            SupportedPresentationModes = @()
+            SupportedPresentationModes = @('DashboardWidget')
             RequiredPermissions        = @('User')
             ConfigurationSchema        = @{}
+            Widgets                    = @(
+                @{
+                    Id                    = 'TargetStatus'
+                    Name                  = 'Komputery'
+                    Description           = 'Komputery zdalne z rejestru: dostępność portu WinRM z tego komputera i stan hasła w pamięci aplikacji.'
+                    DataCommand           = 'Get-MwpTargetStatus'
+                    ViewCommand           = 'ConvertTo-MwpTargetStatusView'
+                    DefaultRefreshSeconds = 300
+                    LocalOnly             = $true
+                    Parameters            = @{
+                        Probe = @{
+                            Type    = 'Bool'
+                            Default = $true
+                            Label   = 'Sprawdzaj dostępność (połączenie TCP z portem WinRM, bez logowania)'
+                        }
+                    }
+                }
+            )
         }
         PSData = @{
             ProjectUri = 'https://github.com/wysockimarcin/mywindowspower'

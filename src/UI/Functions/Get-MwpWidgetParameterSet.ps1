@@ -3,6 +3,13 @@
     .SYNOPSIS
         Zwraca parametry widgetu: wartości domyślne ze schematu widgetu nadpisane wartościami z konfiguracji.
 
+    .DESCRIPTION
+        Parametr, którego nie ma w zapisanej konfiguracji, dostaje PreviousDefault ze schematu (jeśli jest),
+        a w przeciwnym razie Default. PreviousDefault (D-053) to wartość dla widgetów zapisanych, zanim
+        parametr istniał: okno widgetu zapisuje wszystkie parametry schematu, więc brak klucza oznacza
+        starszy zapis — dzięki temu nowy parametr z minimalnym Default nie zmienia wyglądu istniejących
+        widgetów.
+
     .PARAMETER Configuration
         Wpis konfiguracji widgetu (klucz parameters).
 
@@ -22,7 +29,8 @@
     $parameters = @{}
     if ($Definition.Parameters -is [Collections.IDictionary]) {
         foreach ($key in @($Definition.Parameters.Keys)) {
-            $parameters[[string]$key] = $Definition.Parameters[$key]['Default']
+            $schema = $Definition.Parameters[$key]
+            $parameters[[string]$key] = $(if ($schema.Contains('PreviousDefault')) { $schema['PreviousDefault'] } else { $schema['Default'] })
         }
     }
     if ($Configuration['parameters'] -is [Collections.IDictionary]) {

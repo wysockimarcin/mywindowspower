@@ -479,6 +479,33 @@ Describe 'MWP.Apps — aplikacje i winget' {
         }
     }
 
+    Context 'widgety Dashboardu (D-053)' {
+        It 'widok „Programy”: domyślnie podsumowanie bez składników systemu; największe i ostatnie z parametrów' {
+            $data = (Get-MwpInstalledApp).Data
+            $view = ConvertTo-MwpAppsSummaryView -Data $data
+            $view.PSObject.TypeNames | Should -Contain 'MWP.WidgetView'
+            @($view.Sections | ForEach-Object Title) | Should -Be @('Zainstalowane')
+            $full = ConvertTo-MwpAppsSummaryView -Data $data -WidgetParameters @{ Sections = @('Largest', 'Recent'); Top = 2 }
+            @($full.Sections | ForEach-Object Title) | Should -Be @('Największe', 'Ostatnio zainstalowane')
+            $full.Sections[0].Items[0].Label | Should -Be 'Git'
+            @($full.Sections[1].Items).Count | Should -Be 2
+            @($full.Sections | ForEach-Object { $_.Items } | Where-Object { $_.Label -eq 'Składnik ukryty' }) | Should -BeNullOrEmpty
+            ConvertTo-MwpAppsSummaryView -Data $null | Should -BeNullOrEmpty
+        }
+
+        It 'widok „Aktualizacje programów”: lista z wersjami i limitem; błąd winget jako ostrzeżenie, bez wyjątku' {
+            $list = (Get-MwpWingetUpgrade).Data
+            @(Get-FakeArgument)[-1] | Should -Be 'list --source winget --upgrade-available --disable-interactivity'
+            $view = ConvertTo-MwpAppsUpdatesView -Data $list -WidgetParameters @{ Top = 1 }
+            $view.Summary | Should -Match ('aktualizacji: {0}' -f @($list.Packages | Where-Object HasUpgrade).Count)
+            $view.Sections[0].Items[0].Value | Should -Match '→'
+            $failed = [pscustomobject]@{ PSTypeName = 'MWP.WingetList'; Kind = 'List'; Success = $false; Message = 'winget niedostępny'; Packages = @(); Warnings = @() }
+            $failedView = ConvertTo-MwpAppsUpdatesView -Data $failed
+            $failedView.Warnings | Should -Contain 'winget niedostępny'
+            ConvertTo-MwpAppsUpdatesView -Data $null | Should -BeNullOrEmpty
+        }
+    }
+
     Context 'winget: wykrycie, lista, aktualizacje, wyszukiwanie' {
         It 'wykrycie: wersja i ścieżka; brak winget = Available false z komunikatem' {
             $info = Get-MwpWingetInfo

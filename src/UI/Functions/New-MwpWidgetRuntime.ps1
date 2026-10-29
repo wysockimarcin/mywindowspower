@@ -54,7 +54,7 @@
     $computerName = [string]$Configuration['computerName']
     try {
         $name = 'Widget: {0} — {1}' -f $Definition.Name, $computerName
-        $instance = New-MwpModuleInstance -ModuleId $Definition.ModuleId -ComputerName $computerName -Name $name
+        $instance = New-MwpModuleInstance -ModuleId $Definition.ModuleId -ComputerName $computerName -Name $name -ForWidget
         $initialization = Initialize-MwpModuleInstance -Instance $instance
         if (-not $initialization.Success) {
             $null = Close-MwpModuleInstance -Instance $instance

@@ -262,6 +262,44 @@ Describe 'MWP.Cleanup — czyszczenie dysku' {
         }
     }
 
+    Context 'widget Dashboardu (D-053)' {
+        It 'skan w tle (blok Estimate) daje te same liczby co skan krok po kroku i niczego nie usuwa' {
+            $direct = Measure-MwpCleanupCategory -Context $context
+            Mock -ModuleName MWP.Cleanup Start-MwpOperation { [pscustomobject]@{ PSTypeName = 'MWP.Operation'; Block = $ScriptBlock; Arguments = $ArgumentList; Operation = $Operation } }
+            $operation = Measure-MwpCleanupCategory -Context $context -AsOperation -WidgetParameters @{ Categories = @('UserTemp', 'WindowsTemp', 'RecycleBin', 'ThumbnailCache', 'ErrorReports', 'WindowsUpdateDownload', 'DeliveryOptimization', 'Logs') }
+            $operation.Operation | Should -Be 'Cleanup.Scan'
+            # Blok Environment zastąpiony danymi komputera testowego (reszta bloku bez zmian).
+            $environmentPath = Join-Path -Path $TestDrive -ChildPath 'environment.json'
+            [IO.File]::WriteAllText($environmentPath, (ConvertTo-Json -Compress -Depth 5 -InputObject $script:Machine.Environment), [Text.Encoding]::UTF8)
+            $environmentText = (InModuleScope MWP.Cleanup { Get-MwpCleanupScript -Name Environment }).ToString()
+            $text = $operation.Block.ToString()
+            $text.Contains($environmentText) | Should -BeTrue
+            $code = [scriptblock]::Create($text.Replace($environmentText, ("[IO.File]::ReadAllText('{0}')" -f $environmentPath)))
+            $raw = & { Set-StrictMode -Off; & $code @($operation.Arguments) }
+            $scan = Resolve-MwpCleanupScan -Data $raw
+            $scan.PSObject.TypeNames | Should -Contain 'MWP.CleanupScan'
+            $scan.TotalBytes | Should -Be $direct.Data.TotalBytes
+            $scan.TotalFiles | Should -Be $direct.Data.TotalFiles
+            foreach ($file in (Join-Path $paths.AnnaTemp 'stary1.tmp'), (Join-Path $paths.WindowsTemp 'system.tmp')) {
+                Test-File $file | Should -BeTrue
+            }
+            $view = ConvertTo-MwpCleanupEstimateView -Data $raw
+            @($view.Sections | ForEach-Object Title) | Should -Be @('Suma')
+            $view.Sections[0].Items[0].Value | Should -Be $direct.Data.TotalText
+            $withCategories = ConvertTo-MwpCleanupEstimateView -Data $raw -WidgetParameters @{ ShowCategories = $true }
+            @($withCategories.Sections[1].Items | Where-Object { $_.Percent -ge 0 }).Count | Should -BeGreaterThan 0
+            ConvertTo-MwpCleanupEstimateView -Data $null | Should -BeNullOrEmpty
+        }
+
+        It 'blok Estimate ma tryb Scan na stałe i nie usuwa plików' {
+            $block = InModuleScope MWP.Cleanup { Get-MwpCleanupScript -Name Estimate }
+            $text = $block.ToString()
+            $text | Should -Match "Mode\s*=\s*'Scan'"
+            $text | Should -Not -Match 'Invoke-Expression|\$using:|Remove-Item'
+            $text | Should -Not -Match "Mode\s*=\s*\[string\]\`$request\.Mode\s*$"
+        }
+    }
+
     Context 'usuwanie z potwierdzeniem i podglądem' {
         It 'domyślnie pyta o potwierdzenie (ConfirmImpact High) i obsługuje -WhatIf' {
             $binding = (Get-Command -Name Clear-MwpCleanupCategory).ScriptBlock.Attributes | Where-Object { $_ -is [System.Management.Automation.CmdletBindingAttribute] }

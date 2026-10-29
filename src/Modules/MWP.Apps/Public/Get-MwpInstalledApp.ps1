@@ -22,9 +22,14 @@
     .PARAMETER NoAppx
         Bez pakietów Appx.
 
+    .PARAMETER WidgetParameters
+        Parametry widgetu „Programy” (kontrakt D-043); dane są zawsze pełne, sekcje wybiera ConvertTo-MwpAppsSummaryView.
+
     .EXAMPLE
         (Get-MwpInstalledApp).Data.Apps | Select-MwpInstalledApp -Search 'git' | Format-Table Name, Version, Publisher, ScopeText
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'WidgetParameters',
+        Justification = 'Parametr wymagany przez kontrakt widgetu (D-043, D-053); sekcje i liczbę pozycji wybiera funkcja widoku.')]
     [CmdletBinding()]
     [OutputType([pscustomobject])]
     param(
@@ -38,6 +43,9 @@
         [switch] $NoCurrentUser,
 
         [switch] $NoAppx,
+
+        [AllowNull()]
+        [Collections.IDictionary] $WidgetParameters,
 
         [switch] $AsOperation
     )

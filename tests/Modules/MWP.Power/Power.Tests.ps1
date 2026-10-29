@@ -324,6 +324,14 @@ Describe 'MWP.Power — plany zasilania i ustawienia energii' {
         }
     }
 
+    Context 'widget Dashboardu (D-053)' {
+        It 'widok „Zasilanie”: sekcje z parametru Sections; bez parametru wszystkie (widgety sprzed D-053)' {
+            $data = (Get-MwpPowerStatus -Context $context).Data
+            @((ConvertTo-MwpPowerStatusView -Data $data -WidgetParameters @{ Sections = @('Plan') }).Sections | ForEach-Object Title) | Should -Be @('Plan zasilania')
+            @((ConvertTo-MwpPowerStatusView -Data $data).Sections).Count | Should -Be 3
+        }
+    }
+
     Context 'aktywny plan' {
         It '-WhatIf: podgląd z nazwą komputera, bez /setactive' {
             $result = Set-MwpActivePowerPlan -Guid $high -Context $context -WhatIf

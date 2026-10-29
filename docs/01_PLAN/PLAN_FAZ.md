@@ -78,7 +78,7 @@ Cel: kontrola nad aktualizacjami. Zakres: oczekujące aktualizacje i historia pr
 Cel: diagnostyka i konfiguracja sieci. Zakres: adaptery, konfiguracja IP, DNS z presetami i cofaniem, flush DNS, resety, testy łączności. Kryterium: zmiana DNS jest odwracalna. Zdalnie z ochroną przed utratą łączności. Wynik (D-049): zmiana DNS i wyłączenie adaptera z zadaniem automatycznego wycofania na komputerze docelowym (zatwierdzenie w 120 s), lokalnie i zdalnie.
 
 ### FAZA 12 — Aplikacje i winget
-Cel: porządek w zainstalowanych programach. Zakres: lista z rejestru i pakietów Appx, `winget` (lista, aktualizacje, odinstalowanie), lista ochronna aplikacji systemowych. Kryterium: odinstalowanie tylko z potwierdzeniem. Zdalnie z ograniczeniami `winget` do zbadania.
+Cel: porządek w zainstalowanych programach. Zakres: lista z rejestru i pakietów Appx, `winget` (lista, aktualizacje, odinstalowanie), lista ochronna aplikacji systemowych. Kryterium: odinstalowanie tylko z potwierdzeniem. Zdalnie z ograniczeniami `winget` do zbadania. Wynik (D-050): rejestr i Appx lokalnie i zdalnie, winget przez parsowanie tabel niezależne od języka (źródło `winget`), odinstalowanie przez winget/Appx z listą ochronną; winget zdalnie niedostępny dla konta bez zarejestrowanego App Installer (sonda).
 
 ### FAZA 13 — Prywatność i tweaki
 Cel: katalog ustawień rejestru. Zakres: tweaki zdefiniowane danymi (klucz, wartość, ryzyko, wymaga restartu), odczyt stanu, zastosuj/cofnij, profile, punkt przywracania przed grupą. Kryterium: każdy tweak ma cofnięcie. Zdalnie `HKLM`; `HKCU` tylko po jawnym wyborze profilu.

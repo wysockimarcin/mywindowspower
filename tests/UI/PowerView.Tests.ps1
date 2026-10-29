@@ -40,7 +40,7 @@ Describe 'MWP.UI — widok Zasilanie (logika prezentacji)' {
         Test-Path -LiteralPath (Join-Path -Path $root -ChildPath ('src\UI\{0}' -f $view.View)) | Should -BeTrue
         Get-Command -Name $view.Initialize -Module MWP.UI | Should -Not -BeNullOrEmpty
         Get-Command -Name $view.Update -Module MWP.UI | Should -Not -BeNullOrEmpty
-        Get-MwpModuleViewCatalog -ModuleId 'Apps' | Should -BeNullOrEmpty
+        Get-MwpModuleViewCatalog -ModuleId 'Tweaks' | Should -BeNullOrEmpty
     }
 
     It 'pozycje czasów: Nigdy, minuty i godziny; wartość spoza listy jest dopisywana' {

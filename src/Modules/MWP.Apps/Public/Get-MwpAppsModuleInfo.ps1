@@ -4,7 +4,7 @@
         Zwraca informacje o module MWP.Apps.
 
     .DESCRIPTION
-        Zaślepka z FAZY 1. Potwierdza, że moduł się ładuje. Nie zmienia systemu.
+        Punkt wejścia kontraktu modułu (D-024). Nie zmienia systemu.
 
     .EXAMPLE
         Get-MwpAppsModuleInfo
@@ -17,6 +17,6 @@
     [pscustomobject]@{
         Name    = $module.Name
         Version = $module.Version
-        Status  = 'Zaślepka'
+        Status  = 'Aplikacje: programy z rejestru i pakiety Appx, winget (lista, aktualizacje, wyszukiwanie, instalacja), odinstalowanie z listą ochronną (FAZA 12)'
     }
 }

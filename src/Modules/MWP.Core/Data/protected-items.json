@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
-    "description": "Lista ochronna MyWindowsPower: elementy krytyczne dla działania systemu lub zarządzania zdalnego, domyślnie zablokowane przed wyłączeniem lub usunięciem. Pole name może zawierać symbole wieloznaczne (-like). Usługi (Service) — FAZA 7, D-045: usługi chronione można uruchomić i ustawić na typ automatyczny, nie można ich zatrzymać, uruchomić ponownie ani ustawić na ręczny lub wyłączony; usługi, od której zależy usługa chroniona, nie można wyłączyć. Plany zasilania wbudowane (PowerPlan, GUID) — FAZA 6. Zadania harmonogramu — FAZA 8, D-046: Task (pełna ścieżka zadania, folder + nazwa) — zadania krytycznego nie wolno wyłączyć ani usunąć, wolno je włączyć i uruchomić; TaskRemoval — zadania nie wolno usunąć. Rozszerzenie lokalne (tylko dodawanie): protected.local.json obok settings.local.json.",
+    "description": "Lista ochronna MyWindowsPower: elementy krytyczne dla działania systemu lub zarządzania zdalnego, domyślnie zablokowane przed wyłączeniem lub usunięciem. Pole name może zawierać symbole wieloznaczne (-like). Usługi (Service) — FAZA 7, D-045: usługi chronione można uruchomić i ustawić na typ automatyczny, nie można ich zatrzymać, uruchomić ponownie ani ustawić na ręczny lub wyłączony; usługi, od której zależy usługa chroniona, nie można wyłączyć. Plany zasilania wbudowane (PowerPlan, GUID) — FAZA 6. Zadania harmonogramu — FAZA 8, D-046: Task (pełna ścieżka zadania, folder + nazwa) — zadania krytycznego nie wolno wyłączyć ani usunąć, wolno je włączyć i uruchomić; TaskRemoval — zadania nie wolno usunąć. Aplikacje — FAZA 12, D-050: AppxPackage (nazwa pakietu Appx) i App (nazwa programu z rejestru albo identyfikator winget — źródła lub lokalny ARP\\…, MSIX\\…) — nie wolno ich odinstalować z aplikacji; pakiety Appx systemowe, struktury, zasobów i nieusuwalne oraz składniki systemowe z rejestru są chronione niezależnie od listy. Rozszerzenie lokalne (tylko dodawanie): protected.local.json obok settings.local.json.",
     "items": [
         { "category": "Service", "name": "RpcSs", "reason": "Zdalne wywołania procedur (RPC); bez tej usługi system nie działa." },
         { "category": "Service", "name": "RpcEptMapper", "reason": "Mapowanie punktów końcowych RPC; wymagane przez RPC." },
@@ -48,6 +48,28 @@
         { "category": "Task", "name": "\\Microsoft\\Windows\\RecoveryEnvironment\\*", "reason": "Weryfikacja środowiska odzyskiwania Windows (WinRE)." },
         { "category": "Task", "name": "\\Microsoft\\Windows\\BitLocker\\*", "reason": "Zadania szyfrowania dysków BitLocker." },
         { "category": "Task", "name": "\\Microsoft\\Windows\\Time Synchronization\\*", "reason": "Synchronizacja czasu; zły czas psuje certyfikaty, logowanie i aktualizacje." },
-        { "category": "Task", "name": "\\Microsoft\\Windows\\CertificateServicesClient\\*", "reason": "Odnawianie i porządkowanie certyfikatów użytkownika i komputera." }
+        { "category": "Task", "name": "\\Microsoft\\Windows\\CertificateServicesClient\\*", "reason": "Odnawianie i porządkowanie certyfikatów użytkownika i komputera." },
+        { "category": "AppxPackage", "name": "Microsoft.WindowsStore", "reason": "Microsoft Store — instalacja i aktualizacja aplikacji ze Sklepu." },
+        { "category": "AppxPackage", "name": "Microsoft.DesktopAppInstaller", "reason": "Instalator aplikacji (App Installer) — zawiera winget, z którego korzysta MyWindowsPower." },
+        { "category": "AppxPackage", "name": "Microsoft.StorePurchaseApp", "reason": "Zakupy i licencje Microsoft Store." },
+        { "category": "AppxPackage", "name": "Microsoft.SecHealthUI", "reason": "Zabezpieczenia Windows (interfejs Microsoft Defender)." },
+        { "category": "AppxPackage", "name": "Microsoft.VCLibs.*", "reason": "Biblioteki Visual C++ dla aplikacji ze Sklepu (zależność wielu aplikacji)." },
+        { "category": "AppxPackage", "name": "Microsoft.UI.Xaml.*", "reason": "Biblioteka interfejsu WinUI (zależność wielu aplikacji)." },
+        { "category": "AppxPackage", "name": "Microsoft.NET.Native.*", "reason": "Środowisko .NET Native dla aplikacji ze Sklepu." },
+        { "category": "AppxPackage", "name": "Microsoft.WindowsAppRuntime.*", "reason": "Windows App SDK — środowisko uruchomieniowe aplikacji." },
+        { "category": "AppxPackage", "name": "Microsoft.Services.Store.Engagement", "reason": "Usługi Sklepu używane przez inne aplikacje." },
+        { "category": "AppxPackage", "name": "Microsoft.MicrosoftEdge*", "reason": "Przeglądarka Microsoft Edge — składnik systemu." },
+        { "category": "App", "name": "Microsoft.AppInstaller", "reason": "Instalator aplikacji (winget) — używany przez MyWindowsPower." },
+        { "category": "App", "name": "MSIX\\Microsoft.DesktopAppInstaller_*", "reason": "Instalator aplikacji (winget) — używany przez MyWindowsPower." },
+        { "category": "App", "name": "MSIX\\Microsoft.WindowsStore_*", "reason": "Microsoft Store." },
+        { "category": "App", "name": "MSIX\\Microsoft.VCLibs.*", "reason": "Biblioteki Visual C++ dla aplikacji ze Sklepu." },
+        { "category": "App", "name": "MSIX\\Microsoft.UI.Xaml.*", "reason": "Biblioteka interfejsu WinUI." },
+        { "category": "App", "name": "MSIX\\Microsoft.WindowsAppRuntime.*", "reason": "Windows App SDK." },
+        { "category": "App", "name": "Microsoft.Edge", "reason": "Przeglądarka Microsoft Edge — składnik systemu." },
+        { "category": "App", "name": "Microsoft Edge", "reason": "Przeglądarka Microsoft Edge — składnik systemu." },
+        { "category": "App", "name": "Microsoft.EdgeWebView2Runtime", "reason": "Microsoft Edge WebView2 — środowisko wyświetlania stron w wielu programach." },
+        { "category": "App", "name": "Microsoft Edge WebView2 Runtime", "reason": "Microsoft Edge WebView2 — środowisko wyświetlania stron w wielu programach." },
+        { "category": "App", "name": "Microsoft Edge Update", "reason": "Aktualizacje Microsoft Edge i WebView2." },
+        { "category": "App", "name": "Windows Driver Package*", "reason": "Pakiet sterownika urządzenia — usunięcie może wyłączyć sprzęt." }
     ]
 }

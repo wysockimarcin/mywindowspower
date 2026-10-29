@@ -26,6 +26,7 @@
                 break
             }
             $Progress.Message = [string]$step.Label
+            $Progress.Percent = [int](100 * $index / [Math]::Max(1, $Steps.Count))
             $parameters = @{}
             foreach ($key in $step.Parameters.Keys) {
                 $parameters[$key] = $step.Parameters[$key]

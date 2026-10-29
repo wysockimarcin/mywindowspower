@@ -17,9 +17,27 @@
 
 ---
 
+## FAZA 12 — Aplikacje i winget (2026-10-29)
+- Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwej instalacji, aktualizacji i odinstalowania oraz komputera zdalnego — lista w pliku fazy)
+- Commit: `FAZA 12: aplikacje i winget — programy z rejestru i Appx, winget z parsowaniem niezależnym od języka, aktualizacje, wyszukiwanie i instalacja, odinstalowanie z listą ochronną i widok modułu` — hash do uzupełnienia na starcie FAZY 13
+- Start: uzupełniono hash FAZY 11 (`114d45e`); baza testów — 5.1.26100.9711: 0 uwag, 1803/1803; 7.6.7: 0 uwag, 1803/1803.
+- Decyzje użytkownika (2026-10-29): odinstalowanie przez winget i Appx (bez `UninstallString`); potwierdzenie instalacji/aktualizacji = zgoda na umowy pakietu i źródła; środowiska uruchomieniowe tylko z ostrzeżeniem; sonda zdalna wykonana przez użytkownika.
+- Zrobiono:
+  - `MWP.Apps` 0.12.0: inwentarz rejestru i Appx z filtrami i sortowaniem, winget (wykrycie, lista, aktualizacje, wyszukiwanie) z parserem tabel niezależnym od języka i szerokości kolumn, instalacja i aktualizacja pojedyncza, odinstalowanie z podglądem, listą ochronną, logiem i cofnięciem przez ponowną instalację.
+  - `MWP.Core` 0.12.0: kategorie listy ochronnej `App` i `AppxPackage`.
+  - Okno: `Views/Apps.xaml` (Zainstalowane, Aktualizacje, Wyszukaj i zainstaluj, cofnięcia), logika prezentacji bez WPF, wpis w katalogu widoków, procent postępu kroków zmian.
+  - Dokumentacja: `DECYZJE` (D-050), `ARCHITEKTURA` (sekcja „Aplikacje”, struktura, rdzeń, ograniczenia zdalne, testy architektoniczne), `PLAN_FAZ`, `FAZA_12_APLIKACJE`, `STAN_PROJEKTU`, `README`.
+- Testy: 5.1.26100.9711 — 0 uwag, 1913/1913; 7.6.7 — 0 uwag, 1913/1913. Nowe: `tests/Modules/MWP.Apps/Apps.Tests.ps1` (34; atrapa winget.cmd w stronie OEM, atrapy inwentarza i Appx, ścieżka zdalna z mockiem transportu), `tests/UI/AppsView.Tests.ps1` (6); `PowerView.Tests.ps1` — moduł bez widoku: `Tweaks`. Test dymny okna w 5.1 i 7.6.7.
+- Poprawione w trakcie: strona kodowa OEM wyjścia winget, stopki psujące kolumny, ujemne literały HRESULT, `@()` na `List[object]` w 5.1, wydajność inwentarza (7,6 s → 3,3 s), 4 uwagi PSScriptAnalyzer w testach.
+- Niezrobione / odroczone: prawdziwe zmiany (weryfikacja ręczna); winget zdalnie dla konta bez App Installer (nowy ADR, kandydat FAZA 20); widget Dashboardu — poza zakresem.
+- Decyzje: D-050.
+- Do weryfikacji na Windows 11: lista 8 punktów w `docs/03_FAZY/FAZA_12_APLIKACJE.md`.
+- Uwaga: pliki nieśledzone sprzed fazy (`docs/04_PROMPTY/PROMPT_KOREKTA_D031.md`, `docs/scripts/`) pozostawione bez zmian i poza commitem. Przy próbnym `winget list` na starcie fazy raz przekazano `--accept-source-agreements` (msstore nadal zgłasza brak zgody — nic się nie zapisało).
+- Następna faza: FAZA 13 — Prywatność i tweaki
+
 ## FAZA 11 — Sieć (2026-10-28)
 - Status: ZAKOŃCZONA (ręczna weryfikacja prawdziwych zmian jako administrator, automatycznego wycofania i komputera zdalnego — lista w pliku fazy)
-- Commit: `FAZA 11: sieć — adaptery i konfiguracja IP, DNS z presetami, cofaniem i automatycznym wycofaniem przez zadanie na komputerze docelowym, DHCP, resety, testy łączności i widok modułu` — hash do uzupełnienia na starcie FAZY 12
+- Commit: `FAZA 11: sieć — adaptery i konfiguracja IP, DNS z presetami, cofaniem i automatycznym wycofaniem przez zadanie na komputerze docelowym, DHCP, resety, testy łączności i widok modułu` — hash `114d45e` (uzupełniony na starcie FAZY 12)
 - Start: uzupełniono hash FAZY 10 (`5b6daa4`); baza testów — 5.1.26100.9711: 0 uwag, 1698/1698; 7.6.7: 0 uwag, 1698/1698.
 - Decyzje użytkownika (2026-10-28): automatyczne wycofanie przez jednorazowe zadanie harmonogramu na komputerze docelowym; limit 120 s; lokalnie i zdalnie; resety Winsock/IP dozwolone zdalnie z wpisaniem nazwy komputera.
 - Zrobiono:

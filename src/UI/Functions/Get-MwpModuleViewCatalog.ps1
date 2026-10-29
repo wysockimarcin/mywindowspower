@@ -26,6 +26,7 @@
         [pscustomobject]@{ PSTypeName = 'MWP.UiModuleView'; ModuleId = 'Cleanup'; View = 'Views\Cleanup.xaml'; Initialize = 'Initialize-MwpCleanupView'; Update = 'Update-MwpCleanupView' }
         [pscustomobject]@{ PSTypeName = 'MWP.UiModuleView'; ModuleId = 'Update'; View = 'Views\Update.xaml'; Initialize = 'Initialize-MwpUpdateView'; Update = 'Update-MwpUpdateView' }
         [pscustomobject]@{ PSTypeName = 'MWP.UiModuleView'; ModuleId = 'Network'; View = 'Views\Network.xaml'; Initialize = 'Initialize-MwpNetworkView'; Update = 'Update-MwpNetworkView' }
+        [pscustomobject]@{ PSTypeName = 'MWP.UiModuleView'; ModuleId = 'Apps'; View = 'Views\Apps.xaml'; Initialize = 'Initialize-MwpAppsView'; Update = 'Update-MwpAppsView' }
     )
     foreach ($view in $views) {
         if (-not $PSBoundParameters.ContainsKey('ModuleId') -or $view.ModuleId -eq $ModuleId) {

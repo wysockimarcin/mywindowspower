@@ -1,0 +1,126 @@
+<!-- Widok modułu Aplikacje (FAZA 12, D-050): zainstalowane programy z rejestru i pakiety Appx (filtry, sortowanie
+     kolumnami, szczegóły, ochrona), odinstalowanie z podglądem i potwierdzeniem, aktualizacje winget (pojedyncza i zaznaczone),
+     wyszukiwanie i instalacja pakietu z repozytorium winget oraz zmiany do cofnięcia. Wstawiany do widoku instancji
+     (Instance.xaml, ModuleHost). Kod: Initialize-/Update-MwpAppsView. -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <DataTemplate x:Key="OptionTemplate">
+            <TextBlock Text="{Binding Label}"/>
+        </DataTemplate>
+    </UserControl.Resources>
+    <StackPanel>
+        <DockPanel Margin="0,4,0,0" LastChildFill="True">
+            <Button x:Name="AppsRefreshButton" DockPanel.Dock="Right" Content="Odśwież" VerticalAlignment="Center"/>
+            <TextBlock x:Name="AppsStatusText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Odczyt listy programów…"/>
+        </DockPanel>
+        <Border x:Name="AppsWarningBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,10,0,0" Visibility="Collapsed">
+            <TextBlock x:Name="AppsWarningText" TextWrapping="Wrap"/>
+        </Border>
+
+        <TabControl x:Name="AppsTabs" Margin="0,12,0,0">
+            <TabItem Header="Zainstalowane">
+                <StackPanel Margin="0,10,0,0">
+                    <WrapPanel>
+                        <TextBox x:Name="AppsSearchBox" Width="240" Margin="0,0,8,8" VerticalContentAlignment="Center"
+                                 ToolTip="Szukaj w nazwie, wydawcy, wersji i identyfikatorze winget."/>
+                        <ComboBox x:Name="AppsSourceBox" Width="170" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+                        <ComboBox x:Name="AppsScopeBox" Width="190" Margin="0,0,8,8" ItemTemplate="{StaticResource OptionTemplate}"/>
+                        <CheckBox x:Name="AppsSystemCheck" Content="Pokaż składniki systemowe" VerticalAlignment="Center" Margin="0,0,12,8"/>
+                        <CheckBox x:Name="AppsUpgradeCheck" Content="Tylko z aktualizacją" VerticalAlignment="Center" Margin="0,0,12,8"/>
+                    </WrapPanel>
+                    <WrapPanel x:Name="AppsProfilePanel" Visibility="Collapsed">
+                        <TextBlock Text="Programy profilu (zalogowany użytkownik):" VerticalAlignment="Center" Margin="0,0,6,8"/>
+                        <ComboBox x:Name="AppsProfileBox" Width="260" Margin="0,0,8,8" DisplayMemberPath="Label"/>
+                        <Button x:Name="AppsProfileButton" Content="Wczytaj" Margin="0,0,8,8"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="AppsCountText" Style="{StaticResource Mwp.Text.Muted}" Margin="0,0,0,6"/>
+                    <DataGrid x:Name="AppsGrid" MinHeight="160" MaxHeight="420" IsReadOnly="True" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="3*"/>
+                            <DataGridTextColumn Header="Wersja" Binding="{Binding Version}" Width="110"/>
+                            <DataGridTextColumn Header="Dostępna" Binding="{Binding Available}" Width="100"/>
+                            <DataGridTextColumn Header="Wydawca" Binding="{Binding Publisher}" Width="2*"/>
+                            <DataGridTextColumn Header="Źródło" Binding="{Binding SourceText}" Width="110"/>
+                            <DataGridTextColumn Header="Zakres" Binding="{Binding ScopeText}" Width="140"/>
+                            <DataGridTextColumn Header="Instalacja" Binding="{Binding InstallDateText}" Width="90"/>
+                            <DataGridTextColumn Header="Rozmiar" Binding="{Binding SizeText}" SortMemberPath="SizeBytes" Width="80"/>
+                            <DataGridTextColumn Header="Ochrona" Binding="{Binding ProtectionText}" Width="80"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Style="{StaticResource Mwp.Card}" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="AppsDetailTitle" FontWeight="SemiBold" TextWrapping="Wrap" Text="Wybierz aplikację z listy."/>
+                            <TextBlock x:Name="AppsDetailText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button x:Name="AppsUpgradeButton" Content="Aktualizuj…" Margin="0,0,8,8"/>
+                        <Button x:Name="AppsUninstallButton" Style="{StaticResource Mwp.Button.Danger}" Content="Odinstaluj…" Margin="0,0,8,8"/>
+                        <TextBlock x:Name="AppsActionText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                    </WrapPanel>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Aktualizacje (winget)">
+                <StackPanel Margin="0,10,0,0">
+                    <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               Text="Pakiety z repozytorium winget z nowszą wersją. Zatwierdzenie aktualizacji oznacza akceptację umów pakietu i źródła winget. Aktualizacja nie ma wpisu cofnięcia (poprzednia wersja zostaje w logu)."/>
+                    <DockPanel LastChildFill="True">
+                        <Button x:Name="UpgradesRefreshButton" DockPanel.Dock="Right" Content="Sprawdź aktualizacje" Margin="8,0,0,8"/>
+                        <TextBlock x:Name="UpgradesText" Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    </DockPanel>
+                    <DataGrid x:Name="UpgradesGrid" MinHeight="120" MaxHeight="420" IsReadOnly="True" SelectionMode="Extended">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="3*"/>
+                            <DataGridTextColumn Header="Identyfikator" Binding="{Binding Id}" Width="2*"/>
+                            <DataGridTextColumn Header="Wersja" Binding="{Binding Version}" Width="120"/>
+                            <DataGridTextColumn Header="Dostępna" Binding="{Binding Available}" Width="120"/>
+                            <DataGridTextColumn Header="Uwagi" Binding="{Binding Note}" Width="2*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button x:Name="UpgradeSelectedButton" Style="{StaticResource Mwp.Button.Accent}" Content="Aktualizuj zaznaczone…" Margin="0,0,8,8"/>
+                        <TextBlock Style="{StaticResource Mwp.Text.Muted}" VerticalAlignment="Center" Margin="0,0,0,8" TextWrapping="Wrap"
+                                   Text="Ctrl lub Shift — kilka pakietów; każdy aktualizowany osobno, z postępem na pasku stanu."/>
+                    </WrapPanel>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Wyszukaj i zainstaluj">
+                <StackPanel Margin="0,10,0,0">
+                    <TextBlock Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               Text="Repozytorium winget (bez Microsoft Store). Zatwierdzenie instalacji oznacza akceptację umów pakietu i źródła winget; instalację można cofnąć (odinstalowanie)."/>
+                    <WrapPanel>
+                        <TextBox x:Name="SearchBox" Width="300" Margin="0,0,8,8" VerticalContentAlignment="Center"
+                                 ToolTip="Nazwa, identyfikator, moniker lub znacznik pakietu (litery, cyfry, spacja, . _ + - #)."/>
+                        <Button x:Name="SearchButton" Content="Szukaj" Margin="0,0,8,8"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="SearchText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                    <DataGrid x:Name="SearchGrid" MinHeight="100" MaxHeight="360" IsReadOnly="True" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="3*"/>
+                            <DataGridTextColumn Header="Identyfikator" Binding="{Binding Id}" Width="2*"/>
+                            <DataGridTextColumn Header="Wersja" Binding="{Binding Version}" Width="110"/>
+                            <DataGridTextColumn Header="Dopasowanie" Binding="{Binding Match}" Width="2*"/>
+                            <DataGridTextColumn Header="Zainstalowany" Binding="{Binding InstalledText}" Width="120"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button x:Name="InstallButton" Style="{StaticResource Mwp.Button.Accent}" Content="Zainstaluj…" Margin="0,0,8,8"/>
+                    </WrapPanel>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <TextBlock Text="Zmiany aplikacji do cofnięcia (ten komputer)" Style="{StaticResource Mwp.Text.Section}"/>
+        <DataGrid x:Name="AppsUndoGrid" MinHeight="60" MaxHeight="200" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Kiedy" Binding="{Binding When}" Width="140"/>
+                <DataGridTextColumn Header="Zmiana" Binding="{Binding Description}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <WrapPanel Margin="0,10,0,0">
+            <Button x:Name="AppsUndoButton" Content="Cofnij wybraną…" Margin="0,0,8,8"/>
+        </WrapPanel>
+    </StackPanel>
+</UserControl>

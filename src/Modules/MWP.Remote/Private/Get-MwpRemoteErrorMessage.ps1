@@ -26,6 +26,12 @@
         'CredentialRequired' {
             "Połączenie z komputerem '{0}' wymaga poświadczeń: podaj -Credential (np. Get-Credential)." -f $computer
         }
+        'CredentialRejected' {
+            'Komputer ''{0}'' odrzucił poświadczenie w tym uruchomieniu; automatyczne ponowienia są wstrzymane (ochrona konta przed blokadą). Kliknij „Połącz”, aby podać hasło.' -f $computer
+        }
+        'StoredCredentialRejected' {
+            'Komputer ''{0}'' odrzucił hasło zapisane w Menedżerze poświadczeń Windows (np. zmienione na komputerze zdalnym). Aplikacja nie użyje go ponownie w tym uruchomieniu; kliknij „Połącz”, aby podać nowe hasło, albo usuń zapisane w edytorze komputera („Zapomnij hasło”).' -f $computer
+        }
         'Configuration' {
             "Klient WinRM nie ufa komputerowi '{0}' (grupa robocza): dodaj tę nazwę do TrustedHosts albo użyj HTTPS; instrukcja w ARCHITEKTURA.md. Aplikacja nie zmienia TrustedHosts." -f $computer
         }

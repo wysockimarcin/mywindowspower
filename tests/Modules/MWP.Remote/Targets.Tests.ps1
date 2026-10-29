@@ -13,6 +13,9 @@ Describe 'Rejestr komputerów docelowych' {
         $root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\Modules\MWP.Core\MWP.Core.psd1') -Force
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\Modules\MWP.Remote\MWP.Remote.psd1') -Force
+        # D-052: testy nie dotykają prawdziwego Menedżera poświadczeń; pamięć poświadczeń jest wspólna dla procesu.
+        Mock -ModuleName MWP.Remote Invoke-MwpCredentialApi { [pscustomobject]@{ ErrorCode = 1168; UserName = $null; Password = $null; LastWritten = [datetime]::MinValue; BlobSize = 0 } }
+        Clear-MwpTargetCredentialCache
         $configDirectory = Join-Path -Path $TestDrive -ChildPath 'config'
         $null = New-Item -ItemType Directory -Path $configDirectory -Force
         Copy-Item -LiteralPath (Join-Path -Path $root -ChildPath 'config\settings.example.json') -Destination (Join-Path -Path $configDirectory -ChildPath 'settings.example.json')
@@ -42,6 +45,7 @@ Describe 'Rejestr komputerów docelowych' {
     }
 
     BeforeEach {
+        Clear-MwpTargetCredentialCache
         Get-ChildItem -LiteralPath $configDirectory -Filter 'settings.local.json*' | Remove-Item -Force
         Remove-Item -LiteralPath (Join-Path -Path $TestDrive -ChildPath 'Undo') -Recurse -Force -ErrorAction SilentlyContinue
     }

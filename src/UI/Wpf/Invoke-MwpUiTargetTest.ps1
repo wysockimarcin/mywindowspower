@@ -40,9 +40,14 @@
     else {
         $credential = $null
         if (-not $Target.IsLocal -and $Target.Authentication -eq 'Credential') {
-            $credential = Show-MwpCredentialDialog -ComputerName $Target.Name -UserName $Target.UserName -Owner $Owner
-            if ($null -eq $credential) {
-                return
+            # Sprawdzone hasło komputera z pamięci procesu wystarcza (D-052); inaczej okno (bez zapisu).
+            $info = @(Get-MwpTargetCredentialInfo -Name $Target.Name -SkipStore) | Select-Object -First 1
+            if ($null -eq $info -or -not $info.Cached) {
+                $answer = Show-MwpCredentialDialog -ComputerName $Target.Name -UserName $Target.UserName -Owner $Owner
+                if ($null -eq $answer) {
+                    return
+                }
+                $credential = $answer.Credential
             }
         }
         $arguments = @($Target.Name, $credential, $true)

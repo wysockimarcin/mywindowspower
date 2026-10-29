@@ -115,6 +115,13 @@
             Remove-MwpPSSession -Session $connection.Session
             $connection.Session = $null
             $state = if ($kind -eq 'Unauthorized') { 'Unauthorized' } else { 'Disconnected' }
+            if ($kind -eq 'Unauthorized') {
+                # D-052: odrzucone hasło znika z połączenia; wspólne — unieważnione dla wszystkich kontekstów komputera.
+                if ($null -ne $connection.PSObject.Properties['CredentialShared'] -and $connection.CredentialShared) {
+                    $null = Set-MwpCachedCredentialInvalid -ComputerName $Context.ComputerName -Generation ([int]$connection.CredentialGeneration)
+                }
+                Set-MwpConnectionCredential -Connection $connection -Credential $null
+            }
             Set-MwpConnectionState -Connection $connection -State $state -ErrorKind 'ConnectionLost' -ErrorMessage $exception.Message
             $message = Get-MwpRemoteErrorMessage -Kind 'ConnectionLost' -Context $Context -Detail $exception.Message
             return & $fail $message $exception.Message 'Warning'

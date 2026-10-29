@@ -80,8 +80,9 @@
             return & $finish
         }
 
-        if ($null -eq $Credential) {
-            $Credential = $connection.Credential
+        $fromContext = $null -eq $Credential
+        if ($fromContext) {
+            $Credential = Resolve-MwpConnectionCredential -Context $Context
         }
         $session = $null
         $temporary = $false
@@ -110,6 +111,11 @@
                 }
                 catch {
                     $test.ErrorKind = Get-MwpRemoteErrorKind -Exception $_.Exception
+                    $shared = $null -ne $connection.PSObject.Properties['CredentialShared'] -and $connection.CredentialShared
+                    if ($test.ErrorKind -eq 'Unauthorized' -and $fromContext -and $shared) {
+                        $null = Set-MwpCachedCredentialInvalid -ComputerName $Context.ComputerName -Generation ([int]$connection.CredentialGeneration)
+                        Set-MwpConnectionCredential -Connection $connection -Credential $null
+                    }
                     $errors.Add((Get-MwpRemoteErrorMessage -Kind $test.ErrorKind -Context $Context -Detail $_.Exception.Message))
                     return & $finish
                 }

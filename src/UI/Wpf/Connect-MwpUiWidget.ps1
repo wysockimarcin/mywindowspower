@@ -1,13 +1,16 @@
 ﻿function Connect-MwpUiWidget {
     <#
     .SYNOPSIS
-        Łączy widget z komputerem zdalnym: okno poświadczeń, połączenie w tle, potem odświeżenie widgetu.
+        Łączy widget z komputerem zdalnym: poświadczenie (pamięć, magazyn albo okno), połączenie w tle, potem odświeżenie widgetu.
 
     .DESCRIPTION
-        Jak dla instancji (Connect-MwpUiInstance, D-034): okno poświadczeń pokazuje warstwa UI,
-        a Connect-MwpTarget działa w zadaniu w tle na kontekście instancji widgetu, więc okno nie czeka
-        na limit czasu niedostępnego komputera. Poświadczenie zostaje tylko w pamięci połączenia tego
-        widgetu; inne widgety tego samego komputera mają własne konteksty.
+        Jak dla instancji (Connect-MwpUiInstance, D-034, D-052): Get-MwpUiCredentialPlan wybiera
+        sprawdzone hasło komputera z pamięci procesu, wpis z Menedżera poświadczeń albo okno
+        poświadczeń (pole „Zapamiętaj” domyślnie wyłączone). Connect-MwpTarget działa w zadaniu w tle
+        na kontekście instancji widgetu, więc okno nie czeka na limit czasu niedostępnego komputera.
+        Sprawdzone hasło jest wspólne dla instancji i widgetów tego komputera do zamknięcia aplikacji;
+        po udanym połączeniu pozostałe widgety tego komputera czekające na poświadczenia są wznawiane.
+        Po odmowie dostępu widget zostaje w stanie „Wymaga poświadczeń” bez ponowień w tle.
 
     .PARAMETER Id
         Identyfikator widgetu.
@@ -32,22 +35,31 @@
         $widget.Pending = $true
         return
     }
+    $state = Get-MwpConnectionStateInfo -Context $context
+    $info = $null
+    if ($context.Identity.Authentication -eq 'Credential' -and ($state.NeedsCredential -or $state.State -eq 'Unauthorized')) {
+        $info = @(Get-MwpTargetCredentialInfo -Name $context.ComputerName) | Select-Object -First 1
+    }
+    $plan = Get-MwpUiCredentialPlan -State $state -Info $info -UserName $context.Identity.UserName
     $credential = $null
-    if ($context.Identity.Authentication -eq 'Credential') {
-        $credential = Show-MwpCredentialDialog -ComputerName $context.ComputerName -UserName $context.Identity.UserName -Owner $Owner
-        if ($null -eq $credential) {
+    $save = $false
+    if ($plan.Action -eq 'Dialog') {
+        $answer = Show-MwpCredentialDialog -ComputerName $context.ComputerName -UserName $plan.UserName -Owner $Owner -OfferSave:$plan.OfferSave -Notice $plan.Notice
+        if ($null -eq $answer) {
             return
         }
+        $credential = $answer.Credential
+        $save = $answer.Save
     }
     $widget.Status = 'Loading'
     $widget.Message = 'Łączenie z komputerem {0}…' -f $context.ComputerName
     $widget.Version++
     Update-MwpDashboardWidgets
     # Zadanie łączenia zajmuje widget (Task), więc harmonogram nie odświeża go w tym czasie.
-    $widget.Task = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Łączenie: {0}' -f $context.ComputerName) -State $widget -ArgumentList $context, $credential -ScriptBlock {
-        param($Progress, $Context, [System.Management.Automation.PSCredential] $Credential)
-        $Progress.Message = 'nawiązywanie sesji WinRM'
-        Connect-MwpTarget -Context $Context -Credential $Credential
+    $widget.Task = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Łączenie: {0}' -f $context.ComputerName) -State $widget -ArgumentList $context, $credential, ($plan.Action -eq 'Store'), $save -ScriptBlock {
+        param($Progress, $Context, [System.Management.Automation.PSCredential] $Credential, [bool] $UseStored, [bool] $Save)
+        $Progress.Message = $(if ($UseStored) { 'hasło z Menedżera poświadczeń, nawiązywanie sesji WinRM' } else { 'nawiązywanie sesji WinRM' })
+        Connect-MwpTarget -Context $Context -Credential $Credential -UseStoredCredential:$UseStored -SaveCredential:$Save
     } -OnCompleted {
         param($Task)
         $target = $Task.State
@@ -60,6 +72,7 @@
             $target.Message = $null
             $target.Status = 'Idle'
             $target.Pending = $true
+            $null = Resume-MwpUiTargetWidget -Widget @($script:MwpUi.Dashboard.Widgets) -ComputerName $target.Instance.Context.ComputerName
         }
         else {
             $target.Status = 'NeedsCredential'

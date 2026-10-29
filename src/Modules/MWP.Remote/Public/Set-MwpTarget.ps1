@@ -7,7 +7,8 @@
         Operacja klasy Zmiana na konfiguracji aplikacji (komputer lokalny): -WhatIf, -Confirm, log
         i wpis cofnięcia (przez Set-MwpSetting). Zmienia tylko podane pola: nazwę wyświetlaną,
         sposób uwierzytelnienia, podpowiedź konta, port i HTTPS. Nazwy komputera się nie zmienia
-        (inny komputer = Remove-MwpTarget i Add-MwpTarget). Hasło nie jest zapisywane (D-034).
+        (inny komputer = Remove-MwpTarget i Add-MwpTarget), więc wpis zapisanego hasła MWP:<nazwa>
+        nie zostaje osierocony (D-052). Hasło nie jest zapisywane w rejestrze komputerów (D-034).
         Otwarte instancje mają własne, niezmienne konteksty: zmiana obowiązuje dla nowych instancji.
         Funkcja nie zmienia konfiguracji WinRM ani TrustedHosts.
 

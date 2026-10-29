@@ -57,6 +57,35 @@ Describe 'Architektura rdzenia' {
             $hits | Should -BeNullOrEmpty
         }
 
+        It 'P/Invoke Menedżera poświadczeń (advapi32) jest tylko w adapterze magazynu (D-052)' {
+            $pattern = 'advapi32|DllImport|CredReadW|CredWriteW|CredDeleteW|CredentialApiV\d|Initialize-MwpCredentialType'
+            $allowed = @('Initialize-MwpCredentialType.ps1', 'Invoke-MwpCredentialApi.ps1')
+            $hits = @($sourceFiles | Where-Object { $allowed -notcontains $_.Name } | Select-String -Pattern $pattern |
+                    Where-Object { $_.Line -notmatch '^\s*#' } | ForEach-Object { '{0}:{1}' -f $_.Filename, $_.LineNumber })
+            $hits | Should -BeNullOrEmpty
+            # Magazyn czytają i zapisują tylko funkcje adaptera; reszta kodu woła je, nie warstwę P/Invoke.
+            $callers = @($sourceFiles | Select-String -Pattern '\bInvoke-MwpCredentialApi\b' | Where-Object { $_.Line -notmatch '^\s*#' } |
+                    ForEach-Object { $_.Filename } | Sort-Object -Unique)
+            $callers | Should -Be @('Get-MwpStoredCredential.ps1', 'Invoke-MwpCredentialApi.ps1', 'Remove-MwpStoredCredential.ps1', 'Set-MwpStoredCredential.ps1')
+        }
+
+        It 'pamięć poświadczeń procesu (dane AppDomain) jest tylko w funkcjach pamięci podręcznej MWP.Remote' {
+            $hits = @($sourceFiles | Where-Object { $_.Name -ne 'Get-MwpCredentialCache.ps1' } |
+                    Select-String -Pattern 'CredentialCache\.v\d|\.GetData\(|\.SetData\(' | ForEach-Object { '{0}:{1}' -f $_.Filename, $_.LineNumber })
+            $hits | Should -BeNullOrEmpty
+            $allowed = @('Get-MwpCredentialCache.ps1', 'Get-MwpCachedCredential.ps1', 'Set-MwpCachedCredential.ps1', 'Set-MwpCachedCredentialInvalid.ps1',
+                'Remove-MwpCachedCredential.ps1', 'Enter-MwpCredentialLock.ps1', 'Exit-MwpCredentialLock.ps1')
+            $users = @($sourceFiles | Where-Object { $allowed -notcontains $_.Name } | Select-String -Pattern '\bGet-MwpCredentialCache\b' |
+                    Where-Object { $_.Line -notmatch '^\s*#' } | ForEach-Object { '{0}:{1}' -f $_.Filename, $_.LineNumber })
+            $users | Should -BeNullOrEmpty
+        }
+
+        It 'hasła nie są serializowane do plików (ConvertFrom-SecureString, Export-Clixml) i nie używamy CredSSP' {
+            $hits = @($sourceFiles | Select-String -Pattern 'ConvertFrom-SecureString|Export-Clixml|-Authentication\s+CredSSP|Enable-WSManCredSSP|NetworkCredential\b' |
+                    ForEach-Object { '{0}:{1}' -f $_.Filename, $_.LineNumber })
+            $hits | Should -BeNullOrEmpty
+        }
+
         It 'MWP.Remote nie trzyma zmiennej modułu z bieżącym komputerem ani poświadczeniami' {
             $remoteFiles = @(Get-ChildItem -Path $remote.ModuleBase -Recurse -File -Include '*.ps1', '*.psm1')
             $hits = @($remoteFiles | Select-String -Pattern '\$script:\w*(Computer|Target|Credential|Context)' | ForEach-Object { '{0}:{1}' -f $_.Filename, $_.LineNumber })

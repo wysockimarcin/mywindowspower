@@ -36,7 +36,8 @@
         $connection.CimSession = $null
         $connection.Session = $null
         if (-not $KeepCredential) {
-            $connection.Credential = $null
+            # Tylko poświadczenie tego połączenia: pamięć procesu i Menedżer poświadczeń zostają (D-052).
+            Set-MwpConnectionCredential -Connection $connection -Credential $null
         }
         Set-MwpConnectionState -Connection $connection -State Disconnected
 

@@ -40,6 +40,13 @@
         }
         $ui.Dashboard.Widgets.Clear()
     }
+    # D-052: hasła z pamięci procesu nie zostają w konsoli, z której uruchomiono okno (magazyn bez zmian).
+    try {
+        $null = Clear-MwpTargetCredentialCache
+    }
+    catch {
+        Write-Verbose $_.Exception.Message
+    }
     try {
         Write-MwpLog -Level Info -Source 'MWP.UI' -Operation 'UI.Close' -Message 'Zamknięto okno aplikacji.'
     }

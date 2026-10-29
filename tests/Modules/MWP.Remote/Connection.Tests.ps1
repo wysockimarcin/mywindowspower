@@ -14,6 +14,9 @@ Describe 'Połączenia z komputerami docelowymi' {
         $root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\Modules\MWP.Core\MWP.Core.psd1') -Force
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\Modules\MWP.Remote\MWP.Remote.psd1') -Force
+        # D-052: testy nie dotykają prawdziwego Menedżera poświadczeń; pamięć poświadczeń jest wspólna dla procesu.
+        Mock -ModuleName MWP.Remote Invoke-MwpCredentialApi { throw 'Testy nie mogą używać prawdziwego Menedżera poświadczeń Windows.' }
+        Clear-MwpTargetCredentialCache
         $configDirectory = Join-Path -Path $TestDrive -ChildPath 'config'
         $null = New-Item -ItemType Directory -Path $configDirectory -Force
         Copy-Item -LiteralPath (Join-Path -Path $root -ChildPath 'config\settings.example.json') -Destination (Join-Path -Path $configDirectory -ChildPath 'settings.example.json')
@@ -65,6 +68,7 @@ Describe 'Połączenia z komputerami docelowymi' {
     }
 
     BeforeEach {
+        Clear-MwpTargetCredentialCache
         Mock -ModuleName MWP.Remote New-MwpPSSession { [pscustomobject]@{ ComputerName = $ComputerName; State = 'Opened' } }
         Mock -ModuleName MWP.Remote Remove-MwpPSSession { }
         Mock -ModuleName MWP.Remote Remove-MwpCimSession { }

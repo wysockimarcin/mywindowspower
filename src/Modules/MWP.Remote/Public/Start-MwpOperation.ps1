@@ -12,8 +12,11 @@
         nie wpływa na inne.
         Blok skryptu musi być samowystarczalny, jak w Invoke-MwpOnTarget. Zdalnie każda operacja
         otwiera własne, krótkotrwałe połączenie WinRM z poświadczeniami z połączenia kontekstu
-        (sesja kontekstu należy do runspace'u, w którym powstała). Operacja jest przypisana do
-        instancji modułu (Context.InstanceId), więc Close-MwpModuleInstance ją anuluje.
+        (sesja kontekstu należy do runspace'u, w którym powstała). Bez poświadczenia w kontekście
+        używa sprawdzonego hasła komputera ze wspólnej pamięci procesu; gdy komputer je odrzucił
+        (D-052), operacja kończy się od razu z ErrorKind = CredentialRequired, bez próby logowania.
+        Operacja jest przypisana do instancji modułu (Context.InstanceId), więc
+        Close-MwpModuleInstance ją anuluje.
 
     .EXAMPLE
         $operation = Start-MwpOperation -Context $remote -ScriptBlock { Get-HotFix } -Operation 'Update.GetHotFix'
@@ -45,6 +48,9 @@
         $TimeoutSeconds = $Context.Policy.OperationTimeoutSeconds
     }
     $connection = $Context.Connection
+    # D-052: hasło kontekstu albo sprawdzone hasło komputera z pamięci procesu; po odrzuceniu — brak próby.
+    $credential = Resolve-MwpConnectionCredential -Context $Context
+    $shared = $null -ne $connection.PSObject.Properties['CredentialShared'] -and [bool]$connection.CredentialShared
     $handle = [pscustomobject]@{
         PSTypeName     = 'MWP.Operation'
         Id             = [guid]::NewGuid().ToString()
@@ -60,11 +66,15 @@
         Result         = $null
         PowerShell     = $null
         AsyncResult    = $null
+        # Generacja poświadczenia ze wspólnej pamięci (-1: własne kontekstu); Wait-MwpOperation unieważnia ją po odmowie.
+        CredentialGeneration = $(if ($shared) { [int]$connection.CredentialGeneration } else { -1 })
     }
     $common = @{ Operation = $Operation; Target = $Context.ComputerName; ComputerName = $Context.ComputerName }
 
-    if ($Context.Mode -eq 'Remote' -and $Context.Identity.Authentication -eq 'Credential' -and $null -eq $connection.Credential) {
-        $message = Get-MwpRemoteErrorMessage -Kind 'CredentialRequired' -Context $Context
+    if ($Context.Mode -eq 'Remote' -and $Context.Identity.Authentication -eq 'Credential' -and $null -eq $credential) {
+        $cached = Get-MwpCachedCredential -ComputerName $Context.ComputerName
+        $kind = if ($null -ne $cached -and $cached['State'] -eq 'Invalid') { 'CredentialRejected' } else { 'CredentialRequired' }
+        $message = Get-MwpRemoteErrorMessage -Kind $kind -Context $Context
         $handle.Status = 'Failed'
         $handle.CompletedAt = Get-Date
         $handle.Result = New-MwpResult @common -Success $false -Message $message -Data ([ordered]@{ ErrorKind = 'CredentialRequired' })
@@ -114,7 +124,7 @@
             ComputerName            = $Context.ComputerName
             Port                    = $Context.Port
             UseSsl                  = $Context.UseSsl
-            Credential              = $connection.Credential
+            Credential              = $credential
             ScriptText              = $ScriptBlock.ToString()
             Arguments               = $ArgumentList
             OpenTimeoutSeconds      = $Context.Policy.ConnectTimeoutSeconds

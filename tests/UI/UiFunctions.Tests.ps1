@@ -16,6 +16,9 @@ Describe 'MWP.UI — logika prezentacji' {
         $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\Modules\MWP.Core\MWP.Core.psd1') -Force
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\Modules\MWP.Remote\MWP.Remote.psd1') -Force
+        # D-052: testy nie dotykają prawdziwego Menedżera poświadczeń; pamięć poświadczeń jest wspólna dla procesu.
+        Mock -ModuleName MWP.Remote Invoke-MwpCredentialApi { throw 'Testy nie mogą używać prawdziwego Menedżera poświadczeń Windows.' }
+        Clear-MwpTargetCredentialCache
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\UI\MWP.UI.psm1') -Force
         Mock -ModuleName MWP.Core Get-MwpDataPath {
             $path = Join-Path -Path $TestDrive -ChildPath $Kind

@@ -20,6 +20,9 @@
 | Runspace | Osobny wątek wykonania PowerShella, służy do operacji w tle bez zawieszania GUI |
 | Lista ochronna | Elementy systemu domyślnie chronione przed zmianą |
 | Komputer docelowy | Komputer, na którym wykonywana jest operacja: `localhost` albo komputer zdalny |
+| Menedżer poświadczeń | Menedżer poświadczeń Windows (Credential Manager, Panel sterowania → Menedżer poświadczeń → Poświadczenia systemu Windows): magazyn haseł konta Windows chroniony DPAPI; aplikacja zapisuje w nim hasło komputera zdalnego jako wpis generic `MWP:<komputer>` (D-052) |
+| Poświadczenie zapamiętane | Hasło komputera zdalnego zapisane w Menedżerze poświadczeń po zaznaczeniu „Zapamiętaj” i udanym połączeniu; używane po jawnym „Połącz” (także po restarcie), potem wspólne w pamięci procesu dla instancji i widgetów tego komputera; po odmowie dostępu unieważnione do końca uruchomienia, usuwane przez „Zapomnij hasło” albo usunięcie komputera (D-052) |
+| Blokada ponowień | Po pierwszej odmowie dostępu dla hasła wspólnego żadna instancja ani widget komputera nie próbuje logowania do czasu podania nowego hasła przez użytkownika — ochrona konta przed blokadą (D-052) |
 | `localhost` | Komputer lokalny; operacje wykonywane bezpośrednio, bez zdalnego wywołania |
 | Kontekst wykonania | Niezmienny w obrębie instancji opis „gdzie i jak” działa moduł: komputer docelowy, tryb Local/Remote, tożsamość, stan połączenia, parametry, limity czasu |
 | Definicja modułu | Opis funkcjonalności modułu (manifest, kod); nie jest uruchomieniem |

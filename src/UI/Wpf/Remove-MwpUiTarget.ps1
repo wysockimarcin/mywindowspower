@@ -22,7 +22,10 @@
         return
     }
     $open = @($script:MwpUi.Instances.Values | Where-Object { $_.Instance.Context.ComputerName -eq $Target.Name }).Count
-    $warning = if ($open -gt 0) { 'Otwarte instancje dla tego komputera ({0}) działają dalej do zamknięcia.' -f $open } else { '' }
+    $warning = 'Zapisane hasło tego komputera (jeśli jest) zostanie usunięte z Menedżera poświadczeń Windows; cofnięcie przywróci tylko wpis rejestru.'
+    if ($open -gt 0) {
+        $warning = '{0} Otwarte instancje dla tego komputera ({1}) działają dalej do zamknięcia.' -f $warning, $open
+    }
     $confirmed = Show-MwpConfirmDialog -Header 'Usunięcie komputera docelowego' -Target ("Komputer '{0}' ({1})" -f $Target.Name, $Target.DisplayName) `
         -PreviewLine @(ConvertTo-MwpPreviewLine -Result $preview) -Class Change -Warning $warning -ConfirmText 'Usuń' -Owner $Owner
     if (-not $confirmed -or -not $PSCmdlet.ShouldProcess($Target.Name, 'Usunięcie komputera docelowego')) {

@@ -29,6 +29,18 @@
             }
         })
 
+    $v['CredentialStoreCheck'].Add_Click({
+            param($control)
+            Invoke-MwpUiSafe -Name 'UI.Settings.CredentialStore' -Action {
+                # D-052: przełącznik globalny; Set-MwpSetting zapisuje atomowo, z logiem i wpisem cofnięcia.
+                $result = Set-MwpSetting -Name 'remoteCredentialStore' -Value ([bool]$control.IsChecked) -Confirm:$false
+                if (-not $result.Success) {
+                    Show-MwpMessage -Text $result.Message -Kind Warning -Owner (Get-MwpOwnerWindow -Element $control)
+                    Update-MwpCurrentView
+                }
+            }
+        })
+
     $v['TargetsGrid'].Add_SelectionChanged({
             param($control)
             $controls = $script:MwpUi.Views['settings'].Controls

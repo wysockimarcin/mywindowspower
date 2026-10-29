@@ -17,7 +17,9 @@
         - Policy: ConnectTimeoutSeconds, OperationTimeoutSeconds, ErrorPolicy (Stop | Continue),
           AutoConnect.
         Komputer zdalny musi być w rejestrze (Get-MwpTarget). Poświadczenia (-Credential) trafiają
-        tylko do obiektu połączenia w pamięci procesu; nie są zapisywane ani logowane (D-034).
+        tylko do obiektu połączenia w pamięci procesu; nie są zapisywane ani logowane (D-034). Bez
+        -Credential kontekst użyje sprawdzonego hasła komputera ze wspólnej pamięci podręcznej procesu
+        albo — po jawnym Connect-MwpTarget -UseStoredCredential — z Menedżera poświadczeń (D-052).
 
     .PARAMETER ComputerName
         Komputer docelowy; domyślnie 'localhost'.
@@ -114,6 +116,9 @@
         Session        = $null
         CimSession     = $null
         Credential     = $Credential
+        # D-052: czy poświadczenie pochodzi ze wspólnej pamięci podręcznej procesu (i jego generacja).
+        CredentialShared     = $false
+        CredentialGeneration = -1
     }
 
     $parameters = New-Object -TypeName 'System.Collections.Generic.Dictionary[string,object]' -ArgumentList ([StringComparer]::OrdinalIgnoreCase)

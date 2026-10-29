@@ -79,6 +79,11 @@
             }
             $kind = Get-MwpRemoteErrorKind -Exception $exception
             $detail = $exception.Message
+            # D-052: odmowa dostępu dla hasła ze wspólnej pamięci wstrzymuje ponowienia wszystkich kontekstów komputera.
+            $generationProperty = $Operation.PSObject.Properties['CredentialGeneration']
+            if ($kind -eq 'Unauthorized' -and $null -ne $generationProperty -and [int]$generationProperty.Value -ge 0) {
+                $null = Set-MwpCachedCredentialInvalid -ComputerName $Operation.ComputerName -Generation ([int]$generationProperty.Value)
+            }
             $message = if ($kind -in @('Unauthorized', 'Configuration', 'Network', 'Timeout')) {
                 $context = [pscustomobject]@{ PSTypeName = 'MWP.ExecutionContext'; ComputerName = $Operation.ComputerName; Port = $Operation.Port }
                 Get-MwpRemoteErrorMessage -Kind $kind -Context $context -Detail $detail

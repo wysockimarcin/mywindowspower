@@ -21,7 +21,9 @@
             <!-- Komputery docelowe -->
             <TextBlock Text="Komputery docelowe" Style="{StaticResource Mwp.Text.Section}"/>
             <TextBlock Style="{StaticResource Mwp.Text.Muted}" Margin="0,0,0,8"
-                       Text="localhost jest zawsze dostępny. Hasła nie są zapisywane: przy połączeniu aplikacja pyta o poświadczenia. Wpis w TrustedHosts klienta WinRM wykonujesz ręcznie (instrukcja: ARCHITEKTURA.md, „Konfiguracja komputera zdalnego”)."/>
+                       Text="localhost jest zawsze dostępny. Przy połączeniu aplikacja pyta o poświadczenia; hasło jest w pamięci do zamknięcia aplikacji, a zapisywane w Menedżerze poświadczeń Windows tylko po zaznaczeniu „Zapamiętaj” w oknie poświadczeń. Wpis w TrustedHosts klienta WinRM wykonujesz ręcznie (instrukcja: ARCHITEKTURA.md, „Konfiguracja komputera zdalnego”)."/>
+            <CheckBox x:Name="CredentialStoreCheck" Margin="0,0,0,8" Content="Zezwalaj na zapamiętywanie haseł w Menedżerze poświadczeń Windows"
+                      ToolTip="Wyłączone: aplikacja nie czyta i nie zapisuje haseł w Menedżerze poświadczeń; zapisane wpisy usuniesz przyciskiem „Zapomnij hasło” w edytorze komputera."/>
             <DataGrid x:Name="TargetsGrid" Height="180">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>

@@ -13,6 +13,9 @@ Describe 'Operacje asynchroniczne' {
         $root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\Modules\MWP.Core\MWP.Core.psd1') -Force
         Import-Module -Name (Join-Path -Path $root -ChildPath 'src\Modules\MWP.Remote\MWP.Remote.psd1') -Force
+        # D-052: testy nie dotykają prawdziwego Menedżera poświadczeń; pamięć poświadczeń jest wspólna dla procesu.
+        Mock -ModuleName MWP.Remote Invoke-MwpCredentialApi { throw 'Testy nie mogą używać prawdziwego Menedżera poświadczeń Windows.' }
+        Clear-MwpTargetCredentialCache
         $configDirectory = Join-Path -Path $TestDrive -ChildPath 'config'
         $null = New-Item -ItemType Directory -Path $configDirectory -Force
         Copy-Item -LiteralPath (Join-Path -Path $root -ChildPath 'config\settings.example.json') -Destination (Join-Path -Path $configDirectory -ChildPath 'settings.example.json')
@@ -31,6 +34,10 @@ Describe 'Operacje asynchroniczne' {
         ConvertTo-Json -InputObject $local -Depth 5 | Set-Content -LiteralPath (Join-Path -Path $configDirectory -ChildPath 'settings.local.json') -Encoding UTF8
         InModuleScope MWP.Remote { Close-MwpOperationPool }
         $context = New-MwpExecutionContext
+    }
+
+    BeforeEach {
+        Clear-MwpTargetCredentialCache
     }
 
     AfterAll {

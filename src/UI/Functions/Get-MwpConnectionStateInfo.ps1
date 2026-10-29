@@ -7,8 +7,9 @@
         Prezentacja stanu z Context.Connection (D-035): Connected, Connecting, Disconnected,
         Unauthorized, Error; komputer lokalny zawsze „Lokalnie". Ton (Success, Info, Warning, Danger,
         Neutral) wybiera kolor plakietki w widoku. NeedsCredential mówi, że przed połączeniem trzeba
-        zapytać o poświadczenia (uwierzytelnienie Credential bez hasła w pamięci albo
-        ErrorKind = CredentialRequired). Funkcja tylko czyta kontekst.
+        zapytać o poświadczenia (uwierzytelnienie Credential bez hasła w kontekście ani sprawdzonego
+        hasła komputera w pamięci procesu, albo ErrorKind = CredentialRequired; D-052). Funkcja tylko
+        czyta kontekst i pamięć procesu (bez Menedżera poświadczeń i bez pliku ustawień).
 
     .PARAMETER Context
         Kontekst wykonania instancji (MWP.ExecutionContext).
@@ -44,8 +45,18 @@
     if ($null -ne $connection.PSObject.Properties['Credential']) {
         $hasCredential = $null -ne $connection.Credential
     }
-    $missingCredential = -not $hasCredential -or $errorKind -eq 'CredentialRequired'
-    $needsCredential = $Context.Mode -eq 'Remote' -and $Context.Identity.Authentication -eq 'Credential' -and $missingCredential
+    $shared = $null -ne $connection.PSObject.Properties['CredentialShared'] -and [bool]$connection.CredentialShared
+    $usesCredential = $Context.Mode -eq 'Remote' -and $Context.Identity.Authentication -eq 'Credential'
+    # D-052: sprawdzone hasło komputera w pamięci procesu wystarcza każdemu kontekstowi tego komputera,
+    # a hasło wspólne po odrzuceniu (Invalid) już nie — wtedy dopiero użytkownik podaje nowe.
+    $cached = $false
+    if ($usesCredential) {
+        $info = @(Get-MwpTargetCredentialInfo -Name $Context.ComputerName -SkipStore) | Select-Object -First 1
+        $cached = $null -ne $info -and [bool]$info.Cached
+    }
+    $own = $hasCredential -and -not $shared
+    $missingCredential = -not ($own -or $cached) -or ($errorKind -eq 'CredentialRequired' -and -not $cached)
+    $needsCredential = $usesCredential -and $missingCredential
 
     [pscustomobject]@{
         PSTypeName      = 'MWP.UiConnectionState'

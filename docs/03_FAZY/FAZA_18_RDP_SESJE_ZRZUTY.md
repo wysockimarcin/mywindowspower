@@ -14,6 +14,7 @@ FAZY 2, 3 i 4 zakończone (widget statusu RDP wymaga też FAZY 5).
 - Moduł `MWP.Screenshot`: zrzut ekranu komputera docelowego. **Ograniczenie do zbadania:** zdalne polecenia działają w sesji nieinteraktywnej, bez dostępu do pulpitu użytkownika; wykonanie zrzutu w sesji użytkownika wymaga osobnego mechanizmu (np. zadanie uruchomione w tej sesji). Jeśli nie da się tego zrobić bez dodatkowego agenta lub osłabienia zabezpieczeń, zapisz decyzję i odrocz (zgodnie z zasadą nieosłabiania zabezpieczeń Windows).
 - Widget „Status połączenia RDP z innym komputerem" dla Dashboardu.
 - Widoki `Rdp.xaml` i `Screenshot.xaml`; testy Pester z mockami.
+- Poświadczenia: magazyn istnieje od korekty D-052 (Menedżer poświadczeń Windows, wpis generic `MWP:<komputer>` tylko dla WinRM, adapter w `MWP.Remote`). Decyzja użytkownika (2026-10-29): RDP **nie współdzieli** tego wpisu — `mstsc` sam zarządza swoimi wpisami `TERMSRV/<komputer>`; aplikacja nie kopiuje haseł między wpisami.
 
 ## Poza zakresem
 Własny serwer lub agent zdalny, nagrywanie sesji, przesyłanie obrazu poza komputery użytkownika (dane zostają lokalnie).

@@ -22,6 +22,9 @@
         $ui.Navigating = $previous
     }
 
+    $storeSetting = Get-MwpSetting -Name 'remoteCredentialStore' -WarningAction SilentlyContinue
+    $v['CredentialStoreCheck'].IsChecked = -not ($storeSetting -is [bool] -and -not $storeSetting)
+
     $selected = $v['TargetsGrid'].SelectedItem
     $targets = @(Get-MwpTarget)
     $v['TargetsGrid'].ItemsSource = $targets

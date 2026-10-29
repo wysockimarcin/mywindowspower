@@ -10,6 +10,7 @@
     "remoteMaxParallelOperations": 4,
     "remoteConnectTimeoutSeconds": 30,
     "remoteOperationTimeoutSeconds": 300,
+    "remoteCredentialStore": true,
     "dashboardAutoRefresh": true,
     "dashboardMaxParallelRefresh": 2,
     "dashboardWidgets": [

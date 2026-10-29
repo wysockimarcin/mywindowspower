@@ -45,7 +45,7 @@ Wniosek dla projektu: **zgodność z 5.1 jest wymaganiem podstawowym** (D-002, D
 | Komputer | Opis |
 |---|---|
 | `localhost` | Komputer lokalny opisany wyżej. Operacje wykonywane bezpośrednio, bez zdalnego wywołania. |
-| Komputer zdalny | Jeden zdalny komputer użytkownika (nazwa tylko w `config/settings.local.json`). **Windows 11, grupa robocza, WinRM włączony (HTTP, port 5985), logowanie kontem podawanym przez `Get-Credential` na żądanie** (odpowiedzi z FAZY 3, D-033). **PowerShell 7 nie jest na nim zainstalowany** — kod wykonywany zdalnie musi działać w Windows PowerShell 5.1. Komputer lokalny potrzebuje wpisu tej nazwy w `TrustedHosts` klienta WinRM (ręcznie, instrukcja w `ARCHITEKTURA.md`). |
+| Komputer zdalny | Jeden zdalny komputer użytkownika (nazwa tylko w `config/settings.local.json`). **Windows 11, grupa robocza, WinRM włączony (HTTP, port 5985), logowanie kontem podawanym przez `Get-Credential` na żądanie** (odpowiedzi z FAZY 3, D-033); hasło można opcjonalnie zapamiętać w Menedżerze poświadczeń Windows (wpis `MWP:<komputer>`, tylko po zaznaczeniu „Zapamiętaj”, D-052). **PowerShell 7 nie jest na nim zainstalowany** — kod wykonywany zdalnie musi działać w Windows PowerShell 5.1. Komputer lokalny potrzebuje wpisu tej nazwy w `TrustedHosts` klienta WinRM (ręcznie, instrukcja w `ARCHITEKTURA.md`). |
 
 Nazw prawdziwych komputerów, adresów i poświadczeń nie zapisujemy w repozytorium (szablon: `config/settings.example.json`).
 

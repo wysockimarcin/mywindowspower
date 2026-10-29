@@ -6,7 +6,9 @@
     .DESCRIPTION
         Formularz tylko zbiera dane (walidacja prezentacyjna: wymagana nazwa, port 1–65535); walidację
         nazwy, zapis, podgląd i log wykonują Add-MwpTarget i Set-MwpTarget (MWP.Remote). Bez pola
-        hasła (D-034). Zwraca tabelę parametrów albo $null (anulowano).
+        hasła (D-034). Przy edycji pokazuje, czy hasło komputera jest zapisane w Menedżerze
+        poświadczeń Windows, i przycisk „Zapomnij hasło” (Remove-MwpTargetCredential, D-052).
+        Zwraca tabelę parametrów albo $null (anulowano).
 
     .PARAMETER Target
         Edytowany komputer (MWP.Target); bez niego formularz dodaje nowy.
@@ -43,6 +45,24 @@
         $c['PortBox'].Text = [string]$Target.Port
         $c['SslCheck'].IsChecked = [bool]$Target.UseSsl
         $c['AuthCombo'].SelectedIndex = $(if ($Target.Authentication -eq 'CurrentUser') { 1 } else { 0 })
+
+        # D-052: tylko metadane (czy zapisane, konto, data); „Zapomnij hasło” działa od razu, bez zapisu formularza.
+        $showCredential = {
+            $info = @(Get-MwpTargetCredentialInfo -Name $Target.Name) | Select-Object -First 1
+            $text = Get-MwpTargetCredentialText -Info $info
+            $c['CredentialStatusText'].Text = $text.Text
+            $c['ForgetButton'].IsEnabled = $text.CanForget
+        }
+        & $showCredential
+        $c['CredentialPanel'].Visibility = 'Visible'
+        $c['ForgetButton'].Add_Click({
+                $forget = Remove-MwpTargetCredential -Name $Target.Name -Confirm:$false
+                & $showCredential
+                if (-not $forget.Success) {
+                    $c['ErrorText'].Text = $forget.Message
+                    $c['ErrorText'].Visibility = 'Visible'
+                }
+            })
     }
     $c['SslCheck'].Add_Click({
             if ($c['PortBox'].Text -in @('5985', '5986')) {

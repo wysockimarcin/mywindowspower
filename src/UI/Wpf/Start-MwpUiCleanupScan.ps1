@@ -25,14 +25,14 @@
         return
     }
     if ((Get-MwpConnectionStateInfo -Context $context).NeedsCredential) {
-        $view.ScanError = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby przeskanować kategorie czyszczenia.' -f $context.ComputerName
+        $view.ScanError = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby przeskanować kategorie czyszczenia.' -f (Format-MwpTargetLabel -Context $context)
         Update-MwpCleanupView -Entry $Entry
         return
     }
     $module = @(Get-Module -Name $Entry.Instance.ModuleName) | Select-Object -First 1
     $includeProfiles = [bool]$Entry.ModuleView.Controls['CleanupProfilesCheck'].IsChecked
     $view.TaskKind = 'Scan'
-    $view.Task = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Czyszczenie: skan ({0})' -f $context.ComputerName) -State @{ InstanceId = $Entry.Id } -Cancellable `
+    $view.Task = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Czyszczenie: skan ({0})' -f (Format-MwpTargetLabel -Context $context)) -State @{ InstanceId = $Entry.Id } -Cancellable `
         -ArgumentList $(if ($null -ne $module) { $module.Path } else { '' }), $context, $includeProfiles -ScriptBlock (Get-MwpUiCleanupScript -Name Scan) -OnCompleted {
         param($Task)
         $entry = $script:MwpUi.Instances[[string]$Task.State.InstanceId]

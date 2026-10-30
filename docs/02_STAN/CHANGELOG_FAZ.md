@@ -17,6 +17,18 @@
 
 ---
 
+## Korekta po FAZIE 12 — nazwa komputera i adres połączenia rozdzielone (2026-10-30)
+- Status: ZAKOŃCZONA (korekta, nie nowa faza; status FAZY 12 bez zmian; ręczna weryfikacja w prawdziwym oknie — lista w pliku FAZY 3, sekcja „Korekta D-054”)
+- Commit: `FAZA 12 (korekta): nazwa komputera i adres połączenia rozdzielone, weryfikacja nazwy po połączeniu i adres LAN komputera lokalnego informacyjnie (D-054)` — hash do uzupełnienia na starcie FAZY 13
+- Start: korekty D-051, D-052 i D-053 zacommitowane (`df4cc15`, `935e74d`, `ea616da`, `3e53111`); baza testów — 5.1.26100.9711: 0 uwag, 2177/2177; 7.6.7: 0 uwag, 2177/2177. Numer D-054 wolny (zarezerwowany w prompcie).
+- Powód: zgłoszenie użytkownika (2026-10-29) — kolumna „Nazwa” i tytuły instancji pokazywały adres IP; połączenie ma iść po nazwie mapowanej na adres.
+- Decyzje użytkownika: z promptu (pkt 0: osobne pole `address`, mapowanie tylko w ustawieniach, `NameMismatch`, adres LAN `localhost` tylko informacyjnie i nieutrwalany, reguła wyboru adresu, adres wykryty, ostrzeżenie „to ten komputer”) oraz odpowiedzi 2026-10-30 zgodne z rekomendacjami: blokada całego kontekstu przy `NameMismatch`, pierwszy człon nazwy bez wielkości liter, przeniesienie interaktywne z banerem, przepisanie wpisów cofnięcia, HTTPS po nazwie; projekt zaakceptowany.
+- Zrobiono: `MWP.Remote` 0.12.3 (model `address`/`ConnectionAddress`, `Address` w kontekście, adaptery pod adres, weryfikacja nazwy w sesji, operacjach w tle i CIM, `NameMismatch` w słowniku błędów, diagnostyka z `TrustedHosts`, `Get-MwpLocalNetworkAddress`, `Test-MwpTargetIsLocalComputer`, `Get-MwpTargetComputerName`, `Set-MwpTarget -NewName`); `MWP.Core` 0.12.2 (`Set-MwpSetting -Values -NoUndo`, `Rename-MwpUndoComputer`); okno (siatka z kolumnami Nazwa i Adres IP, odczyt adresu LAN w tle, „Odśwież”, baner, edytor z adresem i odczytem nazwy, zmiana nazwy z zamknięciem i odtworzeniem widgetów komputera, `Format-MwpTargetLabel` w ok. 65 miejscach, stan „Inny komputer pod adresem”); `config/settings.example.json` (`address`); ARCHITEKTURA, SŁOWNIK, README.
+- Testy: 5.1.26100.9711 — 0 uwag, 2274/2274; 7.6.9 — 0 uwag, 2274/2274 (+97: nowe TargetAddress.Tests.ps1 (44) i TargetUi.Tests.ps1 (9), test architektoniczny adresu LAN, test statyczny etykiet komputera, testy kodowania i eksportu nowych plików; baza przed korektą 2177/2177 w 5.1 i 7.x; automatyczny test dymny okna w 5.1: kolumny Nazwa i Adres IP, adres LAN localhost odczytany w tle, baner komputera zapisanego pod IP, tytuł, podtytuł i wiersz stanu instancji „Usługi Windows”, karty komputerów).
+- Niezrobione / odroczone: ręczna weryfikacja z prawdziwym komputerem zdalnym (zmiana nazwy wpisu zapisanego pod IP, `NameMismatch`); sesja WinRM nie jest weryfikowana ponownie w trakcie (ograniczenie w ARCHITEKTURA.md).
+- Decyzje: D-054
+- Do weryfikacji na Windows 11: lista 9 punktów w `docs/03_FAZY/FAZA_3_KOMPUTERY_ZDALNE.md` (sekcja „Korekta D-054”).
+
 ## Korekta po FAZIE 12 — widget w każdym module i konfiguracja widgetów modułu (2026-10-29)
 - Status: ZAKOŃCZONA (korekta, nie nowa faza; status FAZY 12 bez zmian; ręczna weryfikacja w prawdziwym oknie — lista w pliku FAZY 5, sekcja „Korekta D-053”)
 - Commit: `FAZA 12 (korekta): widgety we wszystkich modułach obszarów — Windows Update, sieć, autostart, programy, czyszczenie i reguła kompletności (D-053)` — hash do uzupełnienia na starcie FAZY 13

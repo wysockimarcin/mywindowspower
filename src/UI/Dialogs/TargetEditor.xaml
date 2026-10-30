@@ -1,14 +1,22 @@
-<!-- Dodawanie i edycja komputera docelowego (Add-MwpTarget, Set-MwpTarget). Bez pola hasła (D-034); hasło zapamiętuje okno poświadczeń (D-052). -->
+﻿<!-- Dodawanie i edycja komputera docelowego (Add-MwpTarget, Set-MwpTarget). Bez pola hasła (D-034); hasło zapamiętuje okno poświadczeń (D-052).
+     D-054: nazwa komputera (identyfikator, sprawdzana po połączeniu) i opcjonalny adres połączenia; zmiana nazwy przenosi hasło, widgety i cofnięcia. -->
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Komputer docelowy" Width="480" SizeToContent="Height" ResizeMode="NoResize"
+        Title="Komputer docelowy" Width="540" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False" UseLayoutRounding="True"
         Background="{DynamicResource Mwp.Brush.Surface}" Foreground="{DynamicResource Mwp.Brush.Text}"
         FontFamily="{DynamicResource Mwp.Font.Text}" FontSize="14">
     <StackPanel Margin="24,20">
         <TextBlock x:Name="HeaderText" FontSize="20" FontWeight="SemiBold"/>
-        <TextBlock Text="Nazwa komputera (NetBIOS/DNS) albo adres IPv4" Style="{StaticResource Mwp.Text.Label}"/>
+        <TextBlock Text="Nazwa komputera (faktyczna nazwa, np. PC-BIURO)" Style="{StaticResource Mwp.Text.Label}"/>
         <TextBox x:Name="NameBox"/>
+        <TextBlock Text="Adres (IP lub DNS, opcjonalnie) — połączenie idzie pod ten adres; pusty: po nazwie" Style="{StaticResource Mwp.Text.Label}" TextWrapping="Wrap"/>
+        <DockPanel>
+            <Button x:Name="ReadNameButton" DockPanel.Dock="Right" Content="Odczytaj nazwę z komputera" Margin="8,0,0,0"
+                    ToolTip="Łączy się w tle pod podany adres (albo nazwę) i podpowiada nazwę zgłoszoną przez komputer. Wymaga poświadczeń jak każde połączenie."/>
+            <TextBox x:Name="AddressBox" VerticalContentAlignment="Center"/>
+        </DockPanel>
+        <TextBlock x:Name="ReadNameText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="Collapsed"/>
         <TextBlock Text="Nazwa wyświetlana" Style="{StaticResource Mwp.Text.Label}"/>
         <TextBox x:Name="DisplayNameBox"/>
         <TextBlock Text="Uwierzytelnienie" Style="{StaticResource Mwp.Text.Label}"/>
@@ -36,6 +44,10 @@
                         ToolTip="Usuwa wpis MWP:&lt;komputer&gt; z Menedżera poświadczeń Windows i hasło z pamięci aplikacji."/>
                 <TextBlock x:Name="CredentialStatusText" TextWrapping="Wrap" VerticalAlignment="Center"/>
             </DockPanel>
+        </Border>
+        <!-- D-054: ostrzeżenia bez blokady (ten komputer jako zdalny, HTTPS z adresem, nazwa będąca adresem IP, zmiana nazwy). -->
+        <Border x:Name="WarningPanel" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,12,0,0" Visibility="Collapsed">
+            <TextBlock x:Name="WarningText" TextWrapping="Wrap"/>
         </Border>
         <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Mwp.Brush.Danger}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">

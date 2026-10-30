@@ -19,10 +19,12 @@
             $own = @($entries | Where-Object { $_.Instance.Context.ComputerName -eq $target.Name })
             $connected = @($own | Where-Object { $_.Instance.Context.Connection.State -eq 'Connected' }).Count
             [pscustomobject]@{
-                Name        = $target.Name
+                # D-054: karta pokazuje nazwę komputera (localhost — nazwę hosta), a adres połączenia tylko w opisie połączenia.
+                Name        = Format-MwpTargetLabel -ComputerName $(if ($target.IsLocal) { 'localhost' } else { $target.Name })
                 DisplayName = $target.DisplayName
                 Connection  = $(if ($target.IsLocal) { 'Komputer lokalny · bez połączenia zdalnego' } else {
-                        'WinRM {0}, port {1} · {2}' -f $(if ($target.UseSsl) { 'HTTPS' } else { 'HTTP' }), $target.Port, $target.Authentication
+                        'WinRM {0}, port {1} · {2}{3}' -f $(if ($target.UseSsl) { 'HTTPS' } else { 'HTTP' }), $target.Port, $target.Authentication,
+                        $(if ([string]$target.ConnectionAddress -ne [string]$target.Name) { ' · adres {0}' -f $target.ConnectionAddress } else { '' })
                     })
                 Instances   = 'Otwarte instancje: {0}{1}' -f $own.Count, $(if (-not $target.IsLocal -and $own.Count -gt 0) { ' (połączone: {0})' -f $connected } else { '' })
             }

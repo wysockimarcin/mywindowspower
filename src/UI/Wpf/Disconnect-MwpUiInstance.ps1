@@ -15,7 +15,7 @@
     $Entry['ManualDisconnect'] = $true
     $Entry.Busy++
     Update-MwpInstanceView -Entry $Entry -StateOnly
-    $null = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Rozłączanie: {0}' -f $context.ComputerName) -State $Entry.Id -ArgumentList @(, $context) -ScriptBlock {
+    $null = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Rozłączanie: {0}' -f (Format-MwpTargetLabel -Context $context)) -State $Entry.Id -ArgumentList @(, $context) -ScriptBlock {
         param($Progress, $Context)
         $Progress.Message = 'zamykanie sesji'
         Disconnect-MwpTarget -Context $Context

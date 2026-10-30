@@ -45,10 +45,32 @@ Describe 'Architektura rdzenia' {
         It 'polecenia transportu (WinRM, CIM) są tylko w adapterze transportu MWP.Remote' {
             $pattern = '\b(New-PSSession|Invoke-Command|New-CimSession|Test-WSMan|Remove-PSSession|Remove-CimSession)\b'
             $allowed = @('New-MwpPSSession.ps1', 'Invoke-MwpSessionCommand.ps1', 'New-MwpCimSession.ps1', 'Test-MwpWsMan.ps1',
-                'Remove-MwpPSSession.ps1', 'Remove-MwpCimSession.ps1', 'Start-MwpOperation.ps1')
+                'Remove-MwpPSSession.ps1', 'Remove-MwpCimSession.ps1', 'Start-MwpOperation.ps1', 'Get-MwpRemoteIdentity.ps1')
             $hits = @($sourceFiles | Where-Object { $allowed -notcontains $_.Name } | Select-String -Pattern $pattern |
                     Where-Object { $_.Line -notmatch '^\s*#' } | ForEach-Object { '{0}:{1}' -f $_.Filename, $_.LineNumber })
             $hits | Should -BeNullOrEmpty
+        }
+
+        It 'adres LAN komputera lokalnego jest tylko informacyjny: nie trafia do kontekstu, połączeń ani adapterów (D-054)' {
+            # Wynik Get-MwpLocalNetworkAddress czytają tylko: ostrzeżenie „to ten komputer” i warstwa UI (wyświetlanie);
+            # Get-MwpNetworkDataScript wymienia ją tylko w opisie.
+            $callers = @($sourceFiles | Where-Object { $_.FullName -like '*\src\Modules\*' } |
+                    Select-String -Pattern '\bGet-MwpLocalNetworkAddress\b' | Where-Object { $_.Line -notmatch '^\s*#' } |
+                    ForEach-Object { $_.Filename } | Sort-Object -Unique)
+            $callers | Should -Be @('Get-MwpLocalNetworkAddress.ps1', 'Get-MwpNetworkDataScript.ps1', 'Test-MwpTargetIsLocalComputer.ps1')
+            $connectionCode = @('New-MwpExecutionContext.ps1', 'Connect-MwpTarget.ps1', 'Test-MwpTarget.ps1', 'Start-MwpOperation.ps1', 'Invoke-MwpOnTarget.ps1',
+                'Get-MwpCimSessionParameter.ps1', 'New-MwpPSSession.ps1', 'New-MwpCimSession.ps1', 'Test-MwpWsMan.ps1', 'ConvertTo-MwpTarget.ps1',
+                'Get-MwpTarget.ps1', 'Test-MwpLocalTargetName.ps1')
+            $hits = @($sourceFiles | Where-Object { $connectionCode -contains $_.Name } |
+                    Select-String -Pattern 'Get-MwpLocalNetworkAddress|Test-MwpTargetIsLocalComputer|PrimaryAddress' |
+                    ForEach-Object { '{0}:{1}' -f $_.Filename, $_.LineNumber })
+            $hits | Should -BeNullOrEmpty
+            # Adaptery dostają adres połączenia kontekstu (Context.Address), nie nazwę (identyfikator).
+            foreach ($name in 'Connect-MwpTarget.ps1', 'Test-MwpTarget.ps1', 'Get-MwpCimSessionParameter.ps1', 'Start-MwpOperation.ps1') {
+                $file = $sourceFiles | Where-Object { $_.Name -eq $name } | Select-Object -First 1
+                (Get-Content -LiteralPath $file.FullName -Raw) | Should -Match 'ComputerName\s+=\s+\$Context\.Address' -Because $name
+            }
+            @($sourceFiles | Select-String -Pattern 'Test-MwpWsMan -ComputerName \$Context\.ComputerName') | Should -BeNullOrEmpty
         }
 
         It 'kod modułów nie zmienia konfiguracji klienta WinRM (TrustedHosts)' {

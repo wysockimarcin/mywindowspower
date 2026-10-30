@@ -46,7 +46,7 @@
         Status      = 'Running'
         StartedAt   = Get-Date
         CompletedAt = $null
-        Progress    = [hashtable]::Synchronized(@{ Percent = -1; Message = ("Komputer: {0}" -f $Operation.ComputerName); CancelRequested = $false })
+        Progress    = [hashtable]::Synchronized(@{ Percent = -1; Message = ("Komputer: {0}" -f (Format-MwpTargetLabel -ComputerName $Operation.ComputerName)); CancelRequested = $false })
         Output      = @()
         Error       = $null
         Warnings    = @()

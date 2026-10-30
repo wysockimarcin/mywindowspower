@@ -35,22 +35,22 @@
         return
     }
     if ((Get-MwpConnectionStateInfo -Context $context).NeedsCredential) {
-        $view[$Kind + 'Error'] = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać Windows Update.' -f $context.ComputerName
+        $view[$Kind + 'Error'] = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać Windows Update.' -f (Format-MwpTargetLabel -Context $context)
         Update-MwpUpdateView -Entry $Entry
         return
     }
     switch ($Kind) {
         'Status' {
             $operation = Get-MwpUpdateStatus -Context $context -AsOperation
-            $name = 'Windows Update: stan ({0})' -f $context.ComputerName
+            $name = 'Windows Update: stan ({0})' -f (Format-MwpTargetLabel -Context $context)
         }
         'Search' {
             $operation = Find-MwpUpdate -Context $context -Type $Type -AsOperation
-            $name = 'Windows Update: wyszukiwanie aktualizacji ({0})' -f $context.ComputerName
+            $name = 'Windows Update: wyszukiwanie aktualizacji ({0})' -f (Format-MwpTargetLabel -Context $context)
         }
         'History' {
             $operation = Get-MwpUpdateHistory -Context $context -AsOperation
-            $name = 'Windows Update: historia ({0})' -f $context.ComputerName
+            $name = 'Windows Update: historia ({0})' -f (Format-MwpTargetLabel -Context $context)
         }
     }
     $view[$Kind + 'Loading'] = $true

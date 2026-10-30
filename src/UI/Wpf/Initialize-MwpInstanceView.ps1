@@ -25,11 +25,11 @@
     $modes = @($definition.SupportedPresentationModes | Where-Object { $_ })
     $v['StubText'].Text = $(if ($modes.Count -eq 0) {
             'Widok-zaślepka hosta: moduł {0} nie ma jeszcze własnego widoku{1}. Instancja działa niezależnie od innych: ma własny kontekst wykonania (komputer {2}), stan połączenia, operacje i stan.' -f
-            $definition.ModuleName, $(if ($null -ne $phase) { ' (FAZA {0})' -f $phase.Phase } else { '' }), $context.ComputerName
+            $definition.ModuleName, $(if ($null -ne $phase) { ' (FAZA {0})' -f $phase.Phase } else { '' }), (Format-MwpTargetLabel -Context $context)
         }
         else {
             'Moduł {0} deklaruje tryby: {1}. Host pokazuje jego instancję w widoku ogólnym (własne widoki modułów z paczek — przyszły kontrakt widoku). Instancja ma własny kontekst wykonania (komputer {2}).' -f
-            $definition.ModuleName, ($modes -join ', '), $context.ComputerName
+            $definition.ModuleName, ($modes -join ', '), (Format-MwpTargetLabel -Context $context)
         })
 
     # Własny widok modułu wbudowanego (katalog widoków hosta, D-044) zastępuje zaślepkę i odczyt testowy.
@@ -48,7 +48,7 @@
         [pscustomobject]@{ Key = 'Instancja (Id)'; Value = $instance.Id }
         [pscustomobject]@{ Key = 'Kontekst (Id)'; Value = $context.Id }
         [pscustomobject]@{ Key = 'Moduł'; Value = '{0} {1} ({2})' -f $instance.ModuleName, $instance.ModuleVersion, $definition.Source }
-        [pscustomobject]@{ Key = 'Komputer docelowy'; Value = '{0} — {1}' -f $context.ComputerName, $context.DisplayName }
+        [pscustomobject]@{ Key = 'Komputer docelowy'; Value = '{0} — {1}' -f (Format-MwpTargetLabel -Context $context -Format Subtitle), $context.DisplayName }
         [pscustomobject]@{ Key = 'Tryb i transport'; Value = '{0}, {1}{2}' -f $context.Mode, $context.Transport, $(if ($context.Mode -eq 'Remote') { ', port {0}{1}' -f $context.Port, $(if ($context.UseSsl) { ', HTTPS' } else { '' }) } else { '' }) }
         [pscustomobject]@{ Key = 'Tożsamość'; Value = $identity }
         [pscustomobject]@{ Key = 'Limity czasu'; Value = 'połączenie {0} s, operacja {1} s' -f $context.Policy.ConnectTimeoutSeconds, $context.Policy.OperationTimeoutSeconds }

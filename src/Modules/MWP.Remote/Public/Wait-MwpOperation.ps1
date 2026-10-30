@@ -7,8 +7,8 @@
         Czeka najdłużej do upływu limitu czasu operacji (TimeoutSeconds od startu); po jego
         przekroczeniu przerywa operację (status TimedOut). Wynik: Success, Data (wyjście bloku),
         ErrorMessage (błędy nieprzerywające przy ErrorPolicy Continue). Błąd przerywający albo
-        błąd połączenia daje status Failed; wtedy Data.ErrorKind klasyfikuje błąd (Unauthorized,
-        Configuration, Timeout, Network, Other; po limicie czasu — Timeout), co pozwala widgetom
+        błąd połączenia daje status Failed; wtedy Data.ErrorKind klasyfikuje błąd (NameMismatch — D-054,
+        Unauthorized, Configuration, Timeout, Network, Other; po limicie czasu — Timeout), co pozwala widgetom
         odróżnić utratę połączenia od błędu danych (D-043). Kolejne wywołanie dla zakończonej operacji zwraca
         zapamiętany wynik.
 
@@ -65,6 +65,10 @@
             $output = @($powerShell.EndInvoke($Operation.AsyncResult))
             $streamErrors = @($powerShell.Streams.Error | ForEach-Object { $_.ToString() })
             $errorText = $streamErrors -join ' '
+            if ($errorText -match 'MWP-NAMEMISMATCH:(\S*)') {
+                # ErrorPolicy Continue: zdalny wyjątek blokady nazwy trafia do strumienia błędów, nie do wyjątku.
+                throw $errorText
+            }
             $message = "Wykonano operację {0} na komputerze '{1}'." -f $Operation.Operation, $Operation.ComputerName
             if ($errorText -ne '') {
                 $message = "Wykonano operację {0} na komputerze '{1}' z błędami: {2}" -f $Operation.Operation, $Operation.ComputerName, $errorText
@@ -84,9 +88,16 @@
             if ($kind -eq 'Unauthorized' -and $null -ne $generationProperty -and [int]$generationProperty.Value -ge 0) {
                 $null = Set-MwpCachedCredentialInvalid -ComputerName $Operation.ComputerName -Generation ([int]$generationProperty.Value)
             }
-            $message = if ($kind -in @('Unauthorized', 'Configuration', 'Network', 'Timeout')) {
-                $context = [pscustomobject]@{ PSTypeName = 'MWP.ExecutionContext'; ComputerName = $Operation.ComputerName; Port = $Operation.Port }
-                Get-MwpRemoteErrorMessage -Kind $kind -Context $context -Detail $detail
+            $message = if ($kind -in @('NameMismatch', 'Unauthorized', 'Configuration', 'Network', 'Timeout')) {
+                $address = if ($null -ne $Operation.PSObject.Properties['Address'] -and -not [string]::IsNullOrEmpty([string]$Operation.Address)) { [string]$Operation.Address } else { $Operation.ComputerName }
+                $context = [pscustomobject]@{ PSTypeName = 'MWP.ExecutionContext'; ComputerName = $Operation.ComputerName; Address = $address; Port = $Operation.Port }
+                if ($kind -eq 'NameMismatch') {
+                    $remoteName = if ($detail -match 'MWP-NAMEMISMATCH:([^\s''"]*)') { $Matches[1] } else { '' }
+                    Get-MwpRemoteErrorMessage -Kind $kind -Context $context -RemoteName $remoteName
+                }
+                else {
+                    Get-MwpRemoteErrorMessage -Kind $kind -Context $context -Detail $detail
+                }
             }
             else {
                 "Operacja {0} na komputerze '{1}' nie powiodła się: {2}" -f $Operation.Operation, $Operation.ComputerName, $detail

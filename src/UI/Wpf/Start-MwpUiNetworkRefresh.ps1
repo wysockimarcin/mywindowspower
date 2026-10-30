@@ -34,13 +34,13 @@
         return
     }
     if ((Get-MwpConnectionStateInfo -Context $context).NeedsCredential) {
-        $view[$Kind + 'Error'] = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać sieć.' -f $context.ComputerName
+        $view[$Kind + 'Error'] = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać sieć.' -f (Format-MwpTargetLabel -Context $context)
         Update-MwpNetworkView -Entry $Entry
         return
     }
     if ($Kind -eq 'Status') {
         $operation = Get-MwpNetworkStatus -Context $context -AsOperation
-        $name = 'Sieć: stan ({0})' -f $context.ComputerName
+        $name = 'Sieć: stan ({0})' -f (Format-MwpTargetLabel -Context $context)
     }
     else {
         try {
@@ -51,7 +51,7 @@
             Update-MwpNetworkView -Entry $Entry
             return
         }
-        $name = 'Sieć: testy łączności ({0})' -f $context.ComputerName
+        $name = 'Sieć: testy łączności ({0})' -f (Format-MwpTargetLabel -Context $context)
     }
     $view[$Kind + 'Loading'] = $true
     $view[$Kind + 'Error'] = $null

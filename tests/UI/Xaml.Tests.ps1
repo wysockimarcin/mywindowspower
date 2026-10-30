@@ -89,6 +89,24 @@ Describe 'Warstwa UI' {
         $hits[0] | Should -Match 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize'
     }
 
+    It 'widoki nie formatują etykiety komputera z ComputerName z pominięciem Format-MwpTargetLabel (D-054)' {
+        # Tekst z operatorem -f i identyfikatorem komputera kontekstu, operacji albo wyniku musi iść przez wspólną
+        # funkcję (localhost — nazwa hosta, komputer zdalny — nazwa, adres w podtytule). Dane z komputera
+        # (np. nazwa zgłoszona w odczycie testowym, źródło profilu usług) to nie etykieta kontekstu.
+        $allowed = '\$data\.ComputerName|\$view\.Profile\.ComputerName'
+        $hits = @($codeFiles | Where-Object { $_.Name -ne 'Format-MwpTargetLabel.ps1' } |
+                Select-String -Pattern '\s-f\s.*\$\w+(\.Instance)?(\.Context)?\.ComputerName' |
+                Where-Object { $_.Line -notmatch '^\s*#' } |
+                Where-Object { ($_.Line -replace '\(Format-MwpTargetLabel[^)]*\)', '' -replace $allowed, '') -match '\$\w+(\.Instance)?(\.Context)?\.ComputerName' } |
+                ForEach-Object { '{0}:{1}: {2}' -f $_.Filename, $_.LineNumber, $_.Line.Trim() })
+        $hits | Should -BeNullOrEmpty
+        # Tytuł instancji (okno główne i osobne okno) i widgetu też z etykiety.
+        $open = Get-Content -LiteralPath (Join-Path -Path $uiRoot -ChildPath 'Wpf\Open-MwpUiInstance.ps1') -Raw
+        $open | Should -Match 'New-MwpModuleInstance .*-Name \$instanceName'
+        $open | Should -Match 'Format-MwpTargetLabel'
+        Get-Content -LiteralPath (Join-Path -Path $uiRoot -ChildPath 'Functions\New-MwpWidgetRuntime.ps1') -Raw | Should -Match 'Format-MwpTargetLabel'
+    }
+
     Context 'wczytanie przez XamlReader (WPF, wątek STA)' {
         BeforeAll {
             if ($isSta) {

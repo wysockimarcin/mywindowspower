@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Core.psm1'
-    ModuleVersion        = '0.12.1'
+    ModuleVersion        = '0.12.2'
     GUID                 = '49bd0d67-5058-467d-a21e-ef40a9d9710a'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -30,6 +30,7 @@
         'New-MwpRestorePoint'
         'New-MwpResult'
         'Remove-MwpDashboardWidget'
+        'Rename-MwpUndoComputer'
         'Repair-MwpDashboardConfiguration'
         'Request-MwpElevation'
         'Resolve-MwpLogSummary'

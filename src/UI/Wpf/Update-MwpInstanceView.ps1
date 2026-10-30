@@ -27,8 +27,8 @@
 
     if (-not $StateOnly) {
         $v['InstanceTitle'].Text = $instance.Name
-        $v['InstanceSubtitle'].Text = 'Moduł {0} {1} · komputer {2} ({3}) · {4}' -f $instance.ModuleName, $instance.ModuleVersion, $context.ComputerName,
-        $(if ($context.Mode -eq 'Local') { 'lokalnie' } else { 'zdalnie, WinRM' }),
+        # D-054: komputer jako nazwa z adresem i trybem, np. „komputer PC-BIURO (192.0.2.10, zdalnie, WinRM)”.
+        $v['InstanceSubtitle'].Text = 'Moduł {0} {1} · komputer {2} · {3}' -f $instance.ModuleName, $instance.ModuleVersion, (Format-MwpTargetLabel -Context $context -Format Subtitle),
         $(if ($Entry.Placement -eq 'SeparateWindow') { 'w osobnym oknie' } else { 'w oknie głównym' })
         $v['DetachButton'].Content = $(if ($Entry.Placement -eq 'SeparateWindow') { 'Do okna głównego' } else { 'W osobnym oknie' })
         $v['DetachButton'].IsEnabled = Test-MwpPresentationMode -Definition $Entry.Definition -Mode $(if ($Entry.Placement -eq 'SeparateWindow') { 'Embedded' } else { 'SeparateWindow' })

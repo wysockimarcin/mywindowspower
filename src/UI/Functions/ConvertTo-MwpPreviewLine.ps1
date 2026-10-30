@@ -43,7 +43,7 @@
         return
     }
     $Result.Message
-    'Komputer: {0}' -f $Result.ComputerName
+    'Komputer: {0}' -f (Format-MwpTargetLabel -ComputerName $Result.ComputerName)
     if ($null -ne $Result.Before) {
         'Przed: {0}' -f (& $format $Result.Before)
     }

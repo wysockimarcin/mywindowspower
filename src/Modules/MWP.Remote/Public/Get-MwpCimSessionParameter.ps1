@@ -9,6 +9,9 @@
         użyciu, z tymi samymi poświadczeniami co połączenie, i zamykana przez Disconnect-MwpTarget.
         Brak poświadczeń albo błąd połączenia kończy się wyjątkiem z komunikatem po polsku (nigdy
         cichym przejściem na komputer lokalny) i zmianą stanu połączenia kontekstu.
+        D-054: sesja CIM idzie pod adres połączenia (Context.Address); gdy kontekst nie przeszedł
+        weryfikacji nazwy w Connect-MwpTarget, nazwa komputera jest sprawdzana przez CIM (CSName),
+        a niezgodność kończy się wyjątkiem NameMismatch.
 
     .EXAMPLE
         $cim = Get-MwpCimSessionParameter -Context $remote
@@ -37,13 +40,13 @@
 
     try {
         $cimArguments = @{
-            ComputerName            = $Context.ComputerName
+            ComputerName            = $Context.Address
             Port                    = $Context.Port
             UseSsl                  = $Context.UseSsl
             Credential              = $connection.Credential
             OperationTimeoutSeconds = $Context.Policy.OperationTimeoutSeconds
         }
-        $connection.CimSession = New-MwpCimSession @cimArguments
+        $cimSession = New-MwpCimSession @cimArguments
     }
     catch {
         $kind = Get-MwpRemoteErrorKind -Exception $_.Exception
@@ -53,5 +56,26 @@
         Write-MwpLog -Level Warning -Source 'MWP.Remote' -Operation 'Remote.CimSession' -ComputerName $Context.ComputerName -Message $message
         throw $message
     }
+
+    # D-054: odczyt CIM bez wcześniej zweryfikowanego Connect-MwpTarget sprawdza nazwę komputera pod adresem.
+    $alreadyVerified = $null -ne $connection.PSObject.Properties['NameVerified'] -and $connection.NameVerified -eq $true
+    if (-not $alreadyVerified -and (Get-MwpExpectedComputerName -Name $Context.ComputerName) -ne '') {
+        $remoteName = ''
+        try {
+            $remoteName = Get-MwpCimComputerName -CimSession $cimSession -TimeoutSeconds $Context.Policy.ConnectTimeoutSeconds
+        }
+        catch {
+            Write-MwpLog -Level Debug -Source 'MWP.Remote' -Operation 'Remote.CimSession' -ComputerName $Context.ComputerName `
+                -Message ("Nie udało się odczytać nazwy komputera pod adresem '{0}' przez CIM: {1}" -f $Context.Address, $_.Exception.Message)
+        }
+        if ((Update-MwpConnectionIdentity -Context $Context -Identity $null -RemoteName $remoteName) -eq $false) {
+            Remove-MwpCimSession -CimSession $cimSession
+            $message = Get-MwpRemoteErrorMessage -Kind 'NameMismatch' -Context $Context -RemoteName $remoteName
+            Set-MwpConnectionState -Connection $connection -State Error -ErrorKind 'NameMismatch' -ErrorMessage $message
+            Write-MwpLog -Level Warning -Source 'MWP.Remote' -Operation 'Remote.CimSession' -ComputerName $Context.ComputerName -Message $message
+            throw $message
+        }
+    }
+    $connection.CimSession = $cimSession
     @{ CimSession = $connection.CimSession }
 }

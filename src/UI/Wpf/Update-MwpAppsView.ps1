@@ -44,10 +44,10 @@
 
     if ($full) {
         $p['AppsStatusText'].Text = if ($view.InventoryLoading) {
-            'Odczyt programów komputera {0}…' -f $context.ComputerName
+            'Odczyt programów komputera {0}…' -f (Format-MwpTargetLabel -Context $context)
         }
         elseif ($null -ne $inventory) {
-            'Komputer {0} · {1} pozycji (z ukrytymi) · odczyt {2}{3}' -f $context.ComputerName, @($inventory.Apps).Count,
+            'Komputer {0} · {1} pozycji (z ukrytymi) · odczyt {2}{3}' -f (Format-MwpTargetLabel -Context $context), @($inventory.Apps).Count,
             $(if ($null -ne $view.InventoryReadAt) { ([datetime]$view.InventoryReadAt).ToString('HH:mm:ss') } else { '' }),
             $(if ($view.PackagesLoading) { ' · sprawdzanie winget…' } else { '' })
         }
@@ -86,7 +86,7 @@
         $p['InstallTargetBox'].SelectedItem = $(if ($null -ne $again) { $again } else { $targets[0] })
 
         $p['UpgradesText'].Text = if ($view.PackagesLoading) {
-            'Sprawdzanie pakietów winget na komputerze {0}…' -f $context.ComputerName
+            'Sprawdzanie pakietów winget na komputerze {0}…' -f (Format-MwpTargetLabel -Context $context)
         }
         elseif ($view.PackagesError) {
             [string]$view.PackagesError

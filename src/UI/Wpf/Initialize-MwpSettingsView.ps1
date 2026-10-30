@@ -76,11 +76,28 @@
                 if ($null -eq $target) {
                     return
                 }
-                $controls['TargetTestText'].Text = "Diagnostyka komputera '{0}' w toku…" -f $target.Name
+                $controls['TargetTestText'].Text = "Diagnostyka komputera '{0}' w toku…" -f (Format-MwpTargetLabel -ComputerName $target.Name)
                 Invoke-MwpUiTargetTest -Target $target -Owner (Get-MwpOwnerWindow -Element $control) -OnResult {
                     param($Text)
                     $script:MwpUi.Views['settings'].Controls['TargetTestText'].Text = $Text
                 }
+            }
+        })
+
+    # D-054: „Odśwież” — ponowny odczyt adresu LAN tego komputera (tylko informacyjnie) i listy komputerów.
+    $v['RefreshTargetsButton'].Add_Click({
+            Invoke-MwpUiSafe -Name 'UI.Target.Refresh' -Action {
+                Start-MwpUiLocalAddressRead -Force
+                Update-MwpSettingsTargetList -View $script:MwpUi.Views['settings']
+            }
+        })
+    # D-054: baner „Komputer zapisany pod adresem IP — ustaw nazwę” otwiera edytor tego komputera.
+    $v['TargetNameButton'].Add_Click({
+            param($control)
+            Invoke-MwpUiSafe -Name 'UI.Target.SetName' -Action {
+                $name = [string]$control.Tag
+                $target = @(Get-MwpTarget | Where-Object { $_.Name -eq $name }) | Select-Object -First 1
+                if ($null -ne $target) { Edit-MwpUiTarget -Target $target -Owner (Get-MwpOwnerWindow -Element $control) }
             }
         })
 

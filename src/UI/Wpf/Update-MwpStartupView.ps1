@@ -52,7 +52,7 @@
 
     if ($Filter -or (-not $StateOnly -and -not $Selection)) {
         $parts = New-Object -TypeName System.Collections.Generic.List[string]
-        $parts.Add(('Komputer {0}' -f $context.ComputerName))
+        $parts.Add(('Komputer {0}' -f (Format-MwpTargetLabel -Context $context)))
         if ($view.ItemsLoading) { $parts.Add('odczyt autostartu…') } elseif ($null -ne $items) { $parts.Add(('{0} pozycji autostartu ({1})' -f @($items.Items).Count, (& $time $items.CollectedAt))) }
         if ($view.TasksLoading) { $parts.Add('odczyt harmonogramu…') } elseif ($null -ne $tasks) { $parts.Add(('{0} zadań ({1})' -f @($tasks.Tasks).Count, (& $time $tasks.CollectedAt))) }
         $p['StartupStatusText'].Text = $parts -join ' · '

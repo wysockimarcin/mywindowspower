@@ -38,10 +38,10 @@
 
     if (-not $StateOnly -and -not $Selection) {
         $p['UpdateStatusText'].Text = if ($view.StatusLoading) {
-            'Odczyt stanu Windows Update komputera {0}…' -f $context.ComputerName
+            'Odczyt stanu Windows Update komputera {0}…' -f (Format-MwpTargetLabel -Context $context)
         }
         elseif ($null -ne $status) {
-            'Komputer {0} · odczyt {1}' -f $context.ComputerName, $(if ($null -ne $status.CollectedAt) { ([datetime]$status.CollectedAt).ToString('HH:mm:ss') } else { '' })
+            'Komputer {0} · odczyt {1}' -f (Format-MwpTargetLabel -Context $context), $(if ($null -ne $status.CollectedAt) { ([datetime]$status.CollectedAt).ToString('HH:mm:ss') } else { '' })
         }
         else {
             'Brak odczytu stanu Windows Update.'
@@ -72,7 +72,7 @@
         $p['UpdateServicesGrid'].ItemsSource = $(if ($null -ne $status) { @($status.Services) } else { @() })
 
         $p['UpdateSearchText'].Text = if ($view.SearchLoading) {
-            'Wyszukiwanie aktualizacji na komputerze {0} (zwykle do kilku minut; „Anuluj” na pasku stanu)…' -f $context.ComputerName
+            'Wyszukiwanie aktualizacji na komputerze {0} (zwykle do kilku minut; „Anuluj” na pasku stanu)…' -f (Format-MwpTargetLabel -Context $context)
         }
         elseif ($view.SearchError) {
             [string]$view.SearchError

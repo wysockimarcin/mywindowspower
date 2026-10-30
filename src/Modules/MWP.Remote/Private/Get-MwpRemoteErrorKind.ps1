@@ -1,7 +1,7 @@
 ﻿function Get-MwpRemoteErrorKind {
     <#
     .SYNOPSIS
-        Klasyfikuje błąd połączenia zdalnego: Unauthorized, Configuration, Timeout, Network albo Other.
+        Klasyfikuje błąd połączenia zdalnego: NameMismatch, Unauthorized, Configuration, Timeout, Network albo Other.
 
     .DESCRIPTION
         Rozdziela uwierzytelnienie i autoryzację (Unauthorized) od dostępności (Network, Timeout)
@@ -42,6 +42,10 @@
     }
     $text = $messages -join ' '
 
+    # D-054: znacznik zgłaszany przez blok operacji w tle, gdy komputer pod adresem ma inną nazwę.
+    if ($text -match 'MWP-NAMEMISMATCH:') {
+        return 'NameMismatch'
+    }
     $accessDenied = @(5, 1326, 1327, 1330, 1331, 1909, -2147024891)
     if (@($codes | Where-Object { $accessDenied -contains $_ }).Count -gt 0 -or
         $text -match 'Access is denied|Odmowa dostępu|user name or password is incorrect|nazwa użytkownika lub hasło|logon failure|unknown user name') {

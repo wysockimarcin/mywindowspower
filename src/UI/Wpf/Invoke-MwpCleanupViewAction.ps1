@@ -54,7 +54,7 @@
                 return
             }
             if ((Get-MwpConnectionStateInfo -Context $context).NeedsCredential) {
-                Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”).' -f $context.ComputerName) -Owner $Owner
+                Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”).' -f (Format-MwpTargetLabel -Context $context)) -Owner $Owner
                 return
             }
             $names = @($state.Categories | ForEach-Object { $_.Name }) -join ', '

@@ -17,6 +17,11 @@
         (D-052), operacja kończy się od razu z ErrorKind = CredentialRequired, bez próby logowania.
         Operacja jest przypisana do instancji modułu (Context.InstanceId), więc
         Close-MwpModuleInstance ją anuluje.
+        D-054: połączenie idzie pod adres połączenia (Context.Address), a blok na komputerze docelowym
+        najpierw porównuje nazwę komputera ($env:COMPUTERNAME, nazwa hosta) z Context.ComputerName;
+        przy niezgodności blok modułu się nie wykonuje, a operacja kończy się z ErrorKind = NameMismatch
+        (blokada wszystkich operacji kontekstu, także widgetów). Gdy nazwa w rejestrze jest adresem IP,
+        porównania nie ma.
 
     .EXAMPLE
         $operation = Start-MwpOperation -Context $remote -ScriptBlock { Get-HotFix } -Operation 'Update.GetHotFix'
@@ -56,6 +61,7 @@
         Id             = [guid]::NewGuid().ToString()
         Operation      = $Operation
         ComputerName   = $Context.ComputerName
+        Address        = $Context.Address
         Port           = $Context.Port
         InstanceId     = $Context.InstanceId
         ContextId      = $Context.Id
@@ -93,7 +99,9 @@
             [object[]] $Arguments,
             [int] $OpenTimeoutSeconds,
             [int] $OperationTimeoutSeconds,
-            [string] $ErrorPolicy
+            [string] $ErrorPolicy,
+            [string] $ExpectedName,
+            [string] $GuardText
         )
         $ErrorActionPreference = $ErrorPolicy
         $code = [scriptblock]::Create($ScriptText)
@@ -101,11 +109,14 @@
             & $code @Arguments
             return
         }
+        # D-054: na komputerze docelowym najpierw sprawdzenie nazwy (Get-MwpNameGuardScript), potem blok modułu.
+        $guard = [scriptblock]::Create($GuardText)
         $parameters = @{
             ComputerName  = $ComputerName
             Port          = $Port
-            ScriptBlock   = $code
-            ArgumentList  = $Arguments
+            ScriptBlock   = $guard
+            # Argumenty modułu na najwyższym poziomie listy (jak przed D-054) — ta sama głębokość serializacji.
+            ArgumentList  = @(@($ExpectedName, $ScriptText) + @($Arguments))
             SessionOption = New-PSSessionOption -OpenTimeout ($OpenTimeoutSeconds * 1000) -OperationTimeout ($OperationTimeoutSeconds * 1000)
         }
         if ($UseSsl) {
@@ -121,7 +132,7 @@
     $powerShell.RunspacePool = Get-MwpOperationPool
     $null = $powerShell.AddScript($worker.ToString()).AddParameters(@{
             Mode                    = $Context.Mode
-            ComputerName            = $Context.ComputerName
+            ComputerName            = $Context.Address
             Port                    = $Context.Port
             UseSsl                  = $Context.UseSsl
             Credential              = $credential
@@ -130,6 +141,8 @@
             OpenTimeoutSeconds      = $Context.Policy.ConnectTimeoutSeconds
             OperationTimeoutSeconds = $TimeoutSeconds
             ErrorPolicy             = $Context.Policy.ErrorPolicy
+            ExpectedName            = $(if ($Context.Mode -eq 'Local') { '' } else { Get-MwpExpectedComputerName -Name $Context.ComputerName })
+            GuardText               = (Get-MwpNameGuardScript).ToString()
         })
     $handle.PowerShell = $powerShell
     $script:MwpOperationRegistry[$handle.Id] = $handle

@@ -53,7 +53,7 @@
     }
     $computerName = [string]$Configuration['computerName']
     try {
-        $name = 'Widget: {0} — {1}' -f $Definition.Name, $computerName
+        $name = 'Widget: {0} — {1}' -f $Definition.Name, (Format-MwpTargetLabel -ComputerName $computerName)
         $instance = New-MwpModuleInstance -ModuleId $Definition.ModuleId -ComputerName $computerName -Name $name -ForWidget
         $initialization = Initialize-MwpModuleInstance -Instance $instance
         if (-not $initialization.Success) {

@@ -67,5 +67,22 @@ Zakończona 2026-10-23.
 - **Test dymny (tylko odczyt) na localhost w 5.1:** `Invoke-MwpOnTarget` i `Start-`/`Wait-MwpOperation` zwróciły wersję PowerShella i nazwę systemu.
 - **Ograniczenia:** połączenie z prawdziwym komputerem zdalnym nie było wykonywane w tej rozmowie (wymaga poświadczeń i wpisu `TrustedHosts`, które wykonuje użytkownik); ścieżki zdalne są pokryte testami z mockami adaptera transportu.
 
+### Korekta D-054 — nazwa komputera i adres połączenia rozdzielone (2026-10-30)
+Korekta po FAZIE 12 (status FAZY 3 i FAZY 12 bez zmian; dotyczy rejestru komputerów i połączeń z tej fazy). Zgłoszenie użytkownika: kolumna „Nazwa” w informacjach o komputerze zdalnym zawierała adres IP. Rozwiązanie (D-054): `name` = faktyczna nazwa komputera i identyfikator, opcjonalne `address` = adres połączenia (mapowanie tylko w `settings.local.json`), weryfikacja nazwy po połączeniu (`NameMismatch` blokuje cały kontekst), adres LAN `localhost` tylko informacyjnie, zmiana nazwy z przeniesieniem hasła, widgetów i wpisów cofnięcia, wspólna etykieta komputera w oknie.
+
+- **Decyzje użytkownika:** z promptu korekty (pkt 0) oraz odpowiedzi 1–5 zgodnie z rekomendacjami (blokada całego kontekstu; pierwszy człon nazwy bez wielkości liter, bez wyłączania weryfikacji; przeniesienie interaktywne z banerem; przepisanie wpisów cofnięcia; HTTPS po nazwie).
+- **Weryfikacja automatyczna:** `tests/Modules/MWP.Remote/TargetAddress.Tests.ps1` (model, adres w adapterach, `NameMismatch` w sesji, operacji w tle i CIM, diagnostyka, reguła adresu LAN, „ten komputer”, zmiana nazwy z symulatorem magazynu), `tests/UI/TargetUi.Tests.ps1`, test statyczny etykiet w `tests/UI/Xaml.Tests.ps1`, test architektoniczny adresu LAN w `tests/Modules/MWP.Core/Architecture.Tests.ps1`.
+
+**Do weryfikacji na Windows 11 — korekta D-054 (prawdziwa aplikacja; hasła wpisujesz tylko w oknie aplikacji, nigdy w rozmowie; prawdziwych nazw i adresów nie zapisuj w dokumentacji):**
+1. Ustawienia → „Komputery docelowe”: siatka pokazuje się od razu; wiersz `localhost` ma w kolumnie „Nazwa” nazwę tego komputera, a w „Adres IP” po chwili adres w sieci LAN (porównaj z `ipconfig`: karta z bramą domyślną); podpowiedź (najechanie na komórkę) pokazuje kartę i inne adresy; okno się nie zamraża; „Odśwież” odczytuje adres ponownie.
+2. Komputer zapisany pod adresem IP: widoczny baner „Komputer zapisany pod adresem IP — ustaw nazwę”; „Ustaw nazwę…” → edytor → „Odczytaj nazwę z komputera” (okno poświadczeń, jeśli hasło nie jest w pamięci) → w polu „Nazwa” nazwa komputera, a w „Adres” dotychczasowy adres IP → „Dalej…” → podsumowanie (widgety, wpisy cofnięcia, zapisane hasło) → zapis. W siatce: nazwa w „Nazwa”, adres w „Adres IP”, baner znika.
+3. Po zmianie nazwy: wpis w Menedżerze poświadczeń Windows ma nazwę `MWP:<nowa nazwa>` (stary znika), widgety tego komputera działają dalej (odtworzone pod nową nazwą), a instancja łączy się bez ponownego pytania o hasło (jeśli było zapamiętane albo w pamięci).
+4. Instancja „Usługi Windows” (i jednego innego modułu) dla tego komputera: tytuł „Usługi Windows — <NAZWA>”, podtytuł „komputer <NAZWA> (<adres>, zdalnie, WinRM)”, wiersz stanu „Komputer <NAZWA> · …”; dla `localhost` — nazwa hosta i „(ten komputer, lokalnie)”. To samo na kartach komputerów Pulpitu (adres w opisie połączenia), w tytułach widgetów i na liście zadań w tle.
+5. Diagnostyka połączenia (Ustawienia): adres połączenia, nazwa zgłoszona przez komputer („zgodna”), adresy wykryte i wartość do `TrustedHosts` (przy łączeniu po IP — adres IP, tylko NTLM).
+6. Symulacja niezgodności: tymczasowo wpisz w „Adres” adres innego komputera z WinRM (albo nazwę innego komputera) → „Połącz”: stan „Inny komputer pod adresem”, komunikat z obiema nazwami; odczyty i zmiany zablokowane (także widgety); przywróć adres.
+7. Dodanie komputera zdalnego z nazwą albo adresem tego komputera: ostrzeżenie „To ten komputer … użyj localhost” (bez blokady); usuń ten wpis.
+8. HTTPS z wpisanym adresem: ostrzeżenie w edytorze, że adres jest pomijany (połączenie po nazwie).
+9. Stary wpis bez `address` (inny komputer zapisany po nazwie): łączy się jak wcześniej.
+
 ## Następna faza
 FAZA 4 — Szkielet GUI i host modułów. Prompt: `docs/04_PROMPTY/PROMPT_FAZA_4.md`.

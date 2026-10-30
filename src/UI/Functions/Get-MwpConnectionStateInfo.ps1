@@ -40,6 +40,11 @@
     elseif ($errorKind -eq 'CredentialRequired') {
         $label = 'Wymaga poświadczeń'
     }
+    elseif ($errorKind -eq 'NameMismatch') {
+        # D-054: pod adresem odpowiada inny komputer — operacje zablokowane do poprawienia adresu.
+        $label = 'Inny komputer pod adresem'
+        $tone = 'Danger'
+    }
 
     $hasCredential = $false
     if ($null -ne $connection.PSObject.Properties['Credential']) {

@@ -39,3 +39,7 @@
 | Stan połączenia | Pole `Context.Connection.State`: `Connected`, `Connecting`, `Disconnected`, `Unauthorized`, `Error`; jedyny zmienny element kontekstu wykonania (D-035) |
 | Operacja asynchroniczna | Blok wykonywany w puli runspace'ów (`Start-`/`Wait-`/`Stop-MwpOperation`) z limitem równoległości, limitem czasu i anulowaniem (D-036) |
 | ADR | Zapis decyzji architektonicznej (problem, opcje, kryteria, wybór, uzasadnienie, konsekwencje); w projekcie wpisy w `DECYZJE.md` |
+| Adres połączenia | Adres, pod który aplikacja łączy się z komputerem zdalnym (WinRM/CIM): pole `address` z rejestru, a gdy puste — nazwa; przy HTTPS zawsze nazwa (`MWP.Target.ConnectionAddress`, `Context.Address`; D-054). Nazwa (`name`) pozostaje identyfikatorem komputera w aplikacji |
+| Adres wykryty | Adres LAN zgłoszony przez komputer po połączeniu (reguła `Select-MwpNetworkAddress`); pokazywany w podpowiedziach, a adres IP połączenia spoza adresów wykrytych daje tylko ostrzeżenie (D-054) |
+| Adres LAN localhost | Adres tego komputera w sieci LAN pokazywany w Ustawieniach (`Get-MwpLocalNetworkAddress`) — wyłącznie informacyjnie, nie zapisywany i nigdy nieużywany do łączenia ani operacji (D-054) |
+| NameMismatch | Rodzaj błędu połączenia: pod adresem odpowiada komputer o innej nazwie niż w rejestrze (np. DHCP nadał adres innemu komputerowi); blokuje wszystkie operacje kontekstu do poprawienia adresu (D-054) |

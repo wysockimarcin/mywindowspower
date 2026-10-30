@@ -36,7 +36,7 @@
 
     if (-not $StateOnly -and -not $Selection) {
         $parts = New-Object -TypeName System.Collections.Generic.List[string]
-        $parts.Add(('Komputer {0}' -f $context.ComputerName))
+        $parts.Add(('Komputer {0}' -f (Format-MwpTargetLabel -Context $context)))
         if ($running -and $view.TaskKind -eq 'Scan') {
             $parts.Add('skanowanie…')
         }

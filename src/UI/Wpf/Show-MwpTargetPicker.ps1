@@ -37,8 +37,9 @@
     $rows = @(foreach ($target in @(Get-MwpTarget)) {
             $check = Test-MwpInstanceTarget -Definition $Definition -Target $target
             $detail = if ($target.IsLocal) { 'Komputer lokalny, bez połączenia zdalnego' } else {
-                'WinRM {0}, port {1}, uwierzytelnienie: {2}{3}' -f $(if ($target.UseSsl) { 'HTTPS' } else { 'HTTP' }), $target.Port, $target.Authentication,
-                $(if ($target.UserName) { ', konto: ' + $target.UserName } else { '' })
+                'WinRM {0}, port {1}, uwierzytelnienie: {2}{3}{4}' -f $(if ($target.UseSsl) { 'HTTPS' } else { 'HTTP' }), $target.Port, $target.Authentication,
+                $(if ($target.UserName) { ', konto: ' + $target.UserName } else { '' }),
+                $(if ([string]$target.ConnectionAddress -ne [string]$target.Name) { ', adres: ' + $target.ConnectionAddress } else { '' })
             }
             if (-not $check.Allowed) {
                 $detail = '{0} — {1}' -f $detail, $check.Reason

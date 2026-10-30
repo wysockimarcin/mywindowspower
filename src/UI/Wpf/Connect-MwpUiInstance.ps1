@@ -65,7 +65,7 @@
     $Entry.Busy++
     $Entry.Message = $null
     Update-MwpInstanceView -Entry $Entry -StateOnly
-    $null = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Łączenie: {0}' -f $context.ComputerName) -State $Entry.Id -ArgumentList $context, $credential, ($plan.Action -eq 'Store'), $save -ScriptBlock {
+    $null = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Łączenie: {0}' -f (Format-MwpTargetLabel -Context $context)) -State $Entry.Id -ArgumentList $context, $credential, ($plan.Action -eq 'Store'), $save -ScriptBlock {
         param($Progress, $Context, [System.Management.Automation.PSCredential] $Credential, [bool] $UseStored, [bool] $Save)
         $Progress.Message = $(if ($UseStored) { 'hasło z Menedżera poświadczeń, nawiązywanie sesji WinRM' } else { 'nawiązywanie sesji WinRM' })
         Connect-MwpTarget -Context $Context -Credential $Credential -UseStoredCredential:$UseStored -SaveCredential:$Save

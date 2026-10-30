@@ -66,7 +66,7 @@
         default { [pscustomobject]@{ Label = 'Zmiana'; Tone = 'Warning' } }
     }
     $c['TargetText'].Text = $Target
-    $c['ComputerText'].Text = 'Komputer docelowy: {0}' -f $ComputerName
+    $c['ComputerText'].Text = 'Komputer docelowy: {0}' -f (Format-MwpTargetLabel -ComputerName $ComputerName)
     $c['PreviewList'].ItemsSource = @($(if ($PreviewLine.Count -gt 0) { $PreviewLine } else { @('(brak szczegółów podglądu)') }))
     if ($Warning) {
         $c['WarningText'].Text = $Warning

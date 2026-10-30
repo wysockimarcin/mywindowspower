@@ -50,10 +50,10 @@
 
     # Nagłówek i ostrzeżenia.
     $p['PowerStatusText'].Text = if ($power.Loading) {
-        'Odczyt stanu zasilania komputera {0}…' -f $context.ComputerName
+        'Odczyt stanu zasilania komputera {0}…' -f (Format-MwpTargetLabel -Context $context)
     }
     elseif ($null -ne $status) {
-        'Komputer {0} · plan aktywny: {1} · odczyt {2}' -f $context.ComputerName, $(if ($null -ne $status.ActivePlan) { $status.ActivePlan.Name } else { '(brak)' }),
+        'Komputer {0} · plan aktywny: {1} · odczyt {2}' -f (Format-MwpTargetLabel -Context $context), $(if ($null -ne $status.ActivePlan) { $status.ActivePlan.Name } else { '(brak)' }),
         $(try { ([datetime]$status.CollectedAt).ToString('HH:mm:ss') } catch { $status.CollectedAt })
     }
     else {

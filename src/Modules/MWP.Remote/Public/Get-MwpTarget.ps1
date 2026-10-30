@@ -6,7 +6,7 @@
     .DESCRIPTION
         Rejestr komputerów jest w config\settings.local.json (klucz targets, poza repozytorium; D-019).
         localhost jest zawsze pierwszy i działa bez zdalnego wywołania. Pomijane są (z ostrzeżeniem):
-        wpis przykładowy z szablonu (isExample), nazwy oznaczające komputer lokalny, niepoprawne nazwy,
+        wpis przykładowy z szablonu (isExample), nazwy oznaczające komputer lokalny, niepoprawne nazwy lub adresy połączenia,
         nieobsługiwany transport lub sposób uwierzytelnienia i duplikaty.
 
     .PARAMETER Name
@@ -44,6 +44,11 @@
         $entryName = [string]$entry['name']
         if (-not (Test-MwpTargetName -Name $entryName)) {
             Write-Warning ("Pominięto komputer o niepoprawnej nazwie '{0}' w rejestrze komputerów." -f $entryName)
+            continue
+        }
+        $entryAddress = $(if ($entry.Contains('address') -and $null -ne $entry['address']) { [string]$entry['address'] } else { '' })
+        if ($entryAddress -ne '' -and -not (Test-MwpTargetName -Name $entryAddress)) {
+            Write-Warning ("Pominięto komputer '{0}': niepoprawny adres połączenia '{1}'." -f $entryName, $entryAddress)
             continue
         }
         if (Test-MwpLocalTargetName -Name $entryName) {

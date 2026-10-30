@@ -38,7 +38,7 @@
     }
     $module = @(Get-Module -Name $Entry.Instance.ModuleName) | Select-Object -First 1
     $view.TaskKind = 'Clear'
-    $view.Task = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Czyszczenie dysku ({0})' -f $context.ComputerName) -State @{ InstanceId = $Entry.Id } `
+    $view.Task = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Czyszczenie dysku ({0})' -f (Format-MwpTargetLabel -Context $context)) -State @{ InstanceId = $Entry.Id } `
         -ArgumentList $(if ($null -ne $module) { $module.Path } else { '' }), $context, $Category, $IncludeUserProfiles -ScriptBlock (Get-MwpUiCleanupScript -Name Clear) -OnCompleted {
         param($Task)
         $entry = $script:MwpUi.Instances[[string]$Task.State.InstanceId]

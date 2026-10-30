@@ -1,6 +1,6 @@
 ﻿@{
     RootModule           = 'MWP.Remote.psm1'
-    ModuleVersion        = '0.12.2'
+    ModuleVersion        = '0.12.3'
     GUID                 = 'c2b4ddbe-4c75-4db6-89d9-700ff0abe8b2'
     Author               = 'wysockimarcin'
     CompanyName          = 'wysockimarcin'
@@ -16,9 +16,11 @@
         'ConvertTo-MwpTargetStatusView'
         'Disconnect-MwpTarget'
         'Get-MwpCimSessionParameter'
+        'Get-MwpLocalNetworkAddress'
         'Get-MwpModuleInstance'
         'Get-MwpRemoteModuleInfo'
         'Get-MwpTarget'
+        'Get-MwpTargetComputerName'
         'Get-MwpTargetCredentialInfo'
         'Get-MwpTargetInfo'
         'Get-MwpTargetStatus'
@@ -34,6 +36,7 @@
         'Start-MwpOperation'
         'Stop-MwpOperation'
         'Test-MwpTarget'
+        'Test-MwpTargetIsLocalComputer'
         'Wait-MwpOperation'
     )
     CmdletsToExport      = @()

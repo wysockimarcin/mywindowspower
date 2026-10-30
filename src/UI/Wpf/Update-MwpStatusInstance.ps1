@@ -24,7 +24,7 @@
         return
     }
     $context = $entry.Instance.Context
-    $c['StatusInstance'].Text = 'Instancja: {0} · komputer: {1}' -f $entry.Instance.Name, $context.ComputerName
+    $c['StatusInstance'].Text = 'Instancja: {0} · komputer: {1}' -f $entry.Instance.Name, (Format-MwpTargetLabel -Context $context)
     $c['StatusInstanceBadge'].DataContext = Get-MwpConnectionStateInfo -Context $context
     $c['StatusInstancePanel'].Visibility = 'Visible'
 }

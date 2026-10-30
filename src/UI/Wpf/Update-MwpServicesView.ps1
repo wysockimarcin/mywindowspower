@@ -45,10 +45,10 @@
 
     if ($Filter -or (-not $StateOnly -and -not $Selection)) {
         $p['ServicesStatusText'].Text = if ($view.Loading) {
-            'Odczyt usług komputera {0}…' -f $context.ComputerName
+            'Odczyt usług komputera {0}…' -f (Format-MwpTargetLabel -Context $context)
         }
         elseif ($null -ne $list) {
-            'Komputer {0} · {1} usług · odczyt {2}' -f $context.ComputerName, @($list.Services).Count, $(try { ([datetime]$list.CollectedAt).ToString('HH:mm:ss') } catch { $list.CollectedAt })
+            'Komputer {0} · {1} usług · odczyt {2}' -f (Format-MwpTargetLabel -Context $context), @($list.Services).Count, $(try { ([datetime]$list.CollectedAt).ToString('HH:mm:ss') } catch { $list.CollectedAt })
         }
         else {
             'Brak odczytu usług.'

@@ -23,14 +23,14 @@
         return
     }
     if ((Get-MwpConnectionStateInfo -Context $context).NeedsCredential) {
-        $view.ItemsError = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać autostart i harmonogram.' -f $context.ComputerName
+        $view.ItemsError = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać autostart i harmonogram.' -f (Format-MwpTargetLabel -Context $context)
         Update-MwpStartupView -Entry $Entry
         return
     }
 
     $view.ItemsLoading = $true
     $null = Register-MwpUiOperation -Registry $script:MwpUi.Tasks -Operation (Get-MwpStartupItem -Context $context -AsOperation) `
-        -Name ('Autostart: odczyt ({0})' -f $context.ComputerName) -State @{ InstanceId = $Entry.Id } -OnCompleted {
+        -Name ('Autostart: odczyt ({0})' -f (Format-MwpTargetLabel -Context $context)) -State @{ InstanceId = $Entry.Id } -OnCompleted {
         param($Task)
         $entry = $script:MwpUi.Instances[[string]$Task.State.InstanceId]
         if ($null -eq $entry) {
@@ -56,7 +56,7 @@
 
     $view.TasksLoading = $true
     $null = Register-MwpUiOperation -Registry $script:MwpUi.Tasks -Operation (Get-MwpScheduledTask -Context $context -AsOperation) `
-        -Name ('Harmonogram: odczyt ({0})' -f $context.ComputerName) -State @{ InstanceId = $Entry.Id } -OnCompleted {
+        -Name ('Harmonogram: odczyt ({0})' -f (Format-MwpTargetLabel -Context $context)) -State @{ InstanceId = $Entry.Id } -OnCompleted {
         param($Task)
         $entry = $script:MwpUi.Instances[[string]$Task.State.InstanceId]
         if ($null -eq $entry) {

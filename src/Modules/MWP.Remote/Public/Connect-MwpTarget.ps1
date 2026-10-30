@@ -18,6 +18,12 @@
         z połączenia, a pochodzące z pamięci lub magazynu — unieważniane dla wszystkich kontekstów
         komputera (bez automatycznych ponowień); wpis w magazynie zostaje. Data wyniku: State, ErrorKind,
         CredentialSource (Parameter, Context, Cache, Store, None), CredentialSaved — nigdy hasło.
+        D-054: sesja jest otwierana pod adres połączenia (Context.Address), a zaraz potem aplikacja
+        odczytuje w niej nazwę komputera i jego adresy LAN (Get-MwpRemoteIdentity). Gdy komputer zgłasza
+        inną nazwę niż Context.ComputerName (np. DHCP nadał adres innemu komputerowi), sesja jest
+        zamykana, stan to Error z ErrorKind = NameMismatch, a poświadczenie nie trafia do pamięci
+        podręcznej ani do magazynu — wszystkie operacje tego kontekstu są zablokowane. Gdy nazwy nie da
+        się porównać (nazwa w rejestrze jest adresem IP) albo odczytać, połączenie działa jak przed D-054.
 
     .PARAMETER Credential
         Poświadczenia (np. Get-Credential); zastępują zapamiętane w połączeniu.
@@ -138,7 +144,7 @@
             Set-MwpConnectionState -Connection $connection -State Connecting
             try {
                 $sessionArguments = @{
-                    ComputerName            = $Context.ComputerName
+                    ComputerName            = $Context.Address
                     Port                    = $Context.Port
                     UseSsl                  = $Context.UseSsl
                     Credential              = $active
@@ -146,6 +152,25 @@
                     OperationTimeoutSeconds = $Context.Policy.OperationTimeoutSeconds
                 }
                 $connection.Session = New-MwpPSSession @sessionArguments
+                # D-054: tożsamość przed zapamiętaniem hasła — przyjął je komputer pod adresem, nie koniecznie ten z nazwy.
+                $identity = $null
+                try {
+                    $identity = Get-MwpRemoteIdentity -Session $connection.Session -TimeoutSeconds $Context.Policy.ConnectTimeoutSeconds
+                }
+                catch {
+                    Write-MwpLog -Level Debug -Source 'MWP.Remote' -Operation $operation -ComputerName $Context.ComputerName `
+                        -Message ("Nie udało się odczytać nazwy komputera pod adresem '{0}': {1}" -f $Context.Address, $_.Exception.Message)
+                }
+                $verified = Update-MwpConnectionIdentity -Context $Context -Identity $identity
+                if ($verified -eq $false) {
+                    Remove-MwpPSSession -Session $connection.Session
+                    $connection.Session = $null
+                    $message = Get-MwpRemoteErrorMessage -Kind 'NameMismatch' -Context $Context -RemoteName $connection.RemoteComputerName
+                    Set-MwpConnectionState -Connection $connection -State Error -ErrorKind 'NameMismatch' -ErrorMessage $message
+                    Write-MwpLog -Level Warning -Source 'MWP.Remote' -Operation $operation -ComputerName $Context.ComputerName -Message $message `
+                        -Data @{ ErrorKind = 'NameMismatch'; Address = $Context.Address; RemoteComputerName = $connection.RemoteComputerName }
+                    return New-MwpResult @common -Success $false -Message $message -Data (& $snapshot)
+                }
                 Set-MwpConnectionState -Connection $connection -State Connected
                 if ($needsCredential -and $source -in @('Parameter', 'Context', 'Store')) {
                     $cacheSource = switch ($source) { 'Parameter' { 'Dialog' } 'Store' { 'Store' } default { 'Context' } }
@@ -153,7 +178,11 @@
                     Set-MwpConnectionCredential -Connection $connection -Credential $active -Shared $true -Generation $generation
                 }
                 $user = if ($null -ne $active) { $active.UserName } else { $Context.Identity.UserName }
-                $message = "Połączono z komputerem '{0}' (WinRM, port {1}, użytkownik: {2})." -f $Context.ComputerName, $Context.Port, $user
+                $via = if ($Context.Address -ne $Context.ComputerName) { 'adres {0}, ' -f $Context.Address } else { '' }
+                $message = "Połączono z komputerem '{0}' ({1}WinRM, port {2}, użytkownik: {3})." -f $Context.ComputerName, $via, $Context.Port, $user
+                if (-not [string]::IsNullOrEmpty($connection.AddressWarning)) {
+                    $message = '{0} Uwaga: {1}' -f $message, $connection.AddressWarning
+                }
                 if ($source -eq 'Store') {
                     $message = '{0} Użyto hasła z Menedżera poświadczeń Windows.' -f $message
                 }

@@ -30,7 +30,7 @@
     $p = $Entry.ModuleView.Controls
     $context = $Entry.Instance.Context
     if ((Get-MwpConnectionStateInfo -Context $context).NeedsCredential) {
-        Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”), żeby podać poświadczenia.' -f $context.ComputerName) -Owner $Owner
+        Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”), żeby podać poświadczenia.' -f (Format-MwpTargetLabel -Context $context)) -Owner $Owner
         return
     }
     $duration = 60
@@ -45,8 +45,8 @@
     $operation = New-MwpPowerReport -Kind $Kind -Context $context -DurationSeconds $duration -AsOperation
     $label = if ($Kind -eq 'Battery') { 'raport baterii' } else { 'raport energii ({0} s)' -f $duration }
     $Entry.Power.Reporting = $true
-    $p['ReportText'].Text = 'Tworzenie: {0} na komputerze {1}…' -f $label, $context.ComputerName
-    $null = Register-MwpUiOperation -Registry $script:MwpUi.Tasks -Operation $operation -Name ('Zasilanie: {0} ({1})' -f $label, $context.ComputerName) `
+    $p['ReportText'].Text = 'Tworzenie: {0} na komputerze {1}…' -f $label, (Format-MwpTargetLabel -Context $context)
+    $null = Register-MwpUiOperation -Registry $script:MwpUi.Tasks -Operation $operation -Name ('Zasilanie: {0} ({1})' -f $label, (Format-MwpTargetLabel -Context $context)) `
         -State @{ InstanceId = $Entry.Id; Folder = $folder; Owner = $Owner } -OnCompleted {
         param($Task)
         $entry = $script:MwpUi.Instances[[string]$Task.State.InstanceId]

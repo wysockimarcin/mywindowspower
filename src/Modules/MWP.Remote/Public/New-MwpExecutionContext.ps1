@@ -8,11 +8,15 @@
         „bieżący komputer". Pola kontekstu są tylko do odczytu (próba przypisania kończy się błędem),
         więc zmiana komputera oznacza nowy kontekst (zwykle nową instancję modułu). Pola:
         - Id, InstanceId (instancja modułu, do której należy kontekst; może być pusty), CreatedAt,
-        - ComputerName, DisplayName, Mode (Local | Remote), Transport (Local | WinRM), Port, UseSsl,
+        - ComputerName (nazwa komputera = identyfikator: log, wyniki, cofnięcia, poświadczenia, widgety),
+          Address (adres połączenia WinRM/CIM — D-054: adres z rejestru, a gdy pusty — nazwa; dla
+          localhost nieużywany), DisplayName, Mode (Local | Remote), Transport (Local | WinRM), Port, UseSsl,
         - Identity: Authentication (Credential | CurrentUser) i UserName — nigdy hasło,
         - Connection: obiekt połączenia (MWP.Connection) — jedyny zmienny element, zarządzany przez
           Connect-/Disconnect-MwpTarget i Invoke-MwpOnTarget; stan: Context.Connection.State
-          (Connected, Connecting, Disconnected, Unauthorized, Error), ostatni błąd: LastError,
+          (Connected, Connecting, Disconnected, Unauthorized, Error), ostatni błąd: LastError, rodzaj
+          błędu: ErrorKind (m.in. NameMismatch — pod adresem odpowiada inny komputer, D-054); po
+          połączeniu: RemoteComputerName, DetectedAddresses, NameVerified, AddressWarning,
         - ModuleParameters: parametry modułu (słownik tylko do odczytu),
         - Policy: ConnectTimeoutSeconds, OperationTimeoutSeconds, ErrorPolicy (Stop | Continue),
           AutoConnect.
@@ -108,6 +112,7 @@
         PSTypeName     = 'MWP.Connection'
         Id             = [guid]::NewGuid().ToString()
         ComputerName   = $target.Name
+        Address        = $target.ConnectionAddress
         Mode           = $mode
         State          = $(if ($mode -eq 'Local') { 'Connected' } else { 'Disconnected' })
         ErrorKind      = $null
@@ -119,6 +124,11 @@
         # D-052: czy poświadczenie pochodzi ze wspólnej pamięci podręcznej procesu (i jego generacja).
         CredentialShared     = $false
         CredentialGeneration = -1
+        # D-054: tożsamość komputera odczytana po połączeniu (nazwa zgłoszona, adresy LAN, wynik porównania nazw).
+        RemoteComputerName   = $null
+        DetectedAddresses    = @()
+        NameVerified         = $null
+        AddressWarning       = $null
     }
 
     $parameters = New-Object -TypeName 'System.Collections.Generic.Dictionary[string,object]' -ArgumentList ([StringComparer]::OrdinalIgnoreCase)
@@ -143,6 +153,7 @@
             Id               = [guid]::NewGuid().ToString()
             InstanceId       = $(if ([string]::IsNullOrEmpty($InstanceId)) { $null } else { $InstanceId })
             ComputerName     = $target.Name
+            Address          = $target.ConnectionAddress
             DisplayName      = $target.DisplayName
             Mode             = $mode
             Transport        = $target.Transport

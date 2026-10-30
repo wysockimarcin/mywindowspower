@@ -70,7 +70,7 @@
     }
     $state = Get-MwpConnectionStateInfo -Context $context
     if ($state.NeedsCredential) {
-        Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”), żeby podać poświadczenia.' -f $context.ComputerName) -Owner $Owner
+        Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”), żeby podać poświadczenia.' -f (Format-MwpTargetLabel -Context $context)) -Owner $Owner
         return
     }
     $module = @(Get-Module -Name $Entry.Instance.ModuleName) | Select-Object -First 1
@@ -88,7 +88,7 @@
     }
     $Entry.Busy++
     Update-MwpInstanceView -Entry $Entry -StateOnly
-    $null = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Podgląd: {0} ({1})' -f $Header, $context.ComputerName) -State $data -Cancellable `
+    $null = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Podgląd: {0} ({1})' -f $Header, (Format-MwpTargetLabel -Context $context)) -State $data -Cancellable `
         -ArgumentList $data.ModulePath, $context, $data.Steps, $true -ScriptBlock (Get-MwpUiChangeScript) -OnCompleted {
         param($Task)
         $data = $Task.State

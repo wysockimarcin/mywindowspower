@@ -41,7 +41,7 @@
             ('Ostatnie czyszczenie: {0}' -f $(if ($null -ne $Analysis.LastCleanup) { ([datetime]$Analysis.LastCleanup).ToString('yyyy-MM-dd HH:mm') } elseif ($Analysis.LastCleanupText) { $Analysis.LastCleanupText } else { 'brak danych' }))
             ('Pakiety do odzyskania: {0}' -f $(if ($null -ne $Analysis.ReclaimablePackages) { $Analysis.ReclaimablePackages } else { 'brak danych' }))
             ('Czyszczenie magazynu składników: {0}' -f $(if ($Analysis.CleanupRecommended) { 'ZALECANE (ręcznie, jako administrator: DISM /Online /Cleanup-Image /StartComponentCleanup)' } else { 'niezalecane' }))
-            ('Komputer: {0}, analiza: {1}' -f $Analysis.ComputerName, ([datetime]$Analysis.CollectedAt).ToString('yyyy-MM-dd HH:mm'))
+            ('Komputer: {0}, analiza: {1}' -f (Format-MwpTargetLabel -ComputerName $Analysis.ComputerName), ([datetime]$Analysis.CollectedAt).ToString('yyyy-MM-dd HH:mm'))
         )
         return [pscustomobject]@{ Title = 'Magazyn składników'; Text = $lines -join $newLine }
     }

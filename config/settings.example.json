@@ -30,6 +30,7 @@
     "targets": [
         {
             "name": "NAZWA-KOMPUTERA",
+            "address": "",
             "displayName": "Komputer zdalny (przykład, pomijany)",
             "transport": "WinRM",
             "port": 5985,

@@ -21,13 +21,13 @@
         return
     }
     if ((Get-MwpConnectionStateInfo -Context $context).NeedsCredential) {
-        $Entry.Power.Error = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać stan zasilania.' -f $context.ComputerName
+        $Entry.Power.Error = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać stan zasilania.' -f (Format-MwpTargetLabel -Context $context)
         Update-MwpPowerView -Entry $Entry
         return
     }
     $operation = Get-MwpPowerStatus -Context $context -AsOperation
     $Entry.Power.Loading = $true
-    $null = Register-MwpUiOperation -Registry $script:MwpUi.Tasks -Operation $operation -Name ('Zasilanie: odczyt ({0})' -f $context.ComputerName) `
+    $null = Register-MwpUiOperation -Registry $script:MwpUi.Tasks -Operation $operation -Name ('Zasilanie: odczyt ({0})' -f (Format-MwpTargetLabel -Context $context)) `
         -State @{ InstanceId = $Entry.Id } -OnCompleted {
         param($Task)
         $entry = $script:MwpUi.Instances[[string]$Task.State.InstanceId]

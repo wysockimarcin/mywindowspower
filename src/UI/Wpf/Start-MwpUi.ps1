@@ -79,6 +79,8 @@
         Ticks         = 0
         Timer         = $null
         DemoTask      = $null
+        # D-054: adres LAN komputera lokalnego (tylko do wyświetlenia w Ustawieniach; nie jest zapisywany).
+        LocalNetwork  = @{ Result = $null; ReadAt = [datetime]::MinValue; Task = $null }
         Closing       = $false
         Startup       = $startup
     }

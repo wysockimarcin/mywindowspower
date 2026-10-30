@@ -22,7 +22,7 @@
     $context = $Entry.Instance.Context
     $state = Get-MwpConnectionStateInfo -Context $context
     if ($state.NeedsCredential) {
-        Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”), żeby podać poświadczenia.' -f $context.ComputerName) -Owner $Owner
+        Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”), żeby podać poświadczenia.' -f (Format-MwpTargetLabel -Context $context)) -Owner $Owner
         return
     }
 
@@ -30,7 +30,7 @@
     $Entry.Busy++
     $Entry.View.Controls['ProbeText'].Text = 'Odczyt w toku…'
     Update-MwpInstanceView -Entry $Entry -StateOnly
-    $null = Register-MwpUiOperation -Registry $ui.Tasks -Operation $operation -Name ('Odczyt testowy: {0}' -f $context.ComputerName) -State $Entry.Id -OnCompleted {
+    $null = Register-MwpUiOperation -Registry $ui.Tasks -Operation $operation -Name ('Odczyt testowy: {0}' -f (Format-MwpTargetLabel -Context $context)) -State $Entry.Id -OnCompleted {
         param($Task)
         $entry = $script:MwpUi.Instances[[string]$Task.State]
         if ($null -eq $entry) {

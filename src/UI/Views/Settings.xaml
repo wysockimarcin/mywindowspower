@@ -1,4 +1,4 @@
-<!-- Ustawienia: motyw, komputery docelowe (D-033, D-034), katalog danych (D-032, D-038). -->
+﻿<!-- Ustawienia: motyw, komputery docelowe (D-033, D-034), katalog danych (D-032, D-038). -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -24,9 +24,23 @@
                        Text="localhost jest zawsze dostępny. Przy połączeniu aplikacja pyta o poświadczenia; hasło jest w pamięci do zamknięcia aplikacji, a zapisywane w Menedżerze poświadczeń Windows tylko po zaznaczeniu „Zapamiętaj” w oknie poświadczeń. Wpis w TrustedHosts klienta WinRM wykonujesz ręcznie (instrukcja: ARCHITEKTURA.md, „Konfiguracja komputera zdalnego”)."/>
             <CheckBox x:Name="CredentialStoreCheck" Margin="0,0,0,8" Content="Zezwalaj na zapamiętywanie haseł w Menedżerze poświadczeń Windows"
                       ToolTip="Wyłączone: aplikacja nie czyta i nie zapisuje haseł w Menedżerze poświadczeń; zapisane wpisy usuniesz przyciskiem „Zapomnij hasło” w edytorze komputera."/>
+            <!-- D-054: baner dla komputerów zapisanych pod adresem IP (nazwy nie da się zweryfikować po połączeniu). -->
+            <Border x:Name="TargetNameBanner" Style="{StaticResource Mwp.Banner.Warning}" Margin="0,0,0,8" Visibility="Collapsed">
+                <DockPanel>
+                    <Button x:Name="TargetNameButton" DockPanel.Dock="Right" Content="Ustaw nazwę…" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TargetNameText" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
             <DataGrid x:Name="TargetsGrid" Height="180">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
+                    <DataGridTextColumn Header="Nazwa" Binding="{Binding NameText}" Width="*"/>
+                    <DataGridTextColumn Header="Adres IP" Binding="{Binding AddressText}" Width="*">
+                        <DataGridTextColumn.CellStyle>
+                            <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                <Setter Property="ToolTip" Value="{Binding AddressToolTip}"/>
+                            </Style>
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
                     <DataGridTextColumn Header="Nazwa wyświetlana" Binding="{Binding DisplayName}" Width="*"/>
                     <DataGridTextColumn Header="Uwierzytelnienie" Binding="{Binding Authentication}" Width="120"/>
                     <DataGridTextColumn Header="Konto (podpowiedź)" Binding="{Binding UserName}" Width="*"/>
@@ -39,6 +53,8 @@
                 <Button x:Name="EditTargetButton" Content="Edytuj…" Margin="0,0,8,8" IsEnabled="False"/>
                 <Button x:Name="RemoveTargetButton" Content="Usuń…" Margin="0,0,8,8" IsEnabled="False"/>
                 <Button x:Name="TestTargetButton" Content="Diagnostyka połączenia" Margin="0,0,8,8" IsEnabled="False"/>
+                <Button x:Name="RefreshTargetsButton" Content="Odśwież" Margin="0,0,8,8"
+                        ToolTip="Odczytuje ponownie adres tego komputera w sieci LAN (tylko informacyjnie) i listę komputerów."/>
             </WrapPanel>
             <TextBlock x:Name="TargetTestText" Style="{StaticResource Mwp.Text.Muted}" TextWrapping="Wrap"/>
 

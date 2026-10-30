@@ -43,7 +43,7 @@
         return
     }
     if ((Get-MwpConnectionStateInfo -Context $context).NeedsCredential) {
-        $view[$Kind + 'Error'] = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać programy.' -f $context.ComputerName
+        $view[$Kind + 'Error'] = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby odczytać programy.' -f (Format-MwpTargetLabel -Context $context)
         Update-MwpAppsView -Entry $Entry
         return
     }
@@ -54,7 +54,7 @@
                 $parameters['UserSid'] = [string[]]@($view.UserSid)
             }
             $operation = Get-MwpInstalledApp @parameters
-            $name = 'Aplikacje: lista programów ({0})' -f $context.ComputerName
+            $name = 'Aplikacje: lista programów ({0})' -f (Format-MwpTargetLabel -Context $context)
         }
         'Packages' {
             $packageParameters = @{ Context = $context; AsOperation = $true }
@@ -62,7 +62,7 @@
                 $packageParameters['UserSid'] = [string[]]@($view.UserSid)
             }
             $operation = Get-MwpWingetPackage @packageParameters
-            $name = 'Aplikacje: winget list ({0})' -f $context.ComputerName
+            $name = 'Aplikacje: winget list ({0})' -f (Format-MwpTargetLabel -Context $context)
         }
         'Search' {
             try {
@@ -74,7 +74,7 @@
                 return
             }
             $view.SearchQuery = $Query
-            $name = 'Aplikacje: wyszukiwanie „{0}” ({1})' -f $Query, $context.ComputerName
+            $name = 'Aplikacje: wyszukiwanie „{0}” ({1})' -f $Query, (Format-MwpTargetLabel -Context $context)
         }
     }
     $view[$Kind + 'Loading'] = $true

@@ -45,7 +45,7 @@
     $state = Get-MwpConnectionStateInfo -Context $context
     if ($state.NeedsCredential) {
         $Widget.Status = 'NeedsCredential'
-        $Widget.Message = 'Komputer {0} wymaga poświadczeń. Kliknij „Połącz”.' -f $context.ComputerName
+        $Widget.Message = 'Komputer {0} wymaga poświadczeń. Kliknij „Połącz”.' -f (Format-MwpTargetLabel -Context $context)
         return $false
     }
 
@@ -56,7 +56,7 @@
         if ($null -eq $operation -or $operation.PSObject.TypeNames -notcontains 'MWP.Operation') {
             throw ("Funkcja danych {0} nie zwróciła operacji (MWP.Operation)." -f $command)
         }
-        $Widget.Task = Register-MwpUiOperation -Registry $Registry -Operation $operation -Quiet -Name ('Widget: {0} — {1}' -f $title, $context.ComputerName) -State $Widget -OnCompleted {
+        $Widget.Task = Register-MwpUiOperation -Registry $Registry -Operation $operation -Quiet -Name ('Widget: {0} — {1}' -f $title, (Format-MwpTargetLabel -Context $context)) -State $Widget -OnCompleted {
             param($Task)
             Complete-MwpWidgetRefresh -Widget $Task.State -Task $Task
         }

@@ -65,7 +65,7 @@
             $dialog = New-Object -TypeName Microsoft.Win32.SaveFileDialog
             $dialog.Title = 'Eksport profilu usług'
             $dialog.Filter = 'Profil usług (*.json)|*.json'
-            $dialog.FileName = 'uslugi-{0}-{1:yyyyMMdd-HHmm}.json' -f ([string]$Entry.Instance.Context.ComputerName -replace '[^A-Za-z0-9_.-]', '_'), (Get-Date)
+            $dialog.FileName = 'uslugi-{0}-{1:yyyyMMdd-HHmm}.json' -f ([string](Format-MwpTargetLabel -Context $Entry.Instance.Context) -replace '[^A-Za-z0-9_.-]', '_'), (Get-Date)
             $dialog.OverwritePrompt = $true
             $accepted = if ($null -ne $Owner) { $dialog.ShowDialog($Owner) } else { $dialog.ShowDialog() }
             if (-not $accepted) { return }

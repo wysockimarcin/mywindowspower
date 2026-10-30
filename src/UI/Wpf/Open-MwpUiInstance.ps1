@@ -37,7 +37,9 @@
         }
     }
 
-    $instance = New-MwpModuleInstance -ModuleId $Definition.Id -ComputerName $Selection.ComputerName
+    # D-054: tytuł instancji z etykietą komputera (localhost — nazwa hosta), np. „Usługi Windows — PC-BIURO”.
+    $instanceName = '{0} — {1}' -f $Definition.Name, (Format-MwpTargetLabel -ComputerName $Selection.ComputerName)
+    $instance = New-MwpModuleInstance -ModuleId $Definition.Id -ComputerName $Selection.ComputerName -Name $instanceName
     $initialization = Initialize-MwpModuleInstance -Instance $instance
     if (-not $initialization.Success) {
         $null = Close-MwpModuleInstance -Instance $instance

@@ -22,14 +22,14 @@
         return
     }
     if ((Get-MwpConnectionStateInfo -Context $context).NeedsCredential) {
-        $view.StoreError = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby wykonać analizę.' -f $context.ComputerName
+        $view.StoreError = 'Połącz instancję z komputerem {0} (przycisk „Połącz”), żeby wykonać analizę.' -f (Format-MwpTargetLabel -Context $context)
         Update-MwpCleanupView -Entry $Entry
         return
     }
     $view.StoreLoading = $true
     $view.StoreError = $null
     $null = Register-MwpUiOperation -Registry $script:MwpUi.Tasks -Operation (Get-MwpComponentStoreAnalysis -Context $context -AsOperation) `
-        -Name ('DISM: analiza magazynu składników ({0})' -f $context.ComputerName) -State @{ InstanceId = $Entry.Id } -OnCompleted {
+        -Name ('DISM: analiza magazynu składników ({0})' -f (Format-MwpTargetLabel -Context $context)) -State @{ InstanceId = $Entry.Id } -OnCompleted {
         param($Task)
         $entry = $script:MwpUi.Instances[[string]$Task.State.InstanceId]
         if ($null -eq $entry) {

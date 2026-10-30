@@ -52,11 +52,11 @@
         $save = $answer.Save
     }
     $widget.Status = 'Loading'
-    $widget.Message = 'Łączenie z komputerem {0}…' -f $context.ComputerName
+    $widget.Message = 'Łączenie z komputerem {0}…' -f (Format-MwpTargetLabel -Context $context)
     $widget.Version++
     Update-MwpDashboardWidgets
     # Zadanie łączenia zajmuje widget (Task), więc harmonogram nie odświeża go w tym czasie.
-    $widget.Task = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Łączenie: {0}' -f $context.ComputerName) -State $widget -ArgumentList $context, $credential, ($plan.Action -eq 'Store'), $save -ScriptBlock {
+    $widget.Task = Start-MwpUiTask -Registry $ui.Tasks -Pool $ui.Pool -Name ('Łączenie: {0}' -f (Format-MwpTargetLabel -Context $context)) -State $widget -ArgumentList $context, $credential, ($plan.Action -eq 'Store'), $save -ScriptBlock {
         param($Progress, $Context, [System.Management.Automation.PSCredential] $Credential, [bool] $UseStored, [bool] $Save)
         $Progress.Message = $(if ($UseStored) { 'hasło z Menedżera poświadczeń, nawiązywanie sesji WinRM' } else { 'nawiązywanie sesji WinRM' })
         Connect-MwpTarget -Context $Context -Credential $Credential -UseStoredCredential:$UseStored -SaveCredential:$Save

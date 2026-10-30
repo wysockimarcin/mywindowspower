@@ -63,6 +63,7 @@
                     $info = $credentials[[string]$_.Name]
                     [pscustomobject]@{
                         Name        = [string]$_.Name
+                        Address     = [string]$_.ConnectionAddress
                         DisplayName = [string]$_.DisplayName
                         Port        = [int]$_.Port
                         Credential  = $(if ($null -eq $info) { 'None' } elseif ($info.Invalid) { 'Invalid' } elseif ($info.Cached) { 'Verified' } else { 'None' })

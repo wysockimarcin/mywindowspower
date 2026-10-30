@@ -5,7 +5,8 @@
 
     .DESCRIPTION
         Tylko próba połączenia TCP (TcpClient.BeginConnect z limitem 1 s), bez logowania i bez wysyłania
-        danych. Argument: żądanie JSON (Probe, Targets: Name, DisplayName, Port, Credential). Wynik: JSON
+        danych. Argument: żądanie JSON (Probe, Targets: Name, Address — adres połączenia D-054, DisplayName, Port,
+        Credential). Wynik: JSON
         z Kind = 'MWP.TargetStatusRaw'. Zgodny z 5.1.
     #>
     [CmdletBinding()]
@@ -24,7 +25,8 @@
                     $client = New-Object -TypeName System.Net.Sockets.TcpClient
                     $watch = [Diagnostics.Stopwatch]::StartNew()
                     try {
-                        $async = $client.BeginConnect([string]$target.Name, [int]$target.Port, $null, $null)
+                        $probeAddress = if ($null -ne $target.PSObject.Properties['Address'] -and [string]$target.Address -ne '') { [string]$target.Address } else { [string]$target.Name }
+                        $async = $client.BeginConnect($probeAddress, [int]$target.Port, $null, $null)
                         if ($async.AsyncWaitHandle.WaitOne(1000) -and $client.Connected) {
                             $client.EndConnect($async)
                             $reachable = $true

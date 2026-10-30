@@ -36,10 +36,10 @@
 
     if (-not $StateOnly -and -not $Selection) {
         $p['NetworkStatusText'].Text = if ($view.StatusLoading) {
-            'Odczyt stanu sieci komputera {0}…' -f $context.ComputerName
+            'Odczyt stanu sieci komputera {0}…' -f (Format-MwpTargetLabel -Context $context)
         }
         elseif ($null -ne $status) {
-            'Komputer {0} · {1} adapterów · odczyt {2}' -f $context.ComputerName, @($status.Adapters).Count, $(if ($null -ne $view.StatusReadAt) { ([datetime]$view.StatusReadAt).ToString('HH:mm:ss') } else { '' })
+            'Komputer {0} · {1} adapterów · odczyt {2}' -f (Format-MwpTargetLabel -Context $context), @($status.Adapters).Count, $(if ($null -ne $view.StatusReadAt) { ([datetime]$view.StatusReadAt).ToString('HH:mm:ss') } else { '' })
         }
         else {
             'Brak odczytu stanu sieci.'
@@ -68,7 +68,7 @@
         $grid.SelectedItem = $again
 
         $p['NetworkTestText'].Text = if ($view.TestLoading) {
-            'Testy łączności z komputera {0}…' -f $context.ComputerName
+            'Testy łączności z komputera {0}…' -f (Format-MwpTargetLabel -Context $context)
         }
         elseif ($view.TestError) {
             [string]$view.TestError
@@ -104,10 +104,10 @@
     if ($pendingRows.Count -gt 0) {
         $first = @($pendingRows | Sort-Object -Property RemainingSeconds)[0]
         $p['NetworkPendingText'].Text = if ($first.RemainingSeconds -gt 0) {
-            'Zmiana sieci na komputerze {0} czeka na zatwierdzenie: zostało {1} (wycofanie o {2}). Sprawdź, czy połączenie i sieć działają, i zatwierdź.' -f $context.ComputerName, $first.RemainingText, $first.DeadlineText
+            'Zmiana sieci na komputerze {0} czeka na zatwierdzenie: zostało {1} (wycofanie o {2}). Sprawdź, czy połączenie i sieć działają, i zatwierdź.' -f (Format-MwpTargetLabel -Context $context), $first.RemainingText, $first.DeadlineText
         }
         else {
-            'Termin minął — komputer {0} wycofuje zmianę. Stan zostanie odczytany ponownie.' -f $context.ComputerName
+            'Termin minął — komputer {0} wycofuje zmianę. Stan zostanie odczytany ponownie.' -f (Format-MwpTargetLabel -Context $context)
         }
         $p['NetworkPendingPanel'].Visibility = 'Visible'
         if ($first.RemainingSeconds -le -15 -and -not $view.ExpiredRefresh -and -not $view.StatusLoading -and $connected) {

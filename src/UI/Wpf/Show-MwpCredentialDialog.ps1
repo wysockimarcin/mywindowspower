@@ -53,7 +53,7 @@
     if ($null -ne $Owner -and $Owner.IsVisible) {
         $window.Owner = $Owner
     }
-    $c['ComputerText'].Text = 'Komputer: {0}' -f $ComputerName
+    $c['ComputerText'].Text = 'Komputer: {0}' -f (Format-MwpTargetLabel -ComputerName $ComputerName)
     $c['UserBox'].Text = [string]$UserName
     $c['SaveCheck'].IsChecked = $false
     $c['SavePanel'].Visibility = $(if ($OfferSave) { 'Visible' } else { 'Collapsed' })

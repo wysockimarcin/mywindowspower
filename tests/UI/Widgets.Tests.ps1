@@ -120,7 +120,8 @@ Describe 'Widgety Dashboardu — izolacja i cykl życia' {
 
             $first.Instance.Id | Should -Not -Be $second.Instance.Id
             $first.Instance.Context.Id | Should -Not -Be $second.Instance.Context.Id
-            $first.Instance.Name | Should -Be 'Widget: Widget testowy — localhost'
+            # D-054: tytuł z etykietą komputera (localhost — nazwa hosta, Format-MwpTargetLabel).
+            $first.Instance.Name | Should -Be ('Widget: Widget testowy — {0}' -f $env:COMPUTERNAME)
             $first.Status | Should -Be 'Idle'
             $first.Pending | Should -BeTrue -Because 'pierwsze odświeżenie po utworzeniu'
             $first.Parameters['Tryb'] | Should -Be 'ok'

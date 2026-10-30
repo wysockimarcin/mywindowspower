@@ -28,7 +28,7 @@
         $context = $Entry.Instance.Context
         $state = Get-MwpConnectionStateInfo -Context $context
         if ($state.NeedsCredential) {
-            Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”), żeby podać poświadczenia.' -f $context.ComputerName) -Owner $Owner
+            Show-MwpMessage -Text ('Najpierw połącz instancję z komputerem {0} (przycisk „Połącz”), żeby podać poświadczenia.' -f (Format-MwpTargetLabel -Context $context)) -Owner $Owner
             return
         }
         $Entry.Busy++
@@ -89,6 +89,14 @@
                 $lines += 'Dostępny (WinRM): {0}; uwierzytelniony: {1}; autoryzowany: {2}; administrator: {3}; PowerShell na komputerze: {4}' -f
                 (& $yesNo $data.Reachable), (& $yesNo $data.Authenticated), (& $yesNo $data.Authorized), (& $yesNo $data.IsAdministrator),
                 $(if ($data.RemotePSVersion) { $data.RemotePSVersion } else { '?' })
+                # D-054: adres połączenia, nazwa zgłoszona przez komputer i wartość do TrustedHosts (grupa robocza).
+                if ($null -ne $data.PSObject.Properties['Address'] -and -not [string]::IsNullOrEmpty([string]$data.Address)) {
+                    $nameState = switch ($data.NameMatches) { $true { 'zgodna' } $false { 'NIEZGODNA — operacje zablokowane' } default { 'bez porównania' } }
+                    $lines += "Adres połączenia: {0}; nazwa zgłoszona przez komputer: {1} ({2}); adresy wykryte: {3}; TrustedHosts klienta (grupa robocza): '{4}'{5}" -f
+                    $data.Address, $(if ($data.RemoteComputerName) { $data.RemoteComputerName } else { '?' }), $nameState,
+                    $(if (@($data.DetectedAddresses).Count -gt 0) { @($data.DetectedAddresses) -join ', ' } else { '?' }), $data.TrustedHostsValue,
+                    $(if ([string]$data.TrustedHostsValue -match '^\d{1,3}(\.\d{1,3}){3}$') { ' — przy adresie IP tylko NTLM' } else { '' })
+                }
             }
             $lines -join [Environment]::NewLine
         }
